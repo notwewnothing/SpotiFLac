@@ -1282,6 +1282,7 @@ class PlaybackController extends Notifier<PlaybackState> {
     required String artist,
     String album = '',
     String coverUrl = '',
+    Track? track,
   }) async {
     final requestEpoch = _startNewPlayRequest();
     _resetPrefetchCycleState();
@@ -1289,6 +1290,15 @@ class PlaybackController extends Notifier<PlaybackState> {
     _pendingResumePosition = null;
     _pendingResumeIndex = null;
     final uri = _uriFromPath(path);
+    final fallbackTrack = Track(
+      id: path,
+      name: title,
+      artistName: artist,
+      albumName: album,
+      coverUrl: coverUrl.isNotEmpty ? coverUrl : null,
+      duration: 0,
+      source: 'local',
+    );
     final item = PlaybackItem(
       id: path,
       title: title,
@@ -1298,6 +1308,7 @@ class PlaybackController extends Notifier<PlaybackState> {
       sourceUri: uri.toString(),
       isLocal: true,
       service: 'offline',
+      track: track ?? fallbackTrack,
     );
 
     _clearLyricsForTrackChange(upcomingItem: item);
