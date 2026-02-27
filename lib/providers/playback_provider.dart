@@ -914,11 +914,17 @@ class PlaybackController extends Notifier<PlaybackState> {
 
   bool _isPlayRequestCurrent(int epoch) => epoch == _playRequestEpoch;
 
-  void _clearLyricsForTrackChange({PlaybackItem? upcomingItem}) {
+  void _clearLyricsForTrackChange({
+    PlaybackItem? upcomingItem,
+    bool updateCurrentItem = true,
+  }) {
     // Invalidate any in-flight lyrics fetch from previous track.
     _lyricsGeneration++;
     state = state.copyWith(
-      currentItem: upcomingItem ?? state.currentItem,
+      clearCurrentItem: !updateCurrentItem,
+      currentItem: updateCurrentItem
+          ? (upcomingItem ?? state.currentItem)
+          : null,
       lyricsLoading: false,
       clearLyrics: true,
     );
@@ -1323,7 +1329,30 @@ class PlaybackController extends Notifier<PlaybackState> {
       track: track ?? fallbackTrack,
     );
 
-    _clearLyricsForTrackChange(upcomingItem: item);
+    final routeToExternal = _shouldRouteToExternalPlayer(item);
+    _clearLyricsForTrackChange(
+      upcomingItem: item,
+      updateCurrentItem: !routeToExternal,
+    );
+
+    if (routeToExternal) {
+      state = state.copyWith(
+        clearCurrentItem: true,
+        queue: const [],
+        currentIndex: -1,
+        isLoading: false,
+        isBuffering: false,
+        isPlaying: false,
+        seekSupported: false,
+        position: Duration.zero,
+        bufferedPosition: Duration.zero,
+        duration: Duration.zero,
+        clearError: true,
+      );
+      unawaited(_savePlaybackSnapshot());
+      await _setSourceAndPlay(uri, item, expectedRequestEpoch: requestEpoch);
+      return;
+    }
 
     // Replacing single-track playback should also replace queue to avoid stale UI.
     state = state.copyWith(
@@ -1588,20 +1617,31 @@ class PlaybackController extends Notifier<PlaybackState> {
             _trackKeyFromPlaybackItem(item)) {
       _rememberRecentPlayed(previousItem);
     }
-    _clearLyricsForTrackChange(upcomingItem: item);
+    final routeToExternal = _shouldRouteToExternalPlayer(item);
+    _clearLyricsForTrackChange(
+      upcomingItem: item,
+      updateCurrentItem: !routeToExternal,
+    );
     state = state.copyWith(
       currentIndex: index,
-      currentItem: item,
-      isLoading: true,
-      isBuffering: true,
+      clearCurrentItem: routeToExternal,
+      currentItem: routeToExternal ? null : item,
+      isLoading: routeToExternal ? false : true,
+      isBuffering: routeToExternal ? false : true,
       isPlaying: false,
-      seekSupported: _inferSeekSupportedForQueueItem(item),
-      position:
-          pendingResumePosition != null && pendingResumePosition > Duration.zero
-          ? pendingResumePosition
-          : Duration.zero,
+      seekSupported: routeToExternal
+          ? false
+          : _inferSeekSupportedForQueueItem(item),
+      position: routeToExternal
+          ? Duration.zero
+          : (pendingResumePosition != null &&
+                    pendingResumePosition > Duration.zero
+                ? pendingResumePosition
+                : Duration.zero),
       bufferedPosition: Duration.zero,
-      duration: _fallbackDurationForItem(item),
+      duration: routeToExternal
+          ? Duration.zero
+          : _fallbackDurationForItem(item),
       clearError: true,
     );
     await _savePlaybackSnapshot();
@@ -1630,7 +1670,7 @@ class PlaybackController extends Notifier<PlaybackState> {
           expectedRequestEpoch: requestEpoch,
         );
         if (!_isPlayRequestCurrent(requestEpoch) ||
-            state.currentIndex != index) {
+            (!routeToExternal && state.currentIndex != index)) {
           return;
         }
         _clearPendingResumeForIndex(index);
@@ -1746,9 +1786,7 @@ class PlaybackController extends Notifier<PlaybackState> {
     required PlaybackItem item,
     int? expectedRequestEpoch,
   }) async {
-    final settings = ref.read(settingsProvider);
-    if (settings.playerMode != 'external') return false;
-    if (!item.isLocal) return false;
+    if (!_shouldRouteToExternalPlayer(item)) return false;
 
     final externalPath = _externalPathFromPlaybackUri(uri);
     if (externalPath == null || externalPath.isEmpty) return false;
@@ -1800,6 +1838,11 @@ class PlaybackController extends Notifier<PlaybackState> {
       );
       return true;
     }
+  }
+
+  bool _shouldRouteToExternalPlayer(PlaybackItem item) {
+    final settings = ref.read(settingsProvider);
+    return settings.playerMode == 'external' && item.isLocal;
   }
 
   String? _externalPathFromPlaybackUri(Uri uri) {
