@@ -300,7 +300,7 @@
   "@optionsSwitchBack": {
     "description": "Hint to switch back to built-in providers"
   },
-  "optionsAutoFallback": "Auto Fallback",
+  "optionsAutoFallback": "Cadangan Otomatis",
   "@optionsAutoFallback": {
     "description": "Auto-retry with other services"
   },
@@ -308,35 +308,35 @@
   "@optionsAutoFallbackSubtitle": {
     "description": "Subtitle for auto fallback"
   },
-  "optionsAutoSkipUnavailableTracks": "Auto Skip Unavailable Tracks",
+  "optionsAutoSkipUnavailableTracks": "Lewati Otomatis Trek yang Tidak Tersedia",
   "@optionsAutoSkipUnavailableTracks": {
     "description": "Toggle to skip to the next queue track when current track stream resolution fails"
   },
-  "optionsAutoSkipUnavailableTracksSubtitleOn": "Automatically skip to the next queue track when a stream cannot be resolved.",
+  "optionsAutoSkipUnavailableTracksSubtitleOn": "Secara otomatis melompati ke trek antrean berikutnya ketika aliran data tidak dapat diselesaikan.",
   "@optionsAutoSkipUnavailableTracksSubtitleOn": {
     "description": "Subtitle when auto skip on resolve failure is enabled"
   },
-  "optionsAutoSkipUnavailableTracksSubtitleOff": "Stop on failed track resolution and show an error.",
+  "optionsAutoSkipUnavailableTracksSubtitleOff": "Berhenti jika resolusi trek gagal dan tampilkan kesalahan.",
   "@optionsAutoSkipUnavailableTracksSubtitleOff": {
     "description": "Subtitle when auto skip on resolve failure is disabled"
   },
-  "optionsInteractionMode": "Interaction Mode",
+  "optionsInteractionMode": "Mode Interaksi",
   "@optionsInteractionMode": {
     "description": "Tap behavior mode for track lists"
   },
-  "modeDownloader": "Downloader Mode",
+  "modeDownloader": "Mode Pengunduh",
   "@modeDownloader": {
     "description": "Interaction mode where taps queue downloads"
   },
-  "modeDownloaderSubtitle": "Tap tracks to add them to download queue",
+  "modeDownloaderSubtitle": "Ketuk lagu untuk menambahkannya ke antrean unduhan",
   "@modeDownloaderSubtitle": {
     "description": "Subtitle for downloader interaction mode"
   },
-  "modeStreaming": "Streaming Mode",
+  "modeStreaming": "Mode Streaming",
   "@modeStreaming": {
     "description": "Interaction mode where taps start playback"
   },
-  "modeStreamingSubtitle": "Tap tracks to play instantly",
+  "modeStreamingSubtitle": "Ketuk trek untuk memutar secara instan",
   "@modeStreamingSubtitle": {
     "description": "Subtitle for streaming interaction mode"
   },
@@ -445,7 +445,7 @@
   "@optionsSpotifyCredentials": {
     "description": "Spotify API credentials setting"
   },
-  "optionsSpotifyCredentialsConfigured": "Client ID: {clientId}...",
+  "optionsSpotifyCredentialsConfigured": "ID Klien: {clientId}...",
   "@optionsSpotifyCredentialsConfigured": {
     "description": "Shows configured client ID preview",
     "placeholders": {
@@ -632,7 +632,7 @@
   "@aboutSachinsenalDesc": {
     "description": "Credit description for sachinsenal0x64"
   },
-  "aboutSjdonadoDesc": "Creator of I Don't Have Spotify (IDHS). The fallback link resolver that saves the day!",
+  "aboutSjdonadoDesc": "Pencipta I Don't Have Spotify (IDHS). Penyelesai tautan cadangan yang menyelamatkan keadaan!",
   "@aboutSjdonadoDesc": {
     "description": "Credit description for sjdonado"
   },
@@ -1198,7 +1198,7 @@
     "description": "Dialog title - import CSV playlist"
   },
   "dialogImportPlaylistMessage": "Ditemukan {count} lagu di CSV. Tambahkan ke antrian unduhan?",
-  "csvImportTracks": "{count} tracks from CSV",
+  "csvImportTracks": "{count} trek dari CSV",
   "@csvImportTracks": {
     "description": "Label shown in quality picker for CSV import",
     "placeholders": {
@@ -1242,7 +1242,7 @@
       }
     }
   },
-  "snackbarAlreadyInLibrary": "\"{trackName}\" already exists in your library",
+  "snackbarAlreadyInLibrary": "\"{trackName}\" sudah ada di perpustakaan Anda",
   "@snackbarAlreadyInLibrary": {
     "description": "Snackbar - track already exists in local library",
     "placeholders": {
@@ -1372,7 +1372,7 @@
   "@errorNoTracksFound": {
     "description": "Error - search returned no results"
   },
-  "errorSeekNotSupported": "Seeking is not supported for this live stream",
+  "errorSeekNotSupported": "Pencarian tidak didukung untuk siaran langsung ini",
   "@errorSeekNotSupported": {
     "description": "Error - seek disabled for live decrypted stream"
   },
@@ -1564,7 +1564,7 @@
   "@filenameAvailablePlaceholders": {
     "description": "Label for placeholder list"
   },
-  "filenameHint": "{artist} - {title}",
+  "filenameHint": "{artis} - {judul}",
   "@filenameHint": {
     "description": "Default filename format hint"
   },
