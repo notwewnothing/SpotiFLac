@@ -539,12 +539,65 @@ func ExtractYouTubeVideoID(urlStr string) (string, error) {
 	return "", fmt.Errorf("could not extract video ID from URL")
 }
 
+// searchYouTubeMusicViaExtension uses the YT Music extension's customSearch
+// to find a track by artist + title. It filters for tracks only (not videos,
+// albums, or playlists) and returns the YouTube Music watch URL for the first
+// matching track, or "" if nothing was found.
+func searchYouTubeMusicViaExtension(artistName, trackName string) string {
+	extManager := GetExtensionManager()
+	searchProviders := extManager.GetSearchProviders()
+
+	// Find the ytmusic-spotiflac extension
+	var ytProvider *ExtensionProviderWrapper
+	for _, p := range searchProviders {
+		if p.extension.ID == "ytmusic-spotiflac" {
+			ytProvider = p
+			break
+		}
+	}
+	if ytProvider == nil {
+		GoLog("[YouTube] YT Music extension not found or not enabled, skipping fallback\n")
+		return ""
+	}
+
+	query := strings.TrimSpace(artistName + " " + trackName)
+	if query == "" {
+		return ""
+	}
+
+	GoLog("[YouTube] Searching YT Music extension for: %s\n", query)
+	results, err := ytProvider.CustomSearch(query, map[string]interface{}{
+		"filter": "tracks",
+	})
+	if err != nil {
+		GoLog("[YouTube] YT Music extension search failed: %v\n", err)
+		return ""
+	}
+
+	// Find the first track result (item_type == "track" with a valid video ID)
+	for _, track := range results {
+		if track.ItemType != "" && track.ItemType != "track" {
+			continue
+		}
+		videoID := strings.TrimSpace(track.ID)
+		if videoID == "" {
+			continue
+		}
+		if isYouTubeVideoID(videoID) {
+			return BuildYouTubeWatchURL(videoID)
+		}
+	}
+
+	GoLog("[YouTube] YT Music extension returned no matching tracks for: %s\n", query)
+	return ""
+}
+
 func downloadFromYouTube(req DownloadRequest) (YouTubeDownloadResult, error) {
 	downloader := NewYouTubeDownloader()
 
 	format, bitrate, quality := parseYouTubeQualityInput(req.Quality)
 
-	// URL lookup priority: YouTube video ID > Spotify ID > Deezer ID > ISRC
+	// URL lookup priority: YouTube video ID > YT Music extension > SongLink (Spotify/Deezer/ISRC)
 	var youtubeURL string
 	var lookupErr error
 
@@ -554,7 +607,15 @@ func downloadFromYouTube(req DownloadRequest) (YouTubeDownloadResult, error) {
 		GoLog("[YouTube] SpotifyID appears to be YouTube video ID, using directly: %s\n", youtubeURL)
 	}
 
-	// Try Spotify ID via SongLink
+	// Try YT Music extension search first (if installed) - more accurate, tracks only
+	if youtubeURL == "" && (req.TrackName != "" || req.ArtistName != "") {
+		youtubeURL = searchYouTubeMusicViaExtension(req.ArtistName, req.TrackName)
+		if youtubeURL != "" {
+			GoLog("[YouTube] Found YouTube URL via YT Music extension: %s\n", youtubeURL)
+		}
+	}
+
+	// Fallback: Try Spotify ID via SongLink
 	if youtubeURL == "" && req.SpotifyID != "" && !isYouTubeVideoID(req.SpotifyID) {
 		GoLog("[YouTube] Looking up YouTube URL via SongLink for Spotify ID: %s\n", req.SpotifyID)
 		songlink := NewSongLinkClient()
@@ -566,7 +627,7 @@ func downloadFromYouTube(req DownloadRequest) (YouTubeDownloadResult, error) {
 		}
 	}
 
-	// Try Deezer ID via SongLink
+	// Fallback: Try Deezer ID via SongLink
 	if youtubeURL == "" && req.DeezerID != "" {
 		GoLog("[YouTube] Looking up YouTube URL via SongLink for Deezer ID: %s\n", req.DeezerID)
 		songlink := NewSongLinkClient()
@@ -578,7 +639,7 @@ func downloadFromYouTube(req DownloadRequest) (YouTubeDownloadResult, error) {
 		}
 	}
 
-	// Try ISRC via SongLink
+	// Fallback: Try ISRC via SongLink
 	if youtubeURL == "" && req.ISRC != "" {
 		GoLog("[YouTube] Looking up YouTube URL via SongLink for ISRC: %s\n", req.ISRC)
 		songlink := NewSongLinkClient()

@@ -74,13 +74,6 @@ class UpdateChecker {
         return null;
       }
 
-      // Ignore releases from a different major version (e.g. v4.x when we
-      // rolled back to v3.x). Only offer updates within the same major line.
-      if (_majorVersion(latestVersion) != _majorVersion(AppInfo.version)) {
-        _log.i('Skipping update from different major version (current: ${AppInfo.version}, latest: $latestVersion)');
-        return null;
-      }
-
       final body = releaseData['body'] as String? ?? 'No changelog available';
       final htmlUrl = releaseData['html_url'] as String? ?? '${AppInfo.githubUrl}/releases';
       final publishedAt = DateTime.tryParse(releaseData['published_at'] as String? ?? '') ?? DateTime.now();
@@ -122,14 +115,6 @@ class UpdateChecker {
     } catch (e) {
       _log.e('Error checking for updates: $e');
       return null;
-    }
-  }
-
-  static int _majorVersion(String version) {
-    try {
-      return int.parse(version.split('-').first.split('.').first);
-    } catch (_) {
-      return -1;
     }
   }
 

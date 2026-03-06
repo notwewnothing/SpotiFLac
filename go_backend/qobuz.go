@@ -12,6 +12,8 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -31,12 +33,16 @@ var (
 const (
 	qobuzTrackGetBaseURL    = "https://www.qobuz.com/api.json/0.2/track/get?track_id="
 	qobuzTrackSearchBaseURL = "https://www.qobuz.com/api.json/0.2/track/search?query="
+	qobuzStoreSearchBaseURL = "https://www.qobuz.com/us-en/search/tracks/"
 	qobuzTrackPlayBaseURL   = "https://play.qobuz.com/track/"
 	qobuzDownloadAPIURL     = "https://www.musicdl.me/api/qobuz/download"
 	qobuzDabMusicAPIURL     = "https://dabmusic.xyz/api/stream?trackId="
 	qobuzDeebAPIURL         = "https://dab.yeet.su/api/stream?trackId="
+	qobuzSquidAPIURL        = "https://qobuz.squid.wtf/api/download-music?country=US&track_id="
 	qobuzDebugKeyXORMask    = byte(0x5A)
 )
+
+var qobuzStoreTrackIDRegex = regexp.MustCompile(`/v4/ajax/popin-add-cart/track/([0-9]+)`)
 
 var qobuzDebugKeyObfuscated = []byte{
 	0x69, 0x3b, 0x38, 0x3e, 0x36, 0x37, 0x35, 0x2f, 0x36, 0x3b,
@@ -403,6 +409,7 @@ func (q *QobuzDownloader) GetAvailableProviders() []qobuzAPIProvider {
 		{Name: "dabmusic", URL: qobuzDabMusicAPIURL, Kind: qobuzAPIKindStandard},
 		// "deeb" is mapped from the legacy reference fallback endpoint.
 		{Name: "deeb", URL: qobuzDeebAPIURL, Kind: qobuzAPIKindStandard},
+		{Name: "squid", URL: qobuzSquidAPIURL, Kind: qobuzAPIKindStandard},
 	}
 }
 
@@ -560,39 +567,18 @@ func getQobuzDebugKey() string {
 }
 
 func (q *QobuzDownloader) SearchTrackByISRC(isrc string) (*QobuzTrack, error) {
-	searchURL := fmt.Sprintf("%s%s&limit=50&app_id=%s", qobuzTrackSearchBaseURL, url.QueryEscape(isrc), q.appID)
-
-	req, err := http.NewRequest("GET", searchURL, nil)
+	candidates, err := q.searchQobuzTracksWithFallback(isrc, 50)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := DoRequestWithUserAgent(q.client, req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("search failed: HTTP %d", resp.StatusCode)
-	}
-
-	var result struct {
-		Tracks struct {
-			Items []QobuzTrack `json:"items"`
-		} `json:"tracks"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, err
-	}
-
-	for i := range result.Tracks.Items {
-		if result.Tracks.Items[i].ISRC == isrc {
-			return &result.Tracks.Items[i], nil
+	for i := range candidates {
+		if candidates[i].ISRC == isrc {
+			return &candidates[i], nil
 		}
 	}
 
-	if len(result.Tracks.Items) == 0 {
+	if len(candidates) == 0 {
 		return nil, fmt.Errorf("no tracks found for ISRC: %s", isrc)
 	}
 
@@ -602,38 +588,17 @@ func (q *QobuzDownloader) SearchTrackByISRC(isrc string) (*QobuzTrack, error) {
 func (q *QobuzDownloader) SearchTrackByISRCWithDuration(isrc string, expectedDurationSec int) (*QobuzTrack, error) {
 	GoLog("[Qobuz] Searching by ISRC: %s\n", isrc)
 
-	searchURL := fmt.Sprintf("%s%s&limit=50&app_id=%s", qobuzTrackSearchBaseURL, url.QueryEscape(isrc), q.appID)
-
-	req, err := http.NewRequest("GET", searchURL, nil)
+	candidates, err := q.searchQobuzTracksWithFallback(isrc, 50)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := DoRequestWithUserAgent(q.client, req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("search failed: HTTP %d", resp.StatusCode)
-	}
-
-	var result struct {
-		Tracks struct {
-			Items []QobuzTrack `json:"items"`
-		} `json:"tracks"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, err
-	}
-
-	GoLog("[Qobuz] ISRC search returned %d results\n", len(result.Tracks.Items))
+	GoLog("[Qobuz] ISRC search returned %d results\n", len(candidates))
 
 	var isrcMatches []*QobuzTrack
-	for i := range result.Tracks.Items {
-		if result.Tracks.Items[i].ISRC == isrc {
-			isrcMatches = append(isrcMatches, &result.Tracks.Items[i])
+	for i := range candidates {
+		if candidates[i].ISRC == isrc {
+			isrcMatches = append(isrcMatches, &candidates[i])
 		}
 	}
 
@@ -668,7 +633,7 @@ func (q *QobuzDownloader) SearchTrackByISRCWithDuration(isrc string, expectedDur
 		return isrcMatches[0], nil
 	}
 
-	if len(result.Tracks.Items) == 0 {
+	if len(candidates) == 0 {
 		return nil, fmt.Errorf("no tracks found for ISRC: %s", isrc)
 	}
 
@@ -725,6 +690,7 @@ func (q *QobuzDownloader) SearchTrackByMetadataWithDuration(trackName, artistNam
 
 	var allTracks []QobuzTrack
 	searchedQueries := make(map[string]bool)
+	seenTrackIDs := make(map[int64]struct{})
 
 	for _, query := range queries {
 		cleanQuery := strings.TrimSpace(query)
@@ -735,38 +701,26 @@ func (q *QobuzDownloader) SearchTrackByMetadataWithDuration(trackName, artistNam
 
 		GoLog("[Qobuz] Searching for: %s\n", cleanQuery)
 
-		searchURL := fmt.Sprintf("%s%s&limit=50&app_id=%s", qobuzTrackSearchBaseURL, url.QueryEscape(cleanQuery), q.appID)
-
-		req, err := http.NewRequest("GET", searchURL, nil)
-		if err != nil {
-			continue
-		}
-
-		resp, err := DoRequestWithUserAgent(q.client, req)
+		result, err := q.searchQobuzTracksWithFallback(cleanQuery, 50)
 		if err != nil {
 			GoLog("[Qobuz] Search error for '%s': %v\n", cleanQuery, err)
 			continue
 		}
 
-		if resp.StatusCode != 200 {
-			resp.Body.Close()
-			continue
-		}
-
-		var result struct {
-			Tracks struct {
-				Items []QobuzTrack `json:"items"`
-			} `json:"tracks"`
-		}
-		if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-			resp.Body.Close()
-			continue
-		}
-		resp.Body.Close()
-
-		if len(result.Tracks.Items) > 0 {
-			GoLog("[Qobuz] Found %d results for '%s'\n", len(result.Tracks.Items), cleanQuery)
-			allTracks = append(allTracks, result.Tracks.Items...)
+		if len(result) > 0 {
+			GoLog("[Qobuz] Found %d results for '%s'\n", len(result), cleanQuery)
+			for i := range result {
+				trackID := result[i].ID
+				if trackID <= 0 {
+					allTracks = append(allTracks, result[i])
+					continue
+				}
+				if _, ok := seenTrackIDs[trackID]; ok {
+					continue
+				}
+				seenTrackIDs[trackID] = struct{}{}
+				allTracks = append(allTracks, result[i])
+			}
 		}
 	}
 
@@ -835,6 +789,131 @@ func (q *QobuzDownloader) SearchTrackByMetadataWithDuration(trackName, artistNam
 	}
 
 	return nil, fmt.Errorf("no matching track found for: %s - %s", artistName, trackName)
+}
+
+func (q *QobuzDownloader) searchQobuzTracksViaAPI(query string, limit int) ([]QobuzTrack, error) {
+	searchURL := fmt.Sprintf("%s%s&limit=%d&app_id=%s", qobuzTrackSearchBaseURL, url.QueryEscape(query), limit, q.appID)
+	req, err := http.NewRequest("GET", searchURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := DoRequestWithUserAgent(q.client, req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("search failed: HTTP %d", resp.StatusCode)
+	}
+
+	var result struct {
+		Tracks struct {
+			Items []QobuzTrack `json:"items"`
+		} `json:"tracks"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, err
+	}
+	return result.Tracks.Items, nil
+}
+
+func extractQobuzTrackIDsFromStoreSearchHTML(body []byte) []int64 {
+	matches := qobuzStoreTrackIDRegex.FindAllSubmatch(body, -1)
+	if len(matches) == 0 {
+		return nil
+	}
+
+	trackIDs := make([]int64, 0, len(matches))
+	seen := make(map[int64]struct{}, len(matches))
+	for _, match := range matches {
+		if len(match) < 2 {
+			continue
+		}
+		id, err := strconv.ParseInt(string(match[1]), 10, 64)
+		if err != nil || id <= 0 {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		trackIDs = append(trackIDs, id)
+	}
+	return trackIDs
+}
+
+func (q *QobuzDownloader) searchQobuzTracksViaStore(query string, limit int) ([]QobuzTrack, error) {
+	searchURL := qobuzStoreSearchBaseURL + url.PathEscape(query)
+	req, err := http.NewRequest("GET", searchURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := DoRequestWithUserAgent(q.client, req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("store search failed: HTTP %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	trackIDs := extractQobuzTrackIDsFromStoreSearchHTML(body)
+	if len(trackIDs) == 0 {
+		return nil, fmt.Errorf("store search did not contain track IDs")
+	}
+
+	if limit > 0 && len(trackIDs) > limit {
+		trackIDs = trackIDs[:limit]
+	}
+
+	tracks := make([]QobuzTrack, 0, len(trackIDs))
+	for _, id := range trackIDs {
+		track, trackErr := q.GetTrackByID(id)
+		if trackErr != nil || track == nil {
+			continue
+		}
+		tracks = append(tracks, *track)
+	}
+
+	if len(tracks) == 0 {
+		return nil, fmt.Errorf("store fallback returned IDs but no track metadata could be loaded")
+	}
+	return tracks, nil
+}
+
+func (q *QobuzDownloader) searchQobuzTracksWithFallback(query string, limit int) ([]QobuzTrack, error) {
+	apiTracks, apiErr := q.searchQobuzTracksViaAPI(query, limit)
+	if apiErr == nil {
+		if len(apiTracks) > 0 {
+			return apiTracks, nil
+		}
+		GoLog("[Qobuz] API search returned 0 results for '%s', trying store fallback\n", query)
+	} else {
+		GoLog("[Qobuz] API search failed for '%s': %v. Trying store fallback.\n", query, apiErr)
+	}
+
+	storeTracks, storeErr := q.searchQobuzTracksViaStore(query, limit)
+	if storeErr == nil && len(storeTracks) > 0 {
+		GoLog("[Qobuz] Store fallback returned %d candidate tracks for '%s'\n", len(storeTracks), query)
+		return storeTracks, nil
+	}
+
+	if apiErr != nil && storeErr != nil {
+		return nil, fmt.Errorf("api search failed (%v); store fallback failed (%v)", apiErr, storeErr)
+	}
+	if storeErr != nil {
+		return nil, storeErr
+	}
+	return nil, fmt.Errorf("no tracks found for query: %s", query)
 }
 
 type qobuzAPIResult struct {

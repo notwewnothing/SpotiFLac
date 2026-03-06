@@ -1,6 +1,7 @@
 package gobackend
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -36,6 +37,12 @@ var (
 	songLinkClientOnce   sync.Once
 	songLinkRegion       = "US"
 	songLinkRegionMu     sync.RWMutex
+	songLinkSearchByISRC = func(ctx context.Context, isrc string) (*TrackMetadata, error) {
+		return GetDeezerClient().SearchByISRC(ctx, isrc)
+	}
+	songLinkCheckAvailabilityFromDeezer = func(s *SongLinkClient, deezerTrackID string) (*TrackAvailability, error) {
+		return s.CheckAvailabilityFromDeezer(deezerTrackID)
+	}
 )
 
 func NewSongLinkClient() *SongLinkClient {
@@ -109,6 +116,20 @@ func buildSongLinkURLByPlatform(platform, entityType, entityID, userCountry stri
 }
 
 func (s *SongLinkClient) CheckTrackAvailability(spotifyTrackID string, isrc string) (*TrackAvailability, error) {
+	spotifyTrackID = strings.TrimSpace(spotifyTrackID)
+	isrc = strings.ToUpper(strings.TrimSpace(isrc))
+
+	switch {
+	case spotifyTrackID != "":
+		return s.checkTrackAvailabilityFromSpotify(spotifyTrackID)
+	case isrc != "":
+		return s.checkTrackAvailabilityFromISRC(isrc)
+	default:
+		return nil, fmt.Errorf("spotify track ID and ISRC are empty")
+	}
+}
+
+func (s *SongLinkClient) checkTrackAvailabilityFromSpotify(spotifyTrackID string) (*TrackAvailability, error) {
 	songLinkRateLimiter.WaitForSlot()
 
 	spotifyURL := fmt.Sprintf("https://open.spotify.com/track/%s", spotifyTrackID)
@@ -198,6 +219,47 @@ func (s *SongLinkClient) CheckTrackAvailability(spotifyTrackID string, isrc stri
 	}
 
 	return availability, nil
+}
+
+func (s *SongLinkClient) checkTrackAvailabilityFromISRC(isrc string) (*TrackAvailability, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), SongLinkTimeout)
+	defer cancel()
+
+	track, err := songLinkSearchByISRC(ctx, isrc)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve Deezer track from ISRC %s: %w", isrc, err)
+	}
+
+	deezerTrackID := songLinkExtractDeezerTrackID(track)
+	if deezerTrackID == "" {
+		return nil, fmt.Errorf("failed to resolve Deezer track ID from ISRC %s", isrc)
+	}
+
+	availability, err := songLinkCheckAvailabilityFromDeezer(s, deezerTrackID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve SongLink availability from ISRC %s via Deezer %s: %w", isrc, deezerTrackID, err)
+	}
+
+	return availability, nil
+}
+
+func songLinkExtractDeezerTrackID(track *TrackMetadata) string {
+	if track == nil {
+		return ""
+	}
+
+	if deezerID, ok := strings.CutPrefix(strings.TrimSpace(track.SpotifyID), "deezer:"); ok {
+		deezerID = strings.TrimSpace(deezerID)
+		if deezerID != "" {
+			return deezerID
+		}
+	}
+
+	if deezerID := extractDeezerIDFromURL(strings.TrimSpace(track.ExternalURL)); deezerID != "" {
+		return deezerID
+	}
+
+	return ""
 }
 
 func (s *SongLinkClient) GetStreamingURLs(spotifyTrackID string) (map[string]string, error) {

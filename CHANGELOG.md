@@ -1,5 +1,26 @@
 # Changelog
 
+## [3.7.1] - 2026-03-06
+
+### Added
+
+- **Smarter YouTube Downloads**: If the YouTube Music extension is installed, the app now uses it first to find the correct song — more accurate than SongLink, especially for new releases.
+- **Songs-Only Search Filter**: YouTube Music extension search now filters results server-side, so you only get actual songs — no music videos or covers mixed in.
+- **Qobuz Search Fallback**: If Qobuz API search returns nothing, the app now tries the Qobuz web store as a backup to find the track.
+- **Better ISRC Lookup**: Tracks can now be resolved via ISRC even without a Spotify ID, using Deezer as an intermediary.
+
+### Fixed
+
+- **Download Queue Stability**: Fixed duplicate queue item IDs, cancel not working reliably, and "Clear All" not properly stopping active downloads.
+- **Queue Restore on Restart**: Duplicate or broken queue item IDs are now auto-fixed when the app restarts.
+
+### Changed
+
+- **Update Checker**: The app can now detect updates across all versions, not just within the same major version.
+- **Localization Cleanup**: Cleaned up and consolidated translation files across all 13 supported languages.
+
+---
+
 ## [3.7.0] - 2026-03-04
 
 Hey everyone, thank you so much for sticking with SpotiFLAC Mobile.
