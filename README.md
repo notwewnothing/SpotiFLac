@@ -1,15 +1,10 @@
-[![GitHub All Releases](https://img.shields.io/github/downloads/zarzet/SpotiFLAC-Mobile/total?style=for-the-badge&refresh=1)](https://github.com/zarzet/SpotiFLAC-Mobile/releases)
-[![VirusTotal](https://img.shields.io/badge/VirusTotal-Safe-brightgreen?style=for-the-badge&logo=virustotal)](https://www.virustotal.com/gui/file/0a2bd2a033551983fc9fcd83f82fd912c83914fd1094cd8d1c7c6a68eb23233f)
-[![Crowdin](https://img.shields.io/badge/HELP%20TRANSLATE%20ON-CROWDIN-%2321252b?style=for-the-badge&logo=crowdin)](https://crowdin.com/project/spotiflac-mobile)
-
 <div align="center">
 
-<img src="icon.png" width="128" />
-
-Download music in true lossless FLAC from Tidal, Qobuz & Deezer — no account required.
-
-![Android](https://img.shields.io/badge/Android-7.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)
-![iOS](https://img.shields.io/badge/iOS-14.0%2B-000000?style=for-the-badge&logo=apple&logoColor=white)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/images/banner-readme-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="assets/images/banner-readme-light.png">
+  <img alt="SpotiFLAC Mobile" src="assets/images/banner-readme-light.png" width="720">
+</picture>
 
 </div>
 
@@ -23,6 +18,12 @@ Download music in true lossless FLAC from Tidal, Qobuz & Deezer — no account r
   <img src="assets/images/3.jpg?v=2" width="200" />
   <img src="assets/images/4.jpg?v=2" width="200" />
 </p>
+
+[![GitHub All Releases](https://img.shields.io/github/downloads/zarzet/SpotiFLAC-Mobile/total?style=for-the-badge&refresh=1)](https://github.com/zarzet/SpotiFLAC-Mobile/releases)
+[![VirusTotal](https://img.shields.io/badge/VirusTotal-Safe-brightgreen?style=for-the-badge&logo=virustotal)](https://www.virustotal.com/gui/file/0a2bd2a033551983fc9fcd83f82fd912c83914fd1094cd8d1c7c6a68eb23233f)
+[![Crowdin](https://img.shields.io/badge/HELP%20TRANSLATE%20ON-CROWDIN-%2321252b?style=for-the-badge&logo=crowdin)](https://crowdin.com/project/spotiflac-mobile)
+[![Telegram Channel](https://img.shields.io/badge/CHANNEL-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/spotiflac)
+[![Telegram Community](https://img.shields.io/badge/COMMUNITY-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/spotiflac_chat)
 
 ## Extensions
 
@@ -42,11 +43,6 @@ Want to create your own extension? Check out the [Extension Development Guide](h
 
 ### [SpotiFLAC (Desktop)](https://github.com/afkarxyz/SpotiFLAC)
 Download music in true lossless FLAC from Tidal, Qobuz & Amazon Music for Windows, macOS & Linux
-
-## Telegram
-
-[![Telegram Channel](https://img.shields.io/badge/CHANNEL-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/spotiflac)
-[![Telegram Community](https://img.shields.io/badge/COMMUNITY-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/spotiflac_chat)
 
 ## FAQ
 
