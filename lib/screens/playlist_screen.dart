@@ -533,7 +533,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
       tooltip: context.l10n.tooltipAddToPlaylist,
       onPressed: _tracks.isEmpty
           ? null
-          : () => showAddTracksToPlaylistSheet(context, ref, _tracks),
+          : () => showAddTracksToPlaylistSheet(context, ref, _tracks, playlistNamePrefill: widget.playlistName),
     );
   }
 
