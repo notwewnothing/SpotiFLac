@@ -95,7 +95,7 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
           .recordAlbumAccess(
             id: widget.albumId,
             name: widget.albumName,
-            artistName: widget.tracks?.firstOrNull?.artistName,
+            artistName: widget.artistName ?? widget.tracks?.firstOrNull?.albumArtist ?? widget.tracks?.firstOrNull?.artistName,
             imageUrl: widget.coverUrl,
             providerId: providerId,
           );
@@ -283,7 +283,10 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
   ) {
     final expandedHeight = _calculateExpandedHeight(context);
     final tracks = _tracks ?? [];
-    final artistName = tracks.isNotEmpty ? tracks.first.artistName : null;
+    final artistName = widget.artistName ??
+        (tracks.isNotEmpty
+            ? (tracks.first.albumArtist ?? tracks.first.artistName)
+            : null);
     final releaseDate = tracks.isNotEmpty ? tracks.first.releaseDate : null;
 
     return SliverAppBar(

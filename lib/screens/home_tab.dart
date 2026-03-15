@@ -3909,6 +3909,7 @@ class _ExtensionAlbumScreenState extends ConsumerState<ExtensionAlbumScreen> {
       name: (data['name'] ?? '').toString(),
       artistName: (data['artists'] ?? data['artist'] ?? '').toString(),
       albumName: (data['album_name'] ?? widget.albumName).toString(),
+      albumArtist: (data['album_artist'] ?? _artistName)?.toString(),
       artistId:
           (data['artist_id'] ?? data['artistId'])?.toString() ?? _artistId,
       albumId: data['album_id']?.toString() ?? widget.albumId,
