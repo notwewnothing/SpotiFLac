@@ -2379,7 +2379,11 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     }
   }
 
+  /// Deezer CDN cover size pattern: /WxH-0-0-0-0.jpg
+  static final _deezerSizeRegex = RegExp(r'/(\d+)x(\d+)-\d+-\d+-\d+-\d+\.jpg$');
+
   String _upgradeToMaxQualityCover(String coverUrl) {
+    // Spotify CDN upgrade (hash-based size identifiers)
     const spotifySize300 = 'ab67616d00001e02';
     const spotifySize640 = 'ab67616d0000b273';
     const spotifySizeMax = 'ab67616d000082c1';
@@ -2388,9 +2392,27 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     if (result.contains(spotifySize300)) {
       result = result.replaceFirst(spotifySize300, spotifySize640);
     }
-
     if (result.contains(spotifySize640)) {
       result = result.replaceFirst(spotifySize640, spotifySizeMax);
+    }
+
+    // Deezer CDN upgrade (1000x1000 → 1800x1800)
+    if (result.contains('cdn-images.dzcdn.net')) {
+      final upgraded = result.replaceFirst(
+        _deezerSizeRegex,
+        '/1800x1800-000000-80-0-0.jpg',
+      );
+      if (upgraded != result) {
+        _log.d('Cover URL upgraded (Deezer): 1800x1800');
+        result = upgraded;
+      }
+    }
+
+    // Tidal CDN upgrade (1280x1280 → origin)
+    if (result.contains('resources.tidal.com') &&
+        result.contains('/1280x1280.jpg')) {
+      result = result.replaceFirst('/1280x1280.jpg', '/origin.jpg');
+      _log.d('Cover URL upgraded (Tidal): origin');
     }
 
     return result;
