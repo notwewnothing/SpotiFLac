@@ -770,6 +770,37 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
 
   /// Remove history entries where the file no longer exists on disk
   /// Returns the number of orphaned entries removed
+  /// Audio file extensions that the app commonly produces or converts between.
+  static const _audioExtensions = [
+    '.flac',
+    '.m4a',
+    '.mp3',
+    '.opus',
+    '.ogg',
+    '.wav',
+    '.aac',
+  ];
+
+  /// When the original file is missing, check whether a sibling with a
+  /// different audio extension exists (e.g. the user converted .flac → .opus).
+  /// Returns the path of the first match found, or `null` if none exist.
+  Future<String?> _findConvertedSibling(String originalPath) async {
+    // Strip the current extension to get the base path.
+    final dotIndex = originalPath.lastIndexOf('.');
+    if (dotIndex < 0) return null;
+    final basePath = originalPath.substring(0, dotIndex);
+    final originalExt = originalPath.substring(dotIndex).toLowerCase();
+
+    for (final ext in _audioExtensions) {
+      if (ext == originalExt) continue;
+      final candidatePath = '$basePath$ext';
+      try {
+        if (await fileExists(candidatePath)) return candidatePath;
+      } catch (_) {}
+    }
+    return null;
+  }
+
   Future<int> cleanupOrphanedDownloads() async {
     _historyLog.i('Starting orphaned downloads cleanup...');
 
@@ -791,7 +822,21 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
           if (filePath == null || filePath.isEmpty) return null;
           pathById[id] = filePath;
           try {
-            return MapEntry(id, await fileExists(filePath));
+            if (await fileExists(filePath)) return MapEntry(id, true);
+
+            // Original file missing -- check for a converted sibling.
+            final sibling = await _findConvertedSibling(filePath);
+            if (sibling != null) {
+              _historyLog.i(
+                'Found converted sibling for $id: $filePath → $sibling',
+              );
+              // Update the stored path so future checks succeed immediately.
+              await _db.updateFilePath(id, sibling);
+              pathById[id] = sibling;
+              return MapEntry(id, true);
+            }
+
+            return MapEntry(id, false);
           } catch (e) {
             _historyLog.w('Error checking file existence for $id: $e');
             return MapEntry(id, false);
