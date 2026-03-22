@@ -479,8 +479,8 @@ func parseQobuzURL(input string) (string, string, error) {
 }
 
 func qobuzArtistsMatch(expectedArtist, foundArtist string) bool {
-	normExpected := strings.ToLower(strings.TrimSpace(expectedArtist))
-	normFound := strings.ToLower(strings.TrimSpace(foundArtist))
+	normExpected := normalizeLooseArtistName(expectedArtist)
+	normFound := normalizeLooseArtistName(foundArtist)
 
 	if normExpected == normFound {
 		return true

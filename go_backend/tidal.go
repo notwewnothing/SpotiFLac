@@ -1629,8 +1629,8 @@ type TidalDownloadResult struct {
 }
 
 func artistsMatch(spotifyArtist, tidalArtist string) bool {
-	normSpotify := strings.ToLower(strings.TrimSpace(spotifyArtist))
-	normTidal := strings.ToLower(strings.TrimSpace(tidalArtist))
+	normSpotify := normalizeLooseArtistName(spotifyArtist)
+	normTidal := normalizeLooseArtistName(tidalArtist)
 
 	if normSpotify == normTidal {
 		return true

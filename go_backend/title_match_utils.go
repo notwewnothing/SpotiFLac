@@ -3,6 +3,8 @@ package gobackend
 import (
 	"strings"
 	"unicode"
+
+	"golang.org/x/text/unicode/norm"
 )
 
 // normalizeLooseTitle collapses separators/punctuation so titles like
@@ -27,6 +29,37 @@ func normalizeLooseTitle(title string) string {
 			b.WriteByte(' ')
 		default:
 			// Drop other punctuation/symbols (including emoji) for loose matching.
+		}
+	}
+
+	return strings.Join(strings.Fields(b.String()), " ")
+}
+
+// normalizeLooseArtistName folds diacritics and common separators so artist
+// verification is resilient to variants like "Özkent" vs "Ozkent".
+func normalizeLooseArtistName(name string) string {
+	trimmed := strings.TrimSpace(strings.ToLower(name))
+	if trimmed == "" {
+		return ""
+	}
+
+	decomposed := norm.NFD.String(trimmed)
+
+	var b strings.Builder
+	b.Grow(len(decomposed))
+
+	for _, r := range decomposed {
+		switch {
+		case unicode.Is(unicode.Mn, r), unicode.Is(unicode.Mc, r), unicode.Is(unicode.Me, r):
+			continue
+		case unicode.IsLetter(r), unicode.IsNumber(r):
+			b.WriteRune(r)
+		case unicode.IsSpace(r):
+			b.WriteByte(' ')
+		case r == '/', r == '\\', r == '_', r == '-', r == '|', r == '.', r == '&', r == '+':
+			b.WriteByte(' ')
+		default:
+			// Drop remaining punctuation/symbols for loose artist matching.
 		}
 	}
 
