@@ -20,6 +20,7 @@ import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/services/ffmpeg_service.dart';
 import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/utils/logger.dart';
+import 'package:spotiflac_android/utils/lyrics_metadata_helper.dart';
 import 'package:spotiflac_android/utils/mime_utils.dart';
 import 'package:spotiflac_android/utils/string_utils.dart';
 
@@ -1778,6 +1779,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
       final isFlac = lower.endsWith('.flac');
       final isMp3 = lower.endsWith('.mp3');
       final isOpus = lower.endsWith('.opus') || lower.endsWith('.ogg');
+      final isM4A = lower.endsWith('.m4a') || lower.endsWith('.aac');
 
       bool success = false;
       String? error;
@@ -1803,7 +1805,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
         } else {
           error = result['error']?.toString() ?? l10nFailedToEmbedLyrics;
         }
-      } else if (isMp3 || isOpus) {
+      } else if (isMp3 || isOpus || isM4A) {
         final metadata = _buildFallbackMetadata();
         try {
           final result = await PlatformBridge.readFileMetadata(workingPath);
@@ -1835,6 +1837,12 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
         if (isMp3) {
           ffmpegResult = await FFmpegService.embedMetadataToMp3(
             mp3Path: workingPath,
+            coverPath: coverPath,
+            metadata: metadata,
+          );
+        } else if (isM4A) {
+          ffmpegResult = await FFmpegService.embedMetadataToM4a(
+            m4aPath: workingPath,
             coverPath: coverPath,
             metadata: metadata,
           );
@@ -2321,6 +2329,12 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
             coverPath: effectiveCoverPath,
             metadata: metadata,
           );
+        } else if (lower.endsWith('.m4a') || lower.endsWith('.aac')) {
+          ffmpegResult = await FFmpegService.embedMetadataToM4a(
+            m4aPath: ffmpegTarget,
+            coverPath: effectiveCoverPath,
+            metadata: metadata,
+          );
         } else if (lower.endsWith('.opus') || lower.endsWith('.ogg')) {
           ffmpegResult = await FFmpegService.embedMetadataToOpus(
             opusPath: ffmpegTarget,
@@ -2737,6 +2751,8 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
     put('COPYRIGHT', source['copyright']);
     put('COMPOSER', source['composer']);
     put('COMMENT', source['comment']);
+    put('LYRICS', source['lyrics']);
+    put('UNSYNCEDLYRICS', source['lyrics']);
 
     final trackNumber = source['track_number'];
     if (trackNumber != null && trackNumber.toString() != '0') {
@@ -2796,8 +2812,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
 
   void _showConvertSheet(BuildContext context) {
     final currentFormat = _currentFileFormat;
-    final isLosslessSource =
-        currentFormat == 'FLAC' || currentFormat == 'M4A';
+    final isLosslessSource = currentFormat == 'FLAC' || currentFormat == 'M4A';
 
     // Build available target formats based on source
     final formats = <String>[];
@@ -2879,8 +2894,9 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                                 isLosslessTarget =
                                     format == 'ALAC' || format == 'FLAC';
                                 if (!isLosslessTarget) {
-                                  selectedBitrate =
-                                      format == 'Opus' ? '128k' : '320k';
+                                  selectedBitrate = format == 'Opus'
+                                      ? '128k'
+                                      : '320k';
                                 }
                               });
                             }
@@ -2929,11 +2945,8 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                           const SizedBox(width: 6),
                           Text(
                             context.l10n.trackConvertLosslessHint,
-                            style: Theme.of(
-                              context,
-                            ).textTheme.bodySmall?.copyWith(
-                              color: colorScheme.primary,
-                            ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: colorScheme.primary),
                           ),
                         ],
                       ),
@@ -3499,22 +3512,29 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
         SnackBar(content: Text(context.l10n.trackConvertConverting)),
       );
 
+      final settings = ref.read(settingsProvider);
+      final shouldEmbedLyrics =
+          settings.embedLyrics && settings.lyricsMode != 'external';
       final metadata = _buildFallbackMetadata();
       try {
         final result = await PlatformBridge.readFileMetadata(cleanFilePath);
         if (result['error'] == null) {
-          result.forEach((key, value) {
-            if (key == 'error' || value == null) return;
-            final normalizedValue = value.toString().trim();
-            if (normalizedValue.isEmpty) return;
-            metadata[key.toUpperCase()] = normalizedValue;
-          });
+          mergePlatformMetadataForTagEmbed(target: metadata, source: result);
         } else {
           _log.w('readFileMetadata returned error, using fallback metadata');
         }
       } catch (e) {
         _log.w('readFileMetadata threw, using fallback metadata: $e');
       }
+      await ensureLyricsMetadataForConversion(
+        metadata: metadata,
+        sourcePath: cleanFilePath,
+        shouldEmbedLyrics: shouldEmbedLyrics,
+        trackName: trackName,
+        artistName: artistName,
+        spotifyId: _spotifyId ?? '',
+        durationMs: (duration ?? 0) * 1000,
+      );
 
       String? coverPath;
       try {
@@ -4921,6 +4941,7 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
         final lower = widget.filePath.toLowerCase();
         final isMp3 = lower.endsWith('.mp3');
         final isOpus = lower.endsWith('.opus') || lower.endsWith('.ogg');
+        final isM4A = lower.endsWith('.m4a') || lower.endsWith('.aac');
 
         final vorbisMap = <String, String>{};
         if (metadata['title']?.isNotEmpty == true) {
@@ -4964,6 +4985,18 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
         if (metadata['comment']?.isNotEmpty == true) {
           vorbisMap['COMMENT'] = metadata['comment']!;
         }
+        try {
+          final existingMetadata = await PlatformBridge.readFileMetadata(
+            ffmpegTarget,
+          );
+          final existingLyrics = existingMetadata['lyrics']?.toString().trim();
+          if (existingLyrics != null && existingLyrics.isNotEmpty) {
+            vorbisMap['LYRICS'] = existingLyrics;
+            vorbisMap['UNSYNCEDLYRICS'] = existingLyrics;
+          }
+        } catch (_) {
+          // Lyrics preservation is best-effort.
+        }
 
         String? existingCoverPath = _selectedCoverPath ?? _currentCoverPath;
         String? extractedCoverPath;
@@ -4994,6 +5027,12 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
         if (isMp3) {
           ffmpegResult = await FFmpegService.embedMetadataToMp3(
             mp3Path: ffmpegTarget,
+            coverPath: existingCoverPath,
+            metadata: vorbisMap,
+          );
+        } else if (isM4A) {
+          ffmpegResult = await FFmpegService.embedMetadataToM4a(
+            m4aPath: ffmpegTarget,
             coverPath: existingCoverPath,
             metadata: vorbisMap,
           );

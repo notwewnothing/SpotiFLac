@@ -4400,6 +4400,11 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     final format = item.format?.toLowerCase();
     final lowerPath = item.filePath.toLowerCase();
     final isMp3 = format == 'mp3' || lowerPath.endsWith('.mp3');
+    final isM4A =
+        format == 'm4a' ||
+        format == 'aac' ||
+        lowerPath.endsWith('.m4a') ||
+        lowerPath.endsWith('.aac');
     final isOpus =
         format == 'opus' ||
         format == 'ogg' ||
@@ -4410,6 +4415,12 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     if (isMp3) {
       ffmpegResult = await FFmpegService.embedMetadataToMp3(
         mp3Path: ffmpegTarget,
+        coverPath: effectiveCoverPath,
+        metadata: metadata,
+      );
+    } else if (isM4A) {
+      ffmpegResult = await FFmpegService.embedMetadataToM4a(
+        m4aPath: ffmpegTarget,
         coverPath: effectiveCoverPath,
         metadata: metadata,
       );
@@ -5090,12 +5101,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
         try {
           final result = await PlatformBridge.readFileMetadata(item.filePath);
           if (result['error'] == null) {
-            result.forEach((key, value) {
-              if (key == 'error' || value == null) return;
-              final v = value.toString().trim();
-              if (v.isEmpty) return;
-              metadata[key.toUpperCase()] = v;
-            });
+            mergePlatformMetadataForTagEmbed(target: metadata, source: result);
           }
         } catch (_) {}
         await ensureLyricsMetadataForConversion(
@@ -5473,7 +5479,8 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                         icon: Icons.download_for_offline_outlined,
                         label:
                             '${context.l10n.queueFlacAction} ($flacEligibleCount)',
-                        onPressed: () => _queueSelectedLocalAsFlac(unifiedItems),
+                        onPressed: () =>
+                            _queueSelectedLocalAsFlac(unifiedItems),
                         colorScheme: colorScheme,
                       ),
                     ),

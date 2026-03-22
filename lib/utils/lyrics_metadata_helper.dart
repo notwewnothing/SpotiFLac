@@ -74,3 +74,38 @@ Future<void> ensureLyricsMetadataForConversion({
   metadata['LYRICS'] = lyrics;
   metadata['UNSYNCEDLYRICS'] = lyrics;
 }
+
+void mergePlatformMetadataForTagEmbed({
+  required Map<String, String> target,
+  required Map<String, dynamic> source,
+}) {
+  void put(String key, dynamic value) {
+    final normalized = value?.toString().trim();
+    if (normalized == null || normalized.isEmpty) return;
+    target[key] = normalized;
+  }
+
+  put('TITLE', source['title']);
+  put('ARTIST', source['artist']);
+  put('ALBUM', source['album']);
+  put('ALBUMARTIST', source['album_artist']);
+  put('DATE', source['date']);
+  put('ISRC', source['isrc']);
+  put('GENRE', source['genre']);
+  put('ORGANIZATION', source['label']);
+  put('COPYRIGHT', source['copyright']);
+  put('COMPOSER', source['composer']);
+  put('COMMENT', source['comment']);
+  put('LYRICS', source['lyrics']);
+  put('UNSYNCEDLYRICS', source['lyrics']);
+
+  final trackNumber = source['track_number'];
+  if (trackNumber != null && trackNumber.toString() != '0') {
+    put('TRACKNUMBER', trackNumber);
+  }
+
+  final discNumber = source['disc_number'];
+  if (discNumber != null && discNumber.toString() != '0') {
+    put('DISCNUMBER', discNumber);
+  }
+}

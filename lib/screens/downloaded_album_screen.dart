@@ -946,8 +946,9 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
     String selectedFormat = formats.first;
     bool isLosslessTarget =
         selectedFormat == 'ALAC' || selectedFormat == 'FLAC';
-    String selectedBitrate =
-        isLosslessTarget ? '320k' : (selectedFormat == 'Opus' ? '128k' : '320k');
+    String selectedBitrate = isLosslessTarget
+        ? '320k'
+        : (selectedFormat == 'Opus' ? '128k' : '320k');
 
     showModalBottomSheet(
       context: context,
@@ -1009,8 +1010,9 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
                                 isLosslessTarget =
                                     format == 'ALAC' || format == 'FLAC';
                                 if (!isLosslessTarget) {
-                                  selectedBitrate =
-                                      format == 'Opus' ? '128k' : '320k';
+                                  selectedBitrate = format == 'Opus'
+                                      ? '128k'
+                                      : '320k';
                                 }
                               });
                             }
@@ -1055,11 +1057,8 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
                           const SizedBox(width: 6),
                           Text(
                             context.l10n.trackConvertLosslessHint,
-                            style: Theme.of(
-                              context,
-                            ).textTheme.bodySmall?.copyWith(
-                              color: colorScheme.primary,
-                            ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: colorScheme.primary),
                           ),
                         ],
                       ),
@@ -1175,7 +1174,8 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
     int successCount = 0;
     final total = selected.length;
     final historyDb = HistoryDatabase.instance;
-    final newQuality = (targetFormat.toUpperCase() == 'ALAC' ||
+    final newQuality =
+        (targetFormat.toUpperCase() == 'ALAC' ||
             targetFormat.toUpperCase() == 'FLAC')
         ? '${targetFormat.toUpperCase()} Lossless'
         : '${targetFormat.toUpperCase()} ${bitrate.trim().toLowerCase()}';
@@ -1206,12 +1206,7 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
         try {
           final result = await PlatformBridge.readFileMetadata(item.filePath);
           if (result['error'] == null) {
-            result.forEach((key, value) {
-              if (key == 'error' || value == null) return;
-              final v = value.toString().trim();
-              if (v.isEmpty) return;
-              metadata[key.toUpperCase()] = v;
-            });
+            mergePlatformMetadataForTagEmbed(target: metadata, source: result);
           }
         } catch (_) {}
         await ensureLyricsMetadataForConversion(

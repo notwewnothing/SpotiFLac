@@ -1106,6 +1106,88 @@ class FFmpegService {
     return null;
   }
 
+  static Future<String?> embedMetadataToM4a({
+    required String m4aPath,
+    String? coverPath,
+    Map<String, String>? metadata,
+  }) async {
+    final tempDir = await getTemporaryDirectory();
+    final tempOutput = _nextTempEmbedPath(tempDir.path, '.m4a');
+
+    final cmdBuffer = StringBuffer();
+    cmdBuffer.write('-i "$m4aPath" ');
+
+    final hasCover = coverPath != null && await File(coverPath).exists();
+    if (hasCover) {
+      cmdBuffer.write('-i "$coverPath" ');
+    }
+
+    cmdBuffer.write('-map 0:a ');
+    cmdBuffer.write('-map_metadata -1 ');
+
+    // For M4A/MP4, cover art is mapped as a video stream and stored in the
+    // 'covr' atom automatically by FFmpeg. The '-disposition attached_pic'
+    // flag is only valid for Matroska/WebM containers and must NOT be used here.
+    if (hasCover) {
+      cmdBuffer.write('-map 1:v -c:v copy ');
+    }
+
+    cmdBuffer.write('-c:a copy ');
+
+    if (metadata != null) {
+      final m4aMetadata = _convertToM4aTags(metadata);
+      for (final entry in m4aMetadata.entries) {
+        final sanitizedValue = entry.value.replaceAll('"', '\\"');
+        cmdBuffer.write('-metadata ${entry.key}="$sanitizedValue" ');
+      }
+    }
+
+    cmdBuffer.write('"$tempOutput" -y');
+
+    final command = cmdBuffer.toString();
+    _log.d(
+      'Executing FFmpeg M4A embed command: ${_previewCommandForLog(command)}',
+    );
+
+    final result = await _execute(command);
+
+    if (result.success) {
+      try {
+        final tempFile = File(tempOutput);
+        final originalFile = File(m4aPath);
+
+        if (await tempFile.exists()) {
+          if (await originalFile.exists()) {
+            await originalFile.delete();
+          }
+          await tempFile.copy(m4aPath);
+          await tempFile.delete();
+
+          _log.d('M4A metadata embedded successfully');
+          return m4aPath;
+        } else {
+          _log.e('Temp M4A output file not found: $tempOutput');
+          return null;
+        }
+      } catch (e) {
+        _log.e('Failed to replace M4A file after metadata embed: $e');
+        return null;
+      }
+    }
+
+    try {
+      final tempFile = File(tempOutput);
+      if (await tempFile.exists()) {
+        await tempFile.delete();
+      }
+    } catch (e) {
+      _log.w('Failed to cleanup temp M4A file: $e');
+    }
+
+    _log.e('M4A Metadata embed failed: ${result.output}');
+    return null;
+  }
+
   static Future<String?> _createMetadataBlockPicture(String imagePath) async {
     try {
       final file = File(imagePath);
@@ -1330,7 +1412,8 @@ class FFmpegService {
     cmdBuffer.write('-i "$inputPath" ');
 
     // Cover art as second input for M4A attached picture
-    final hasCover = coverPath != null &&
+    final hasCover =
+        coverPath != null &&
         coverPath.trim().isNotEmpty &&
         await File(coverPath).exists();
     if (hasCover) {
@@ -1338,8 +1421,10 @@ class FFmpegService {
     }
 
     cmdBuffer.write('-map 0:a ');
+    // M4A/MP4 containers store cover art in the 'covr' atom automatically.
+    // '-disposition attached_pic' is only for Matroska/WebM and must NOT be used here.
     if (hasCover) {
-      cmdBuffer.write('-map 1:v -c:v copy -disposition:v:0 attached_pic ');
+      cmdBuffer.write('-map 1:v -c:v copy ');
     }
     cmdBuffer.write('-c:a alac ');
     cmdBuffer.write('-map_metadata -1 ');
@@ -1389,7 +1474,8 @@ class FFmpegService {
     final cmdBuffer = StringBuffer();
     cmdBuffer.write('-i "$inputPath" ');
 
-    final hasCover = coverPath != null &&
+    final hasCover =
+        coverPath != null &&
         coverPath.trim().isNotEmpty &&
         await File(coverPath).exists();
     if (hasCover) {
@@ -1508,9 +1594,7 @@ class FFmpegService {
   }
 
   /// Map Vorbis comment keys to M4A/MP4 metadata tag names for FFmpeg.
-  static Map<String, String> _convertToM4aTags(
-    Map<String, String> metadata,
-  ) {
+  static Map<String, String> _convertToM4aTags(Map<String, String> metadata) {
     final m4aMap = <String, String>{};
 
     for (final entry in metadata.entries) {
@@ -1548,6 +1632,9 @@ class FFmpegService {
         case 'GENRE':
           m4aMap['genre'] = value;
           break;
+        case 'ISRC':
+          m4aMap['isrc'] = value;
+          break;
         case 'COMPOSER':
           m4aMap['composer'] = value;
           break;
@@ -1556,6 +1643,10 @@ class FFmpegService {
           break;
         case 'COPYRIGHT':
           m4aMap['copyright'] = value;
+          break;
+        case 'LABEL':
+        case 'ORGANIZATION':
+          m4aMap['organization'] = value;
           break;
         case 'LYRICS':
         case 'UNSYNCEDLYRICS':
@@ -1648,7 +1739,11 @@ class FFmpegService {
     final outputPaths = <String>[];
     final inputExt = audioPath.toLowerCase().split('.').last;
     // For lossless formats, keep as FLAC; for others, keep original format
-    final outputExt = (inputExt == 'flac' || inputExt == 'wav' || inputExt == 'ape' || inputExt == 'wv')
+    final outputExt =
+        (inputExt == 'flac' ||
+            inputExt == 'wav' ||
+            inputExt == 'ape' ||
+            inputExt == 'wv')
         ? 'flac'
         : inputExt;
 
@@ -1681,7 +1776,9 @@ class FFmpegService {
         cmdBuffer.write('-c:a copy ');
       }
 
-      final artist = track.artist.isNotEmpty ? track.artist : (albumMetadata['artist'] ?? '');
+      final artist = track.artist.isNotEmpty
+          ? track.artist
+          : (albumMetadata['artist'] ?? '');
       final album = albumMetadata['album'] ?? '';
       final genre = albumMetadata['genre'] ?? '';
       final date = albumMetadata['date'] ?? '';
@@ -1706,7 +1803,9 @@ class FFmpegService {
       cmdBuffer.write('"$outputPath" -y');
 
       final command = cmdBuffer.toString();
-      _log.d('CUE split track ${track.number}: ${_previewCommandForLog(command)}');
+      _log.d(
+        'CUE split track ${track.number}: ${_previewCommandForLog(command)}',
+      );
 
       final result = await _execute(command);
       if (!result.success) {
