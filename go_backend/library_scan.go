@@ -293,7 +293,7 @@ func scanAudioFileWithKnownModTimeAndDisplayName(filePath, displayNameHint, scan
 	libraryCoverCacheMu.RLock()
 	coverCacheDir := libraryCoverCacheDir
 	libraryCoverCacheMu.RUnlock()
-	if coverCacheDir != "" && ext != ".m4a" {
+	if coverCacheDir != "" {
 		coverPath, err := SaveCoverToCacheWithHint(filePath, displayNameHint, coverCacheDir)
 		if err == nil && coverPath != "" {
 			result.CoverPath = coverPath
@@ -373,13 +373,30 @@ func scanFLACFile(filePath string, result *LibraryScanResult) (*LibraryScanResul
 }
 
 func scanM4AFile(filePath string, result *LibraryScanResult) (*LibraryScanResult, error) {
+	metadata, err := ReadM4ATags(filePath)
+	if err == nil && metadata != nil {
+		result.TrackName = metadata.Title
+		result.ArtistName = metadata.Artist
+		result.AlbumName = metadata.Album
+		result.AlbumArtist = metadata.AlbumArtist
+		result.ISRC = metadata.ISRC
+		result.TrackNumber = metadata.TrackNumber
+		result.DiscNumber = metadata.DiscNumber
+		result.ReleaseDate = metadata.Date
+		if result.ReleaseDate == "" {
+			result.ReleaseDate = metadata.Year
+		}
+		result.Genre = metadata.Genre
+	}
+
 	quality, err := GetM4AQuality(filePath)
 	if err == nil {
 		result.BitDepth = quality.BitDepth
 		result.SampleRate = quality.SampleRate
 	}
 
-	return scanFromFilename(filePath, "", result)
+	applyDefaultLibraryMetadata(filePath, "", result)
+	return result, nil
 }
 
 func scanMP3File(filePath string, result *LibraryScanResult) (*LibraryScanResult, error) {

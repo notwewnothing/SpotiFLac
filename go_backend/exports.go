@@ -739,6 +739,26 @@ func ReadFileMetadata(filePath string) (string, error) {
 			}
 		}
 	} else if isM4A {
+		meta, err := ReadM4ATags(filePath)
+		if err == nil && meta != nil {
+			result["title"] = meta.Title
+			result["artist"] = meta.Artist
+			result["album"] = meta.Album
+			result["album_artist"] = meta.AlbumArtist
+			result["date"] = meta.Date
+			if meta.Date == "" {
+				result["date"] = meta.Year
+			}
+			result["track_number"] = meta.TrackNumber
+			result["disc_number"] = meta.DiscNumber
+			result["isrc"] = meta.ISRC
+			result["lyrics"] = meta.Lyrics
+			result["genre"] = meta.Genre
+			result["label"] = meta.Label
+			result["copyright"] = meta.Copyright
+			result["composer"] = meta.Composer
+			result["comment"] = meta.Comment
+		}
 		quality, qualityErr := GetM4AQuality(filePath)
 		if qualityErr == nil {
 			result["bit_depth"] = quality.BitDepth
@@ -1960,8 +1980,15 @@ func ReEnrichFile(requestJSON string) (string, error) {
 		}
 	}()
 
-	// Fetch lyrics
+	// Preserve existing lyrics when online enrichment does not return a replacement.
 	var lyricsLRC string
+	existingLyrics, existingLyricsErr := ExtractLyrics(req.FilePath)
+	if existingLyricsErr == nil && strings.TrimSpace(existingLyrics) != "" {
+		lyricsLRC = existingLyrics
+		GoLog("[ReEnrich] Preserving existing embedded/sidecar lyrics\n")
+	}
+
+	// Fetch lyrics
 	if req.EmbedLyrics {
 		client := NewLyricsClient()
 		durationSec := float64(req.DurationMs) / 1000.0
@@ -2042,7 +2069,6 @@ func ReEnrichFile(requestJSON string) (string, error) {
 		return string(jsonBytes), nil
 	}
 
-	// MP3/Opus: return metadata map for Dart to use FFmpeg
 	// Don't cleanup cover temp — Dart needs it for FFmpeg embed
 	cleanupCover = false
 	result := map[string]interface{}{
