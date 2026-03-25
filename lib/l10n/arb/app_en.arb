@@ -3903,5 +3903,77 @@
   "editMetadataSelectEmpty": "Empty only",
   "@editMetadataSelectEmpty": {
     "description": "Button to select only fields that are currently empty"
+  },
+
+  "queueDownloadingCount": "Downloading ({count})",
+  "@queueDownloadingCount": {
+    "description": "Header for active downloads section with count",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "queueDownloadedHeader": "Downloaded",
+  "@queueDownloadedHeader": {
+    "description": "Header label for downloaded items section in library"
+  },
+  "queueFilteringIndicator": "Filtering...",
+  "@queueFilteringIndicator": {
+    "description": "Shown while filter results are being computed"
+  },
+  "queueTrackCount": "{count, plural, =1{1 track} other{{count} tracks}}",
+  "@queueTrackCount": {
+    "description": "Track count label with plural support",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "queueAlbumCount": "{count, plural, =1{1 album} other{{count} albums}}",
+  "@queueAlbumCount": {
+    "description": "Album count label with plural support",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "queueEmptyAlbums": "No album downloads",
+  "@queueEmptyAlbums": {
+    "description": "Empty state title when no album downloads exist"
+  },
+  "queueEmptyAlbumsSubtitle": "Download multiple tracks from an album to see them here",
+  "@queueEmptyAlbumsSubtitle": {
+    "description": "Empty state subtitle for album downloads"
+  },
+  "queueEmptySingles": "No single downloads",
+  "@queueEmptySingles": {
+    "description": "Empty state title when no single track downloads exist"
+  },
+  "queueEmptySinglesSubtitle": "Single track downloads will appear here",
+  "@queueEmptySinglesSubtitle": {
+    "description": "Empty state subtitle for single track downloads"
+  },
+  "queueEmptyHistory": "No download history",
+  "@queueEmptyHistory": {
+    "description": "Empty state title when download history is empty"
+  },
+  "queueEmptyHistorySubtitle": "Downloaded tracks will appear here",
+  "@queueEmptyHistorySubtitle": {
+    "description": "Empty state subtitle for download history"
+  },
+  "selectionAllPlaylistsSelected": "All playlists selected",
+  "@selectionAllPlaylistsSelected": {
+    "description": "Shown when all playlists are selected in selection mode"
+  },
+  "selectionTapPlaylistsToSelect": "Tap playlists to select",
+  "@selectionTapPlaylistsToSelect": {
+    "description": "Hint shown in playlist selection mode"
+  },
+  "selectionSelectPlaylistsToDelete": "Select playlists to delete",
+  "@selectionSelectPlaylistsToDelete": {
+    "description": "Hint shown when no playlists are selected for deletion"
   }
 }

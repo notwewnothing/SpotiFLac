@@ -2968,4 +2968,66 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get editMetadataSelectEmpty => 'Empty only';
+
+  @override
+  String queueDownloadingCount(int count) {
+    return 'Downloading ($count)';
+  }
+
+  @override
+  String get queueDownloadedHeader => 'Downloaded';
+
+  @override
+  String get queueFilteringIndicator => 'Filtering...';
+
+  @override
+  String queueTrackCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tracks',
+      one: '1 track',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String queueAlbumCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count albums',
+      one: '1 album',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get queueEmptyAlbums => 'No album downloads';
+
+  @override
+  String get queueEmptyAlbumsSubtitle =>
+      'Download multiple tracks from an album to see them here';
+
+  @override
+  String get queueEmptySingles => 'No single downloads';
+
+  @override
+  String get queueEmptySinglesSubtitle =>
+      'Single track downloads will appear here';
+
+  @override
+  String get queueEmptyHistory => 'No download history';
+
+  @override
+  String get queueEmptyHistorySubtitle => 'Downloaded tracks will appear here';
+
+  @override
+  String get selectionAllPlaylistsSelected => 'All playlists selected';
+
+  @override
+  String get selectionTapPlaylistsToSelect => 'Tap playlists to select';
+
+  @override
+  String get selectionSelectPlaylistsToDelete => 'Select playlists to delete';
 }

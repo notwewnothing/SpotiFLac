@@ -1567,8 +1567,8 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                         ),
                         Text(
                           allSelected
-                              ? 'All playlists selected'
-                              : 'Tap playlists to select',
+                              ? context.l10n.selectionAllPlaylistsSelected
+                              : context.l10n.selectionTapPlaylistsToSelect,
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(color: colorScheme.onSurfaceVariant),
                         ),
@@ -1643,7 +1643,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                   label: Text(
                     selectedCount > 0
                         ? 'Delete $selectedCount ${selectedCount == 1 ? 'playlist' : 'playlists'}'
-                        : 'Select playlists to delete',
+                        : context.l10n.selectionSelectPlaylistsToDelete,
                   ),
                   style: FilledButton.styleFrom(
                     backgroundColor: selectedCount > 0
@@ -3169,7 +3169,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
             child: Row(
               children: [
                 Text(
-                  'Downloading ($queueCount)',
+                  context.l10n.queueDownloadingCount(queueCount),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -3631,7 +3631,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
               child: Row(
                 children: [
                   Text(
-                    '$totalTrackCount ${totalTrackCount == 1 ? 'track' : 'tracks'}',
+                    context.l10n.queueTrackCount(totalTrackCount),
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),
@@ -3665,7 +3665,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
               child: Row(
                 children: [
                   Text(
-                    '$totalAlbumCount ${totalAlbumCount == 1 ? 'album' : 'albums'}',
+                    context.l10n.queueAlbumCount(totalAlbumCount),
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),
@@ -3699,7 +3699,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: Text(
-                'Downloaded',
+                context.l10n.queueDownloadedHeader,
                 style: Theme.of(
                   context,
                 ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
@@ -3723,7 +3723,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    'Filtering...',
+                    context.l10n.queueFilteringIndicator,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),
@@ -3897,7 +3897,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
               child: Row(
                 children: [
                   Text(
-                    '$totalTrackCount ${totalTrackCount == 1 ? 'track' : 'tracks'}',
+                    context.l10n.queueTrackCount(totalTrackCount),
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),
@@ -4056,18 +4056,18 @@ class _QueueTabState extends ConsumerState<QueueTab> {
 
     switch (filterMode) {
       case 'albums':
-        message = 'No album downloads';
-        subtitle = 'Download multiple tracks from an album to see them here';
+        message = context.l10n.queueEmptyAlbums;
+        subtitle = context.l10n.queueEmptyAlbumsSubtitle;
         icon = Icons.album;
         break;
       case 'singles':
-        message = 'No single downloads';
-        subtitle = 'Single track downloads will appear here';
+        message = context.l10n.queueEmptySingles;
+        subtitle = context.l10n.queueEmptySinglesSubtitle;
         icon = Icons.music_note;
         break;
       default:
-        message = 'No download history';
-        subtitle = 'Downloaded tracks will appear here';
+        message = context.l10n.queueEmptyHistory;
+        subtitle = context.l10n.queueEmptyHistorySubtitle;
         icon = Icons.history;
     }
 

@@ -5084,6 +5084,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Empty only'**
   String get editMetadataSelectEmpty;
+
+  /// Header for active downloads section with count
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading ({count})'**
+  String queueDownloadingCount(int count);
+
+  /// Header label for downloaded items section in library
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded'**
+  String get queueDownloadedHeader;
+
+  /// Shown while filter results are being computed
+  ///
+  /// In en, this message translates to:
+  /// **'Filtering...'**
+  String get queueFilteringIndicator;
+
+  /// Track count label with plural support
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 track} other{{count} tracks}}'**
+  String queueTrackCount(int count);
+
+  /// Album count label with plural support
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 album} other{{count} albums}}'**
+  String queueAlbumCount(int count);
+
+  /// Empty state title when no album downloads exist
+  ///
+  /// In en, this message translates to:
+  /// **'No album downloads'**
+  String get queueEmptyAlbums;
+
+  /// Empty state subtitle for album downloads
+  ///
+  /// In en, this message translates to:
+  /// **'Download multiple tracks from an album to see them here'**
+  String get queueEmptyAlbumsSubtitle;
+
+  /// Empty state title when no single track downloads exist
+  ///
+  /// In en, this message translates to:
+  /// **'No single downloads'**
+  String get queueEmptySingles;
+
+  /// Empty state subtitle for single track downloads
+  ///
+  /// In en, this message translates to:
+  /// **'Single track downloads will appear here'**
+  String get queueEmptySinglesSubtitle;
+
+  /// Empty state title when download history is empty
+  ///
+  /// In en, this message translates to:
+  /// **'No download history'**
+  String get queueEmptyHistory;
+
+  /// Empty state subtitle for download history
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded tracks will appear here'**
+  String get queueEmptyHistorySubtitle;
+
+  /// Shown when all playlists are selected in selection mode
+  ///
+  /// In en, this message translates to:
+  /// **'All playlists selected'**
+  String get selectionAllPlaylistsSelected;
+
+  /// Hint shown in playlist selection mode
+  ///
+  /// In en, this message translates to:
+  /// **'Tap playlists to select'**
+  String get selectionTapPlaylistsToSelect;
+
+  /// Hint shown when no playlists are selected for deletion
+  ///
+  /// In en, this message translates to:
+  /// **'Select playlists to delete'**
+  String get selectionSelectPlaylistsToDelete;
 }
 
 class _AppLocalizationsDelegate
