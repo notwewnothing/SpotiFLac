@@ -450,7 +450,7 @@
   "@aboutSpotiSaverDesc": {
     "description": "Credit for SpotiSaver API"
   },
-  "aboutAppDescription": "Tidal、Qobuz、Amazon Music から Spotify のトラックをロスレス品質でダウンロードします。",
+  "aboutAppDescription": "Download Spotify tracks in lossless quality from Tidal and Qobuz.",
   "@aboutAppDescription": {
     "description": "App description in header card"
   },
@@ -897,6 +897,18 @@
   "@errorNoTracksFound": {
     "description": "Error - search returned no results"
   },
+  "errorUrlNotRecognized": "Link not recognized",
+  "@errorUrlNotRecognized": {
+    "description": "Error title - URL not handled by any extension or service"
+  },
+  "errorUrlNotRecognizedMessage": "This link is not supported. Make sure the URL is correct and a compatible extension is installed.",
+  "@errorUrlNotRecognizedMessage": {
+    "description": "Error message - URL not recognized explanation"
+  },
+  "errorUrlFetchFailed": "Failed to load content from this link. Please try again.",
+  "@errorUrlFetchFailed": {
+    "description": "Error message - generic URL fetch failure"
+  },
   "errorMissingExtensionSource": "{item} を読み込めません: 拡張ソースがありません",
   "@errorMissingExtensionSource": {
     "description": "Error - extension source not available",
@@ -991,7 +1003,7 @@
   "@filenameFormat": {
     "description": "Setting title - filename pattern"
   },
-  "filenameShowAdvancedTags": "Show advanced tags",
+  "filenameShowAdvancedTags": "高度なタグを表示",
   "@filenameShowAdvancedTags": {
     "description": "Toggle label for showing advanced filename tags"
   },
@@ -1002,6 +1014,14 @@
   "folderOrganizationNone": "構成がありません",
   "@folderOrganizationNone": {
     "description": "Folder option - flat structure"
+  },
+  "folderOrganizationByPlaylist": "By Playlist",
+  "@folderOrganizationByPlaylist": {
+    "description": "Folder option - playlist folders"
+  },
+  "folderOrganizationByPlaylistSubtitle": "Separate folder for each playlist",
+  "@folderOrganizationByPlaylistSubtitle": {
+    "description": "Subtitle for playlist folder option"
   },
   "folderOrganizationByArtist": "アーティスト別",
   "@folderOrganizationByArtist": {
@@ -1097,7 +1117,7 @@
   },
   "providerBuiltIn": "内蔵",
   "@providerBuiltIn": {
-    "description": "Label for built-in providers (Tidal/Qobuz/Amazon)"
+    "description": "Label for built-in providers (Tidal/Qobuz)"
   },
   "providerExtension": "拡張",
   "@providerExtension": {
@@ -1471,7 +1491,7 @@
   "@trackLyricsEmbedded": {
     "description": "Snackbar - lyrics saved to file"
   },
-  "trackInstrumental": "Instrumental track",
+  "trackInstrumental": "インストゥルメンタルのトラック",
   "@trackInstrumental": {
     "description": "Message when track is instrumental (no lyrics)"
   },
@@ -2383,7 +2403,7 @@
   "@tutorialWelcomeTip1": {
     "description": "Tutorial welcome tip 1"
   },
-  "tutorialWelcomeTip2": "Get FLAC quality audio from Tidal, Qobuz, or Amazon Music",
+  "tutorialWelcomeTip2": "Get FLAC quality audio from Tidal, Qobuz, or Deezer",
   "@tutorialWelcomeTip2": {
     "description": "Tutorial welcome tip 2"
   },
@@ -2808,6 +2828,90 @@
   "@trackConvertFailed": {
     "description": "Snackbar when conversion fails"
   },
+  "cueSplitTitle": "分割 CUE シート",
+  "@cueSplitTitle": {
+    "description": "Title for CUE split bottom sheet"
+  },
+  "cueSplitSubtitle": "Split CUE+FLAC into individual tracks",
+  "@cueSplitSubtitle": {
+    "description": "Subtitle for CUE split menu item"
+  },
+  "cueSplitAlbum": "Album: {album}",
+  "@cueSplitAlbum": {
+    "description": "Album name in CUE split sheet",
+    "placeholders": {
+      "album": {
+        "type": "String"
+      }
+    }
+  },
+  "cueSplitArtist": "Artist: {artist}",
+  "@cueSplitArtist": {
+    "description": "Artist name in CUE split sheet",
+    "placeholders": {
+      "artist": {
+        "type": "String"
+      }
+    }
+  },
+  "cueSplitTrackCount": "{count} tracks",
+  "@cueSplitTrackCount": {
+    "description": "Number of tracks in CUE sheet",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cueSplitConfirmTitle": "Split CUE Album",
+  "@cueSplitConfirmTitle": {
+    "description": "CUE split confirmation dialog title"
+  },
+  "cueSplitConfirmMessage": "Split \"{album}\" into {count} individual FLAC files?\n\nFiles will be saved to the same directory.",
+  "@cueSplitConfirmMessage": {
+    "description": "CUE split confirmation dialog message",
+    "placeholders": {
+      "album": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cueSplitSplitting": "Splitting CUE sheet... ({current}/{total})",
+  "@cueSplitSplitting": {
+    "description": "Snackbar while splitting CUE",
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "cueSplitSuccess": "Split into {count} tracks successfully",
+  "@cueSplitSuccess": {
+    "description": "Snackbar after successful CUE split",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cueSplitFailed": "CUE split failed",
+  "@cueSplitFailed": {
+    "description": "Snackbar when CUE split fails"
+  },
+  "cueSplitNoAudioFile": "Audio file not found for this CUE sheet",
+  "@cueSplitNoAudioFile": {
+    "description": "Error when CUE audio file is missing"
+  },
+  "cueSplitButton": "Split into Tracks",
+  "@cueSplitButton": {
+    "description": "Button text to start CUE splitting"
+  },
   "actionCreate": "Create",
   "@actionCreate": {
     "description": "Generic action button - create"
@@ -2940,7 +3044,7 @@
   "@collectionRemoveFromPlaylist": {
     "description": "Tooltip for removing track from playlist"
   },
-  "collectionRemoveFromFolder": "Remove from folder",
+  "collectionRemoveFromFolder": "フォルダから削除",
   "@collectionRemoveFromFolder": {
     "description": "Tooltip for removing track from wishlist/loved folder"
   },
@@ -2997,23 +3101,23 @@
   "@trackOptionRemoveFromLoved": {
     "description": "Bottom sheet action label - remove track from loved folder"
   },
-  "trackOptionAddToWishlist": "Add to Wishlist",
+  "trackOptionAddToWishlist": "ウィッシュリストに追加",
   "@trackOptionAddToWishlist": {
     "description": "Bottom sheet action label - add track to wishlist"
   },
-  "trackOptionRemoveFromWishlist": "Remove from Wishlist",
+  "trackOptionRemoveFromWishlist": "ウィッシュから削除",
   "@trackOptionRemoveFromWishlist": {
     "description": "Bottom sheet action label - remove track from wishlist"
   },
-  "collectionPlaylistChangeCover": "Change cover image",
+  "collectionPlaylistChangeCover": "カバー画像を変更",
   "@collectionPlaylistChangeCover": {
     "description": "Bottom sheet action to pick a custom cover image for a playlist"
   },
-  "collectionPlaylistRemoveCover": "Remove cover image",
+  "collectionPlaylistRemoveCover": "カバー画像を削除",
   "@collectionPlaylistRemoveCover": {
     "description": "Bottom sheet action to remove custom cover image from a playlist"
   },
-  "selectionShareCount": "Share {count} {count, plural, =1{track} other{tracks}}",
+  "selectionShareCount": "{count} {count, plural, =1{個のトラック} other{個のトラック}}を共有",
   "@selectionShareCount": {
     "description": "Share button text with count in selection mode",
     "placeholders": {
@@ -3039,7 +3143,7 @@
   "@selectionConvertNoConvertible": {
     "description": "Snackbar when no selected tracks support conversion"
   },
-  "selectionBatchConvertConfirmTitle": "Batch Convert",
+  "selectionBatchConvertConfirmTitle": "一括変換",
   "@selectionBatchConvertConfirmTitle": {
     "description": "Confirmation dialog title for batch conversion"
   },

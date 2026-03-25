@@ -5,143 +5,143 @@
   "@appName": {
     "description": "App name - DO NOT TRANSLATE"
   },
-  "navHome": "Home",
+  "navHome": "主页",
   "@navHome": {
     "description": "Bottom navigation - Home tab"
   },
-  "navLibrary": "Library",
+  "navLibrary": "乐库",
   "@navLibrary": {
     "description": "Bottom navigation - Library tab"
   },
-  "navSettings": "Settings",
+  "navSettings": "设置",
   "@navSettings": {
     "description": "Bottom navigation - Settings tab"
   },
-  "navStore": "Store",
+  "navStore": "商店",
   "@navStore": {
     "description": "Bottom navigation - Extension store tab"
   },
-  "homeTitle": "Home",
+  "homeTitle": "主页",
   "@homeTitle": {
     "description": "Home screen title"
   },
-  "homeSubtitle": "Paste a Spotify link or search by name",
+  "homeSubtitle": "粘贴 Spotify 链接或按名称搜索",
   "@homeSubtitle": {
     "description": "Subtitle shown below search box"
   },
-  "homeSupports": "Supports: Track, Album, Playlist, Artist URLs",
+  "homeSupports": "支持：歌曲、专辑、播放列表、艺人网址",
   "@homeSupports": {
     "description": "Info text about supported URL types"
   },
-  "homeRecent": "Recent",
+  "homeRecent": "最近",
   "@homeRecent": {
     "description": "Section header for recent searches"
   },
-  "historyFilterAll": "All",
+  "historyFilterAll": "全部",
   "@historyFilterAll": {
     "description": "Filter chip - show all items"
   },
-  "historyFilterAlbums": "Albums",
+  "historyFilterAlbums": "专辑",
   "@historyFilterAlbums": {
     "description": "Filter chip - show albums only"
   },
-  "historyFilterSingles": "Singles",
+  "historyFilterSingles": "单曲",
   "@historyFilterSingles": {
     "description": "Filter chip - show singles only"
   },
-  "historySearchHint": "Search history...",
+  "historySearchHint": "搜索历史……",
   "@historySearchHint": {
     "description": "Search bar placeholder in history"
   },
-  "settingsTitle": "Settings",
+  "settingsTitle": "设置",
   "@settingsTitle": {
     "description": "Settings screen title"
   },
-  "settingsDownload": "Download",
+  "settingsDownload": "下载",
   "@settingsDownload": {
     "description": "Settings section - download options"
   },
-  "settingsAppearance": "Appearance",
+  "settingsAppearance": "外观",
   "@settingsAppearance": {
     "description": "Settings section - visual customization"
   },
-  "settingsOptions": "Options",
+  "settingsOptions": "选项",
   "@settingsOptions": {
     "description": "Settings section - app options"
   },
-  "settingsExtensions": "Extensions",
+  "settingsExtensions": "扩展",
   "@settingsExtensions": {
     "description": "Settings section - extension management"
   },
-  "settingsAbout": "About",
+  "settingsAbout": "关于",
   "@settingsAbout": {
     "description": "Settings section - app info"
   },
-  "downloadTitle": "Download",
+  "downloadTitle": "下载",
   "@downloadTitle": {
     "description": "Download settings page title"
   },
-  "downloadAskQualitySubtitle": "Show quality picker for each download",
+  "downloadAskQualitySubtitle": "为每次下载显示质量选择器",
   "@downloadAskQualitySubtitle": {
     "description": "Subtitle for ask quality toggle"
   },
-  "downloadFilenameFormat": "Filename Format",
+  "downloadFilenameFormat": "文件名格式",
   "@downloadFilenameFormat": {
     "description": "Setting for output filename pattern"
   },
-  "downloadFolderOrganization": "Folder Organization",
+  "downloadFolderOrganization": "文件夹结构",
   "@downloadFolderOrganization": {
     "description": "Setting for folder structure"
   },
-  "appearanceTitle": "Appearance",
+  "appearanceTitle": "外观",
   "@appearanceTitle": {
     "description": "Appearance settings page title"
   },
-  "appearanceThemeSystem": "System",
+  "appearanceThemeSystem": "系统",
   "@appearanceThemeSystem": {
     "description": "Follow system theme"
   },
-  "appearanceThemeLight": "Light",
+  "appearanceThemeLight": "浅色",
   "@appearanceThemeLight": {
     "description": "Light theme"
   },
-  "appearanceThemeDark": "Dark",
+  "appearanceThemeDark": "深色",
   "@appearanceThemeDark": {
     "description": "Dark theme"
   },
-  "appearanceDynamicColor": "Dynamic Color",
+  "appearanceDynamicColor": "动态色彩",
   "@appearanceDynamicColor": {
     "description": "Material You dynamic colors"
   },
-  "appearanceDynamicColorSubtitle": "Use colors from your wallpaper",
+  "appearanceDynamicColorSubtitle": "使用壁纸的颜色",
   "@appearanceDynamicColorSubtitle": {
     "description": "Subtitle for dynamic color"
   },
-  "appearanceHistoryView": "History View",
+  "appearanceHistoryView": "历史记录",
   "@appearanceHistoryView": {
     "description": "Layout style for history"
   },
-  "appearanceHistoryViewList": "List",
+  "appearanceHistoryViewList": "列表",
   "@appearanceHistoryViewList": {
     "description": "List layout option"
   },
-  "appearanceHistoryViewGrid": "Grid",
+  "appearanceHistoryViewGrid": "网格",
   "@appearanceHistoryViewGrid": {
     "description": "Grid layout option"
   },
-  "optionsTitle": "Options",
+  "optionsTitle": "选项",
   "@optionsTitle": {
     "description": "Options settings page title"
   },
-  "optionsPrimaryProvider": "Primary Provider",
+  "optionsPrimaryProvider": "主要提供者",
   "@optionsPrimaryProvider": {
     "description": "Main search provider setting"
   },
-  "optionsPrimaryProviderSubtitle": "Service used when searching by track name.",
+  "optionsPrimaryProviderSubtitle": "按歌曲名称搜索时使用的服务。",
   "@optionsPrimaryProviderSubtitle": {
     "description": "Subtitle for primary provider"
   },
-  "optionsUsingExtension": "Using extension: {extensionName}",
+  "optionsUsingExtension": "使用扩展：{extensionName}",
   "@optionsUsingExtension": {
     "description": "Shows active extension name",
     "placeholders": {
@@ -150,55 +150,55 @@
       }
     }
   },
-  "optionsSwitchBack": "Tap Deezer or Spotify to switch back from extension",
+  "optionsSwitchBack": "点击 Deezer 或 Spotify 即可从扩展程序切换回来",
   "@optionsSwitchBack": {
     "description": "Hint to switch back to built-in providers"
   },
-  "optionsAutoFallback": "Auto Fallback",
+  "optionsAutoFallback": "自动回退",
   "@optionsAutoFallback": {
     "description": "Auto-retry with other services"
   },
-  "optionsAutoFallbackSubtitle": "Try other services if download fails",
+  "optionsAutoFallbackSubtitle": "如果下载失败，请尝试其他服务",
   "@optionsAutoFallbackSubtitle": {
     "description": "Subtitle for auto fallback"
   },
-  "optionsUseExtensionProviders": "Use Extension Providers",
+  "optionsUseExtensionProviders": "使用扩展提供商",
   "@optionsUseExtensionProviders": {
     "description": "Enable extension download providers"
   },
-  "optionsUseExtensionProvidersOn": "Extensions will be tried first",
+  "optionsUseExtensionProvidersOn": "扩展会被最先尝试",
   "@optionsUseExtensionProvidersOn": {
     "description": "Status when extension providers enabled"
   },
-  "optionsUseExtensionProvidersOff": "Using built-in providers only",
+  "optionsUseExtensionProvidersOff": "仅使用内置提供商",
   "@optionsUseExtensionProvidersOff": {
     "description": "Status when extension providers disabled"
   },
-  "optionsEmbedLyrics": "Embed Lyrics",
+  "optionsEmbedLyrics": "内嵌歌词",
   "@optionsEmbedLyrics": {
     "description": "Embed lyrics in audio files"
   },
-  "optionsEmbedLyricsSubtitle": "Embed synced lyrics into FLAC files",
+  "optionsEmbedLyricsSubtitle": "嵌入已同步歌词到 FLAC 文件",
   "@optionsEmbedLyricsSubtitle": {
     "description": "Subtitle for embed lyrics"
   },
-  "optionsMaxQualityCover": "Max Quality Cover",
+  "optionsMaxQualityCover": "最高质量封面",
   "@optionsMaxQualityCover": {
     "description": "Download highest quality album art"
   },
-  "optionsMaxQualityCoverSubtitle": "Download highest resolution cover art",
+  "optionsMaxQualityCoverSubtitle": "下载最高分辨率封面",
   "@optionsMaxQualityCoverSubtitle": {
     "description": "Subtitle for max quality cover"
   },
-  "optionsConcurrentDownloads": "Concurrent Downloads",
+  "optionsConcurrentDownloads": "并行下载数",
   "@optionsConcurrentDownloads": {
     "description": "Number of parallel downloads"
   },
-  "optionsConcurrentSequential": "Sequential (1 at a time)",
+  "optionsConcurrentSequential": "按顺序下载（一次一首）",
   "@optionsConcurrentSequential": {
     "description": "Download one at a time"
   },
-  "optionsConcurrentParallel": "{count} parallel downloads",
+  "optionsConcurrentParallel": "同时下载 {count} 首",
   "@optionsConcurrentParallel": {
     "description": "Multiple parallel downloads",
     "placeholders": {
@@ -207,67 +207,67 @@
       }
     }
   },
-  "optionsConcurrentWarning": "Parallel downloads may trigger rate limiting",
+  "optionsConcurrentWarning": "并行下载可能会触发速率限制",
   "@optionsConcurrentWarning": {
     "description": "Warning about rate limits"
   },
-  "optionsExtensionStore": "Extension Store",
+  "optionsExtensionStore": "扩展商店",
   "@optionsExtensionStore": {
     "description": "Show/hide store tab"
   },
-  "optionsExtensionStoreSubtitle": "Show Store tab in navigation",
+  "optionsExtensionStoreSubtitle": "在导航中显示商店标签",
   "@optionsExtensionStoreSubtitle": {
     "description": "Subtitle for extension store toggle"
   },
-  "optionsCheckUpdates": "Check for Updates",
+  "optionsCheckUpdates": "检查更新",
   "@optionsCheckUpdates": {
     "description": "Auto update check toggle"
   },
-  "optionsCheckUpdatesSubtitle": "Notify when new version is available",
+  "optionsCheckUpdatesSubtitle": "当有新版本可用时通知",
   "@optionsCheckUpdatesSubtitle": {
     "description": "Subtitle for update check"
   },
-  "optionsUpdateChannel": "Update Channel",
+  "optionsUpdateChannel": "更新频道",
   "@optionsUpdateChannel": {
     "description": "Stable vs preview releases"
   },
-  "optionsUpdateChannelStable": "Stable releases only",
+  "optionsUpdateChannelStable": "仅稳定版本",
   "@optionsUpdateChannelStable": {
     "description": "Only stable updates"
   },
-  "optionsUpdateChannelPreview": "Get preview releases",
+  "optionsUpdateChannelPreview": "获取预览版本",
   "@optionsUpdateChannelPreview": {
     "description": "Include beta/preview updates"
   },
-  "optionsUpdateChannelWarning": "Preview may contain bugs or incomplete features",
+  "optionsUpdateChannelWarning": "预览版本可能包含错误或者尚未完善的功能",
   "@optionsUpdateChannelWarning": {
     "description": "Warning about preview channel"
   },
-  "optionsClearHistory": "Clear Download History",
+  "optionsClearHistory": "清除下载历史记录",
   "@optionsClearHistory": {
     "description": "Delete all download history"
   },
-  "optionsClearHistorySubtitle": "Remove all downloaded tracks from history",
+  "optionsClearHistorySubtitle": "从历史记录中清除所有已下载的曲目",
   "@optionsClearHistorySubtitle": {
     "description": "Subtitle for clear history"
   },
-  "optionsDetailedLogging": "Detailed Logging",
+  "optionsDetailedLogging": "详细日志",
   "@optionsDetailedLogging": {
     "description": "Enable verbose logs for debugging"
   },
-  "optionsDetailedLoggingOn": "Detailed logs are being recorded",
+  "optionsDetailedLoggingOn": "正在记录详细日志",
   "@optionsDetailedLoggingOn": {
     "description": "Status when logging enabled"
   },
-  "optionsDetailedLoggingOff": "Enable for bug reports",
+  "optionsDetailedLoggingOff": "为错误报告启用",
   "@optionsDetailedLoggingOff": {
     "description": "Status when logging disabled"
   },
-  "optionsSpotifyCredentials": "Spotify Credentials",
+  "optionsSpotifyCredentials": "Spotify 凭据",
   "@optionsSpotifyCredentials": {
     "description": "Spotify API credentials setting"
   },
-  "optionsSpotifyCredentialsConfigured": "Client ID: {clientId}...",
+  "optionsSpotifyCredentialsConfigured": "客户端 ID：{clientId}……",
   "@optionsSpotifyCredentialsConfigured": {
     "description": "Shows configured client ID preview",
     "placeholders": {
@@ -276,27 +276,27 @@
       }
     }
   },
-  "optionsSpotifyCredentialsRequired": "Required - tap to configure",
+  "optionsSpotifyCredentialsRequired": "必填 - 点击配置",
   "@optionsSpotifyCredentialsRequired": {
     "description": "Prompt to set up credentials"
   },
-  "optionsSpotifyWarning": "Spotify requires your own API credentials. Get them free from developer.spotify.com",
+  "optionsSpotifyWarning": "Spotify 需要您自己的 API 凭据。在 developer.spotify.com 免费获取",
   "@optionsSpotifyWarning": {
     "description": "Info about Spotify API requirement"
   },
-  "optionsSpotifyDeprecationWarning": "Spotify search will be deprecated on March 3, 2026 due to Spotify API changes. Please switch to Deezer.",
+  "optionsSpotifyDeprecationWarning": "Spotify 搜索将在 2026 年 3 月 3 日因 Spotify API 更改而被废弃。请切换到 Deezer。",
   "@optionsSpotifyDeprecationWarning": {
     "description": "Warning about Spotify API deprecation"
   },
-  "extensionsTitle": "Extensions",
+  "extensionsTitle": "扩展",
   "@extensionsTitle": {
     "description": "Extensions page title"
   },
-  "extensionsDisabled": "Disabled",
+  "extensionsDisabled": "禁用",
   "@extensionsDisabled": {
     "description": "Extension status - inactive"
   },
-  "extensionsVersion": "Version {version}",
+  "extensionsVersion": "版本 {version}",
   "@extensionsVersion": {
     "description": "Extension version display",
     "placeholders": {
@@ -305,7 +305,7 @@
       }
     }
   },
-  "extensionsAuthor": "by {author}",
+  "extensionsAuthor": "来自 {author}",
   "@extensionsAuthor": {
     "description": "Extension author credit",
     "placeholders": {
@@ -314,75 +314,75 @@
       }
     }
   },
-  "extensionsUninstall": "Uninstall",
+  "extensionsUninstall": "卸载",
   "@extensionsUninstall": {
     "description": "Uninstall extension button"
   },
-  "storeTitle": "Extension Store",
+  "storeTitle": "扩展商店",
   "@storeTitle": {
     "description": "Store screen title"
   },
-  "storeSearch": "Search extensions...",
+  "storeSearch": "搜索扩展……",
   "@storeSearch": {
     "description": "Store search placeholder"
   },
-  "storeInstall": "Install",
+  "storeInstall": "安装",
   "@storeInstall": {
     "description": "Install extension button"
   },
-  "storeInstalled": "Installed",
+  "storeInstalled": "已安装",
   "@storeInstalled": {
     "description": "Already installed badge"
   },
-  "storeUpdate": "Update",
+  "storeUpdate": "更新",
   "@storeUpdate": {
     "description": "Update available button"
   },
-  "aboutTitle": "About",
+  "aboutTitle": "关于",
   "@aboutTitle": {
     "description": "About page title"
   },
-  "aboutContributors": "Contributors",
+  "aboutContributors": "贡献者",
   "@aboutContributors": {
     "description": "Section for contributors"
   },
-  "aboutMobileDeveloper": "Mobile version developer",
+  "aboutMobileDeveloper": "移动版本开发者",
   "@aboutMobileDeveloper": {
     "description": "Role description for mobile dev"
   },
-  "aboutOriginalCreator": "Creator of the original SpotiFLAC",
+  "aboutOriginalCreator": "原 SpotiLDAC 创建者",
   "@aboutOriginalCreator": {
     "description": "Role description for original creator"
   },
-  "aboutLogoArtist": "The talented artist who created our beautiful app logo!",
+  "aboutLogoArtist": "有才华的艺术家创建了我们美丽的应用图标！",
   "@aboutLogoArtist": {
     "description": "Role description for logo artist"
   },
-  "aboutTranslators": "Translators",
+  "aboutTranslators": "译者",
   "@aboutTranslators": {
     "description": "Section for translators"
   },
-  "aboutSpecialThanks": "Special Thanks",
+  "aboutSpecialThanks": "特别鸣谢",
   "@aboutSpecialThanks": {
     "description": "Section for special thanks"
   },
-  "aboutLinks": "Links",
+  "aboutLinks": "相关链接",
   "@aboutLinks": {
     "description": "Section for external links"
   },
-  "aboutMobileSource": "Mobile source code",
+  "aboutMobileSource": "移动版本源代码",
   "@aboutMobileSource": {
     "description": "Link to mobile GitHub repo"
   },
-  "aboutPCSource": "PC source code",
+  "aboutPCSource": "桌面版本源代码",
   "@aboutPCSource": {
     "description": "Link to PC GitHub repo"
   },
-  "aboutReportIssue": "Report an issue",
+  "aboutReportIssue": "报告一个问题",
   "@aboutReportIssue": {
     "description": "Link to report bugs"
   },
-  "aboutReportIssueSubtitle": "Report any problems you encounter",
+  "aboutReportIssueSubtitle": "报告您遇到的任何问题",
   "@aboutReportIssueSubtitle": {
     "description": "Subtitle for report issue"
   },
@@ -450,7 +450,7 @@
   "@aboutSpotiSaverDesc": {
     "description": "Credit for SpotiSaver API"
   },
-  "aboutAppDescription": "Download Spotify tracks in lossless quality from Tidal, Qobuz, and Amazon Music.",
+  "aboutAppDescription": "Download Spotify tracks in lossless quality from Tidal and Qobuz.",
   "@aboutAppDescription": {
     "description": "App description in header card"
   },
@@ -603,23 +603,23 @@
   "@setupNotificationGranted": {
     "description": "Success message for notification permission"
   },
-  "setupNotificationEnable": "Enable Notifications",
+  "setupNotificationEnable": "启用通知",
   "@setupNotificationEnable": {
     "description": "Button to enable notifications"
   },
-  "setupFolderChoose": "Choose Download Folder",
+  "setupFolderChoose": "选择下载文件夹",
   "@setupFolderChoose": {
     "description": "Button to choose folder"
   },
-  "setupFolderDescription": "Select a folder where your downloaded music will be saved.",
+  "setupFolderDescription": "选择保存您下载的音乐的文件夹。",
   "@setupFolderDescription": {
     "description": "Explanation for folder selection"
   },
-  "setupSelectFolder": "Select Folder",
+  "setupSelectFolder": "选择文件夹",
   "@setupSelectFolder": {
     "description": "Button to select folder"
   },
-  "setupEnableNotifications": "Enable Notifications",
+  "setupEnableNotifications": "启用通知",
   "@setupEnableNotifications": {
     "description": "Button to enable notifications"
   },
@@ -889,13 +889,25 @@
   "@errorRateLimited": {
     "description": "Error title - too many requests"
   },
-  "errorRateLimitedMessage": "Too many requests. Please wait a moment before searching again.",
+  "errorRateLimitedMessage": "请求过多。请等一会再搜索。",
   "@errorRateLimitedMessage": {
     "description": "Error message - rate limit explanation"
   },
-  "errorNoTracksFound": "No tracks found",
+  "errorNoTracksFound": "未找到曲目",
   "@errorNoTracksFound": {
     "description": "Error - search returned no results"
+  },
+  "errorUrlNotRecognized": "Link not recognized",
+  "@errorUrlNotRecognized": {
+    "description": "Error title - URL not handled by any extension or service"
+  },
+  "errorUrlNotRecognizedMessage": "This link is not supported. Make sure the URL is correct and a compatible extension is installed.",
+  "@errorUrlNotRecognizedMessage": {
+    "description": "Error message - URL not recognized explanation"
+  },
+  "errorUrlFetchFailed": "Failed to load content from this link. Please try again.",
+  "@errorUrlFetchFailed": {
+    "description": "Error message - generic URL fetch failure"
   },
   "errorMissingExtensionSource": "Cannot load {item}: missing extension source",
   "@errorMissingExtensionSource": {
@@ -1003,6 +1015,14 @@
   "@folderOrganizationNone": {
     "description": "Folder option - flat structure"
   },
+  "folderOrganizationByPlaylist": "By Playlist",
+  "@folderOrganizationByPlaylist": {
+    "description": "Folder option - playlist folders"
+  },
+  "folderOrganizationByPlaylistSubtitle": "Separate folder for each playlist",
+  "@folderOrganizationByPlaylistSubtitle": {
+    "description": "Subtitle for playlist folder option"
+  },
   "folderOrganizationByArtist": "By Artist",
   "@folderOrganizationByArtist": {
     "description": "Folder option - artist folders"
@@ -1097,7 +1117,7 @@
   },
   "providerBuiltIn": "Built-in",
   "@providerBuiltIn": {
-    "description": "Label for built-in providers (Tidal/Qobuz/Amazon)"
+    "description": "Label for built-in providers (Tidal/Qobuz)"
   },
   "providerExtension": "Extension",
   "@providerExtension": {
@@ -2383,7 +2403,7 @@
   "@tutorialWelcomeTip1": {
     "description": "Tutorial welcome tip 1"
   },
-  "tutorialWelcomeTip2": "Get FLAC quality audio from Tidal, Qobuz, or Amazon Music",
+  "tutorialWelcomeTip2": "Get FLAC quality audio from Tidal, Qobuz, or Deezer",
   "@tutorialWelcomeTip2": {
     "description": "Tutorial welcome tip 2"
   },
@@ -2807,6 +2827,90 @@
   "trackConvertFailed": "Conversion failed",
   "@trackConvertFailed": {
     "description": "Snackbar when conversion fails"
+  },
+  "cueSplitTitle": "Split CUE Sheet",
+  "@cueSplitTitle": {
+    "description": "Title for CUE split bottom sheet"
+  },
+  "cueSplitSubtitle": "Split CUE+FLAC into individual tracks",
+  "@cueSplitSubtitle": {
+    "description": "Subtitle for CUE split menu item"
+  },
+  "cueSplitAlbum": "Album: {album}",
+  "@cueSplitAlbum": {
+    "description": "Album name in CUE split sheet",
+    "placeholders": {
+      "album": {
+        "type": "String"
+      }
+    }
+  },
+  "cueSplitArtist": "Artist: {artist}",
+  "@cueSplitArtist": {
+    "description": "Artist name in CUE split sheet",
+    "placeholders": {
+      "artist": {
+        "type": "String"
+      }
+    }
+  },
+  "cueSplitTrackCount": "{count} tracks",
+  "@cueSplitTrackCount": {
+    "description": "Number of tracks in CUE sheet",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cueSplitConfirmTitle": "Split CUE Album",
+  "@cueSplitConfirmTitle": {
+    "description": "CUE split confirmation dialog title"
+  },
+  "cueSplitConfirmMessage": "Split \"{album}\" into {count} individual FLAC files?\n\nFiles will be saved to the same directory.",
+  "@cueSplitConfirmMessage": {
+    "description": "CUE split confirmation dialog message",
+    "placeholders": {
+      "album": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cueSplitSplitting": "Splitting CUE sheet... ({current}/{total})",
+  "@cueSplitSplitting": {
+    "description": "Snackbar while splitting CUE",
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "cueSplitSuccess": "Split into {count} tracks successfully",
+  "@cueSplitSuccess": {
+    "description": "Snackbar after successful CUE split",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cueSplitFailed": "CUE split failed",
+  "@cueSplitFailed": {
+    "description": "Snackbar when CUE split fails"
+  },
+  "cueSplitNoAudioFile": "Audio file not found for this CUE sheet",
+  "@cueSplitNoAudioFile": {
+    "description": "Error when CUE audio file is missing"
+  },
+  "cueSplitButton": "Split into Tracks",
+  "@cueSplitButton": {
+    "description": "Button text to start CUE splitting"
   },
   "actionCreate": "Create",
   "@actionCreate": {

@@ -450,7 +450,7 @@
   "@aboutSpotiSaverDesc": {
     "description": "Credit for SpotiSaver API"
   },
-  "aboutAppDescription": "Скачайте треки Spotify в Lossless качестве из Tidal, Qobuz и Amazon Music.",
+  "aboutAppDescription": "Скачивайте треки Spotify в lossless качестве с Tidal и Qobuz.",
   "@aboutAppDescription": {
     "description": "App description in header card"
   },
@@ -897,6 +897,18 @@
   "@errorNoTracksFound": {
     "description": "Error - search returned no results"
   },
+  "errorUrlNotRecognized": "Ссылка не распознана",
+  "@errorUrlNotRecognized": {
+    "description": "Error title - URL not handled by any extension or service"
+  },
+  "errorUrlNotRecognizedMessage": "Эта ссылка не поддерживается. Убедитесь, что URL-адрес указан правильно и установлено совместимое расширение.",
+  "@errorUrlNotRecognizedMessage": {
+    "description": "Error message - URL not recognized explanation"
+  },
+  "errorUrlFetchFailed": "Не удалось загрузить контент по этой ссылке. Пожалуйста, попробуйте еще раз.",
+  "@errorUrlFetchFailed": {
+    "description": "Error message - generic URL fetch failure"
+  },
   "errorMissingExtensionSource": "Невозможно загрузить {item}: отсутствует источник расширения",
   "@errorMissingExtensionSource": {
     "description": "Error - extension source not available",
@@ -1003,6 +1015,14 @@
   "@folderOrganizationNone": {
     "description": "Folder option - flat structure"
   },
+  "folderOrganizationByPlaylist": "По плейлисту",
+  "@folderOrganizationByPlaylist": {
+    "description": "Folder option - playlist folders"
+  },
+  "folderOrganizationByPlaylistSubtitle": "Отдельная папка для каждого плейлиста",
+  "@folderOrganizationByPlaylistSubtitle": {
+    "description": "Subtitle for playlist folder option"
+  },
   "folderOrganizationByArtist": "По исполнителю",
   "@folderOrganizationByArtist": {
     "description": "Folder option - artist folders"
@@ -1097,7 +1117,7 @@
   },
   "providerBuiltIn": "Встроенные",
   "@providerBuiltIn": {
-    "description": "Label for built-in providers (Tidal/Qobuz/Amazon)"
+    "description": "Label for built-in providers (Tidal/Qobuz)"
   },
   "providerExtension": "Расширение",
   "@providerExtension": {
@@ -1789,7 +1809,7 @@
   "@downloadUsePrimaryArtistOnly": {
     "description": "Setting - strip featured artists from folder name"
   },
-  "downloadUsePrimaryArtistOnlyEnabled": "Featured artists removed from folder name (e.g. Justin Bieber, Quavo → Justin Bieber)",
+  "downloadUsePrimaryArtistOnlyEnabled": "Список исполнителей, чьи работы были удалены из названия папки (например, Джастин Бибер, Quavo → Джастин Бибер)",
   "@downloadUsePrimaryArtistOnlyEnabled": {
     "description": "Subtitle when primary artist only is enabled"
   },
@@ -2383,7 +2403,7 @@
   "@tutorialWelcomeTip1": {
     "description": "Tutorial welcome tip 1"
   },
-  "tutorialWelcomeTip2": "Скачайте FLAC с Tidal, Qobuz или Amazon Music",
+  "tutorialWelcomeTip2": "Получите аудио в качестве FLAC от Tidal, Qobuz или Deezer",
   "@tutorialWelcomeTip2": {
     "description": "Tutorial welcome tip 2"
   },
@@ -2487,7 +2507,7 @@
   "@cleanupOrphanedDownloadsSubtitle": {
     "description": "Subtitle for orphaned cleanup button"
   },
-  "cleanupOrphanedDownloadsResult": "Removed {count} orphaned entries from history",
+  "cleanupOrphanedDownloadsResult": "Удалено {count} утерянных записей из истории",
   "@cleanupOrphanedDownloadsResult": {
     "description": "Snackbar after orphan cleanup",
     "placeholders": {
@@ -2525,7 +2545,7 @@
   "@cacheSectionStorage": {
     "description": "Section header for cache entries"
   },
-  "cacheSectionMaintenance": "Maintenance",
+  "cacheSectionMaintenance": "Обслуживание",
   "@cacheSectionMaintenance": {
     "description": "Section header for cleanup actions"
   },
@@ -2577,7 +2597,7 @@
   "@cacheTrackLookupDesc": {
     "description": "Description of what track lookup cache contains"
   },
-  "cacheCleanupUnusedDesc": "Remove orphaned download history and library entries for missing files.",
+  "cacheCleanupUnusedDesc": "Удалить записи из истории загрузок и библиотеки, которые остались без файлов.",
   "@cacheCleanupUnusedDesc": {
     "description": "Description of what cleanup unused data does"
   },
@@ -2653,7 +2673,7 @@
   "@cacheCleanupUnused": {
     "description": "Action title for cleaning unused entries"
   },
-  "cacheCleanupUnusedSubtitle": "Remove orphaned download history and missing library entries",
+  "cacheCleanupUnusedSubtitle": "Удалить историю загрузок, оставшихся без просмотра, и отсутствующие записи в библиотеке",
   "@cacheCleanupUnusedSubtitle": {
     "description": "Subtitle for cleanup unused data action"
   },
@@ -2807,6 +2827,90 @@
   "trackConvertFailed": "Ошибка конвертации",
   "@trackConvertFailed": {
     "description": "Snackbar when conversion fails"
+  },
+  "cueSplitTitle": "Разделить CUE Sheet",
+  "@cueSplitTitle": {
+    "description": "Title for CUE split bottom sheet"
+  },
+  "cueSplitSubtitle": "Разделить файл CUE+FLAC на отдельные треки",
+  "@cueSplitSubtitle": {
+    "description": "Subtitle for CUE split menu item"
+  },
+  "cueSplitAlbum": "Альбом: {album}",
+  "@cueSplitAlbum": {
+    "description": "Album name in CUE split sheet",
+    "placeholders": {
+      "album": {
+        "type": "String"
+      }
+    }
+  },
+  "cueSplitArtist": "Артист: {artist}",
+  "@cueSplitArtist": {
+    "description": "Artist name in CUE split sheet",
+    "placeholders": {
+      "artist": {
+        "type": "String"
+      }
+    }
+  },
+  "cueSplitTrackCount": "{count} треков",
+  "@cueSplitTrackCount": {
+    "description": "Number of tracks in CUE sheet",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cueSplitConfirmTitle": "Разделенный CUE-альбом",
+  "@cueSplitConfirmTitle": {
+    "description": "CUE split confirmation dialog title"
+  },
+  "cueSplitConfirmMessage": "Разбить \"{album}\" на {count} отдельных FLAC-файлов?",
+  "@cueSplitConfirmMessage": {
+    "description": "CUE split confirmation dialog message",
+    "placeholders": {
+      "album": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cueSplitSplitting": "Разделение CUE sheet... ({current}/{total})",
+  "@cueSplitSplitting": {
+    "description": "Snackbar while splitting CUE",
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "cueSplitSuccess": "Успешно разделено на {count} треков",
+  "@cueSplitSuccess": {
+    "description": "Snackbar after successful CUE split",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cueSplitFailed": "Разделение CUE не удалось",
+  "@cueSplitFailed": {
+    "description": "Snackbar when CUE split fails"
+  },
+  "cueSplitNoAudioFile": "Аудиофайл для этого CUE sheet не найден",
+  "@cueSplitNoAudioFile": {
+    "description": "Error when CUE audio file is missing"
+  },
+  "cueSplitButton": "Разделить на Треки",
+  "@cueSplitButton": {
+    "description": "Button text to start CUE splitting"
   },
   "actionCreate": "Создать",
   "@actionCreate": {
@@ -3022,7 +3126,7 @@
       }
     }
   },
-  "selectionShareNoFiles": "No shareable files found",
+  "selectionShareNoFiles": "Файлы, доступные для совместного доступа, не найдены",
   "@selectionShareNoFiles": {
     "description": "Snackbar when no selected files exist on disk"
   },
@@ -3043,7 +3147,7 @@
   "@selectionBatchConvertConfirmTitle": {
     "description": "Confirmation dialog title for batch conversion"
   },
-  "selectionBatchConvertConfirmMessage": "Convert {count} {count, plural, =1{track} other{tracks}} to {format} at {bitrate}?\n\nOriginal files will be deleted after conversion.",
+  "selectionBatchConvertConfirmMessage": "Преобразовать {count} {count, plural, =1{track} other{tracks}} в {format} с {bitrate}?",
   "@selectionBatchConvertConfirmMessage": {
     "description": "Confirmation dialog message for batch conversion",
     "placeholders": {
