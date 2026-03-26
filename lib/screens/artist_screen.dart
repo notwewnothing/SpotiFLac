@@ -1156,6 +1156,8 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
         imageUrl.isNotEmpty &&
         Uri.tryParse(imageUrl)?.hasAuthority == true;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     String? listenersText;
     final listeners = _monthlyListeners ?? widget.monthlyListeners;
     if (listeners != null && listeners > 0) {
@@ -1226,7 +1228,9 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
                     Colors.transparent,
                     Colors.black.withValues(alpha: 0.3),
                     Colors.black.withValues(alpha: 0.7),
-                    colorScheme.surface,
+                    isDark
+                        ? colorScheme.surface
+                        : Colors.black.withValues(alpha: 0.85),
                   ],
                   stops: const [0.0, 0.5, 0.75, 1.0],
                 ),
@@ -1267,7 +1271,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
                             listenersText,
                             style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.8),
+                                  color: Colors.white,
                                   shadows: [
                                     Shadow(
                                       offset: const Offset(0, 1),

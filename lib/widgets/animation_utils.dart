@@ -146,11 +146,23 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final baseColor = isDark
-        ? colorScheme.surfaceContainerHighest
-        : colorScheme.surfaceContainerHigh;
+        ? Color.alphaBlend(
+            Colors.white.withValues(alpha: 0.08),
+            colorScheme.surface,
+          )
+        : Color.alphaBlend(
+            Colors.black.withValues(alpha: 0.10),
+            colorScheme.surface,
+          );
     final highlightColor = isDark
-        ? colorScheme.surfaceContainerHigh
-        : colorScheme.surface;
+        ? Color.alphaBlend(
+            Colors.white.withValues(alpha: 0.14),
+            colorScheme.surface,
+          )
+        : Color.alphaBlend(
+            Colors.black.withValues(alpha: 0.01),
+            colorScheme.surface,
+          );
 
     return AnimatedBuilder(
       animation: _controller,
@@ -194,11 +206,21 @@ class SkeletonBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = isDark
+        ? Color.alphaBlend(
+            Colors.white.withValues(alpha: 0.08),
+            colorScheme.surface,
+          )
+        : Color.alphaBlend(
+            Colors.black.withValues(alpha: 0.06),
+            colorScheme.surface,
+          );
     return Container(
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
+        color: color,
         borderRadius: BorderRadius.circular(borderRadius),
       ),
     );
