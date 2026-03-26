@@ -1445,16 +1445,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get qualityNote => '実際の品質はサービスからのトラックの可用性に依存します';
 
   @override
-  String get youtubeQualityNote =>
-      'YouTube provides lossy audio only. Not part of lossless fallback.';
-
-  @override
-  String get youtubeOpusBitrateTitle => 'YouTube Opus のビットレート';
-
-  @override
-  String get youtubeMp3BitrateTitle => 'YouTube MP3 のビットレート';
-
-  @override
   String get downloadAskBeforeDownload => 'ダウンロード前に確認する';
 
   @override

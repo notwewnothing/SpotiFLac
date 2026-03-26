@@ -748,7 +748,7 @@ class _DownloadSuccessOverlayState extends State<DownloadSuccessOverlay>
     _flashAnimation = TweenSequence<double>([
       TweenSequenceItem(tween: Tween(begin: 0.0, end: 0.15), weight: 30),
       TweenSequenceItem(tween: Tween(begin: 0.15, end: 0.0), weight: 70),
-    ]).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    ]).animate(_controller);
   }
 
   @override
@@ -816,7 +816,7 @@ class _AnimatedBadgeState extends State<AnimatedBadge>
     _scaleAnimation = TweenSequence<double>([
       TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.3), weight: 40),
       TweenSequenceItem(tween: Tween(begin: 1.3, end: 1.0), weight: 60),
-    ]).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
+    ]).animate(_controller);
   }
 
   @override

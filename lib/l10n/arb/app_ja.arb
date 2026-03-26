@@ -1773,18 +1773,6 @@
   "@qualityNote": {
     "description": "Note about quality availability"
   },
-  "youtubeQualityNote": "YouTube provides lossy audio only. Not part of lossless fallback.",
-  "@youtubeQualityNote": {
-    "description": "Note for YouTube service explaining lossy-only quality"
-  },
-  "youtubeOpusBitrateTitle": "YouTube Opus のビットレート",
-  "@youtubeOpusBitrateTitle": {
-    "description": "Title for YouTube Opus bitrate setting"
-  },
-  "youtubeMp3BitrateTitle": "YouTube MP3 のビットレート",
-  "@youtubeMp3BitrateTitle": {
-    "description": "Title for YouTube MP3 bitrate setting"
-  },
   "downloadAskBeforeDownload": "ダウンロード前に確認する",
   "@downloadAskBeforeDownload": {
     "description": "Setting - show quality picker"

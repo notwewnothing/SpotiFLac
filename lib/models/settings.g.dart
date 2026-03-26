@@ -47,8 +47,6 @@ AppSettings _$AppSettingsFromJson(Map<String, dynamic> json) => AppSettings(
   locale: json['locale'] as String? ?? 'system',
   lyricsMode: json['lyricsMode'] as String? ?? 'embed',
   tidalHighFormat: json['tidalHighFormat'] as String? ?? 'mp3_320',
-  youtubeOpusBitrate: (json['youtubeOpusBitrate'] as num?)?.toInt() ?? 256,
-  youtubeMp3Bitrate: (json['youtubeMp3Bitrate'] as num?)?.toInt() ?? 320,
   useAllFilesAccess: json['useAllFilesAccess'] as bool? ?? false,
   autoExportFailedDownloads:
       json['autoExportFailedDownloads'] as bool? ?? false,
@@ -125,8 +123,6 @@ Map<String, dynamic> _$AppSettingsToJson(
   'locale': instance.locale,
   'lyricsMode': instance.lyricsMode,
   'tidalHighFormat': instance.tidalHighFormat,
-  'youtubeOpusBitrate': instance.youtubeOpusBitrate,
-  'youtubeMp3Bitrate': instance.youtubeMp3Bitrate,
   'useAllFilesAccess': instance.useAllFilesAccess,
   'autoExportFailedDownloads': instance.autoExportFailedDownloads,
   'downloadNetworkMode': instance.downloadNetworkMode,

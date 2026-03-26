@@ -1773,18 +1773,6 @@
   "@qualityNote": {
     "description": "Note about quality availability"
   },
-  "youtubeQualityNote": "YouTube hanya menyediakan audio terkompresi (lossy). Bukan bagian dari fallback lossless.",
-  "@youtubeQualityNote": {
-    "description": "Note for YouTube service explaining lossy-only quality"
-  },
-  "youtubeOpusBitrateTitle": "Bitrate YouTube Opus",
-  "@youtubeOpusBitrateTitle": {
-    "description": "Title for YouTube Opus bitrate setting"
-  },
-  "youtubeMp3BitrateTitle": "Kecepatan Bit MP3 YouTube",
-  "@youtubeMp3BitrateTitle": {
-    "description": "Title for YouTube MP3 bitrate setting"
-  },
   "downloadAskBeforeDownload": "Tanya Sebelum Unduh",
   "@downloadAskBeforeDownload": {
     "description": "Setting - show quality picker"

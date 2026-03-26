@@ -2135,15 +2135,12 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
   }
 
   String _determineOutputExt(String quality, String service) {
-    if (service.toLowerCase() == 'youtube') {
-      if (quality.toLowerCase().contains('mp3')) {
-        return '.mp3';
-      }
-      return '.opus';
-    }
     if (service.toLowerCase() == 'tidal' && quality == 'HIGH') {
       return '.m4a';
     }
+    final q = quality.toLowerCase();
+    if (q.startsWith('opus')) return '.opus';
+    if (q.startsWith('mp3')) return '.mp3';
     return '.flac';
   }
 
@@ -3795,28 +3792,6 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       );
 
       var quality = item.qualityOverride ?? state.audioQuality;
-      if (item.service.toLowerCase() == 'youtube') {
-        final normalized = quality.toLowerCase();
-        final isYoutubeQuality =
-            normalized.startsWith('mp3_') || normalized.startsWith('opus_');
-        if (!isYoutubeQuality) {
-          final mp3Bitrate = (() {
-            const supported = [128, 256, 320];
-            var nearest = supported.first;
-            var nearestDistance = (settings.youtubeMp3Bitrate - nearest).abs();
-            for (final option in supported.skip(1)) {
-              final distance = (settings.youtubeMp3Bitrate - option).abs();
-              if (distance < nearestDistance ||
-                  (distance == nearestDistance && option > nearest)) {
-                nearest = option;
-                nearestDistance = distance;
-              }
-            }
-            return nearest;
-          })();
-          quality = 'mp3_$mp3Bitrate';
-        }
-      }
       final isSafMode = _isSafMode(settings);
       final relativeOutputDir = isSafMode
           ? await _buildRelativeOutputDir(
@@ -4172,14 +4147,10 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         final relativeDir = useSaf ? outputDir : '';
         final fileName = useSaf ? (safFileName ?? '') : '';
         final outputExt = useSaf ? safOutputExt : '';
-        final isYouTube = item.service == 'youtube';
-        final shouldUseExtensions = !isYouTube && useExtensions;
-        final shouldUseFallback = !isYouTube && state.autoFallback;
+        final shouldUseExtensions = useExtensions;
+        final shouldUseFallback = state.autoFallback;
 
-        if (isYouTube) {
-          _log.d('Using YouTube/Cobalt provider for download');
-          _log.d('Quality: $quality (lossy only)');
-        } else if (shouldUseExtensions) {
+        if (shouldUseExtensions) {
           _log.d('Using extension providers for download');
           _log.d(
             'Quality: $quality${item.qualityOverride != null ? ' (override)' : ''}',
@@ -4854,11 +4825,23 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         } else if (metadataEmbeddingEnabled &&
             isContentUriPath &&
             effectiveSafMode &&
-            isFlacFile &&
+            !isM4aFile &&
             !wasExisting) {
           final currentFilePath = filePath;
+          final isOpusFile = filePath.endsWith('.opus');
+          final isMp3File = filePath.endsWith('.mp3');
+          final ext = isOpusFile
+              ? '.opus'
+              : isMp3File
+              ? '.mp3'
+              : '.flac';
+          final formatName = isOpusFile
+              ? 'Opus'
+              : isMp3File
+              ? 'MP3'
+              : 'FLAC';
           _log.d(
-            'SAF FLAC detected, embedding metadata and cover via temp file...',
+            'SAF $formatName detected, embedding metadata and cover via temp file...',
           );
           final tempPath = await _copySafToTemp(currentFilePath);
           if (tempPath != null) {
@@ -4878,21 +4861,39 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
               final backendLabel = result['label'] as String?;
               final backendCopyright = result['copyright'] as String?;
 
-              await _embedMetadataAndCover(
-                tempPath,
-                finalTrack,
-                genre: backendGenre ?? genre,
-                label: backendLabel ?? label,
-                copyright: backendCopyright,
-                writeExternalLrc: false,
-              );
+              if (isMp3File) {
+                await _embedMetadataToMp3(
+                  tempPath,
+                  finalTrack,
+                  genre: backendGenre ?? genre,
+                  label: backendLabel ?? label,
+                  copyright: backendCopyright,
+                );
+              } else if (isOpusFile) {
+                await _embedMetadataToOpus(
+                  tempPath,
+                  finalTrack,
+                  genre: backendGenre ?? genre,
+                  label: backendLabel ?? label,
+                  copyright: backendCopyright,
+                );
+              } else {
+                await _embedMetadataAndCover(
+                  tempPath,
+                  finalTrack,
+                  genre: backendGenre ?? genre,
+                  label: backendLabel ?? label,
+                  copyright: backendCopyright,
+                  writeExternalLrc: false,
+                );
+              }
 
-              final newFileName = '${safBaseName ?? 'track'}.flac';
+              final newFileName = '${safBaseName ?? 'track'}$ext';
               final newUri = await _writeTempToSaf(
                 treeUri: settings.downloadTreeUri,
                 relativeDir: effectiveOutputDir,
                 fileName: newFileName,
-                mimeType: _mimeTypeForExt('.flac'),
+                mimeType: _mimeTypeForExt(ext),
                 srcPath: tempPath,
               );
 
@@ -4902,12 +4903,14 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
                 }
                 filePath = newUri;
                 finalSafFileName = newFileName;
-                _log.d('SAF FLAC metadata embedding completed');
+                _log.d('SAF $formatName metadata embedding completed');
               } else {
-                _log.w('Failed to write metadata-updated FLAC back to SAF');
+                _log.w(
+                  'Failed to write metadata-updated $formatName back to SAF',
+                );
               }
             } catch (e) {
-              _log.w('SAF FLAC metadata embedding failed: $e');
+              _log.w('SAF $formatName metadata embedding failed: $e');
             } finally {
               try {
                 await File(tempPath).delete();
@@ -4949,109 +4952,6 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
             _log.d('Local FLAC metadata embedding completed');
           } catch (e) {
             _log.w('Local FLAC metadata embedding failed: $e');
-          }
-        }
-
-        // YouTube downloads: embed metadata to raw Opus/MP3 files from Cobalt
-        if (metadataEmbeddingEnabled &&
-            !wasExisting &&
-            item.service == 'youtube' &&
-            filePath != null) {
-          final isOpusFile = filePath.endsWith('.opus');
-          final isMp3File = filePath.endsWith('.mp3');
-
-          if (isOpusFile || isMp3File) {
-            _log.i(
-              'YouTube download: embedding metadata to ${isOpusFile ? 'Opus' : 'MP3'} file',
-            );
-            updateItemStatus(
-              item.id,
-              DownloadStatus.downloading,
-              progress: 0.95,
-            );
-
-            final finalTrack = _buildTrackForMetadataEmbedding(
-              trackToDownload,
-              result,
-              resolvedAlbumArtist,
-            );
-            final backendGenre = result['genre'] as String?;
-            final backendLabel = result['label'] as String?;
-            final backendCopyright = result['copyright'] as String?;
-
-            final isContentUriPath = isContentUri(filePath);
-            if (isContentUriPath && effectiveSafMode) {
-              final tempPath = await _copySafToTemp(filePath);
-              if (tempPath != null) {
-                try {
-                  if (isMp3File) {
-                    await _embedMetadataToMp3(
-                      tempPath,
-                      finalTrack,
-                      genre: backendGenre ?? genre,
-                      label: backendLabel ?? label,
-                      copyright: backendCopyright,
-                    );
-                  } else {
-                    await _embedMetadataToOpus(
-                      tempPath,
-                      finalTrack,
-                      genre: backendGenre ?? genre,
-                      label: backendLabel ?? label,
-                      copyright: backendCopyright,
-                    );
-                  }
-                  final ext = isMp3File ? '.mp3' : '.opus';
-                  final newFileName = '${safBaseName ?? 'track'}$ext';
-                  final newUri = await _writeTempToSaf(
-                    treeUri: settings.downloadTreeUri,
-                    relativeDir: effectiveOutputDir,
-                    fileName: newFileName,
-                    mimeType: _mimeTypeForExt(ext),
-                    srcPath: tempPath,
-                  );
-                  if (newUri != null) {
-                    if (newUri != filePath) {
-                      await _deleteSafFile(filePath);
-                    }
-                    filePath = newUri;
-                    finalSafFileName = newFileName;
-                    _log.d('YouTube SAF metadata embedding completed');
-                  } else {
-                    _log.w('Failed to write metadata-updated file back to SAF');
-                  }
-                } catch (e) {
-                  _log.w('YouTube SAF metadata embedding failed: $e');
-                } finally {
-                  try {
-                    await File(tempPath).delete();
-                  } catch (_) {}
-                }
-              }
-            } else {
-              try {
-                if (isMp3File) {
-                  await _embedMetadataToMp3(
-                    filePath,
-                    finalTrack,
-                    genre: backendGenre ?? genre,
-                    label: backendLabel ?? label,
-                    copyright: backendCopyright,
-                  );
-                } else {
-                  await _embedMetadataToOpus(
-                    filePath,
-                    finalTrack,
-                    genre: backendGenre ?? genre,
-                    label: backendLabel ?? label,
-                    copyright: backendCopyright,
-                  );
-                }
-                _log.d('YouTube metadata embedding completed');
-              } catch (e) {
-                _log.w('YouTube metadata embedding failed: $e');
-              }
-            }
           }
         }
 

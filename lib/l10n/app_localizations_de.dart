@@ -1480,16 +1480,6 @@ class AppLocalizationsDe extends AppLocalizations {
       'Die eigentliche Qualität hängt von der Verfügbarkeit des Dienstes ab';
 
   @override
-  String get youtubeQualityNote =>
-      'YouTube bietet nur verlustbehaftete Audioqualität. Deswegen ist es kein Teil des verlustfreien Fallbacks.';
-
-  @override
-  String get youtubeOpusBitrateTitle => 'YouTube Opus Bitrate';
-
-  @override
-  String get youtubeMp3BitrateTitle => 'YouTube MP3 Bitrate';
-
-  @override
   String get downloadAskBeforeDownload => 'Qualität vor Download fragen';
 
   @override

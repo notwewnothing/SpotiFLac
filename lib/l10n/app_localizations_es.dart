@@ -1456,16 +1456,6 @@ class AppLocalizationsEs extends AppLocalizations {
       'Actual quality depends on track availability from the service';
 
   @override
-  String get youtubeQualityNote =>
-      'YouTube provides lossy audio only. Not part of lossless fallback.';
-
-  @override
-  String get youtubeOpusBitrateTitle => 'YouTube Opus Bitrate';
-
-  @override
-  String get youtubeMp3BitrateTitle => 'YouTube MP3 Bitrate';
-
-  @override
   String get downloadAskBeforeDownload => 'Ask Before Download';
 
   @override
@@ -4465,16 +4455,6 @@ class AppLocalizationsEsEs extends AppLocalizationsEs {
   @override
   String get qualityNote =>
       'La calidad real depende de la disponibilidad de la pista del servicio';
-
-  @override
-  String get youtubeQualityNote =>
-      'YouTube provides lossy audio only. Not part of lossless fallback.';
-
-  @override
-  String get youtubeOpusBitrateTitle => 'YouTube Opus Bitrate';
-
-  @override
-  String get youtubeMp3BitrateTitle => 'YouTube MP3 Bitrate';
 
   @override
   String get downloadAskBeforeDownload => 'Preguntar antes de descargar';

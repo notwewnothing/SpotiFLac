@@ -465,34 +465,6 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                       ),
                     ),
                   ],
-                  SettingsItem(
-                    title: context.l10n.youtubeOpusBitrateTitle,
-                    subtitle:
-                        '${settings.youtubeOpusBitrate}kbps (128/256/320)',
-                    onTap: () => _showYoutubeBitratePicker(
-                      context: context,
-                      title: context.l10n.youtubeOpusBitrateTitle,
-                      currentValue: settings.youtubeOpusBitrate,
-                      options: const [128, 256, 320],
-                      onSave: (value) => ref
-                          .read(settingsProvider.notifier)
-                          .setYoutubeOpusBitrate(value),
-                    ),
-                  ),
-                  SettingsItem(
-                    title: context.l10n.youtubeMp3BitrateTitle,
-                    subtitle: '${settings.youtubeMp3Bitrate}kbps (128/256/320)',
-                    onTap: () => _showYoutubeBitratePicker(
-                      context: context,
-                      title: context.l10n.youtubeMp3BitrateTitle,
-                      currentValue: settings.youtubeMp3Bitrate,
-                      options: const [128, 256, 320],
-                      onSave: (value) => ref
-                          .read(settingsProvider.notifier)
-                          .setYoutubeMp3Bitrate(value),
-                    ),
-                    showDivider: false,
-                  ),
                 ],
               ),
             ),
@@ -1689,68 +1661,6 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
     );
   }
 
-  void _showYoutubeBitratePicker({
-    required BuildContext context,
-    required String title,
-    required int currentValue,
-    required List<int> options,
-    required void Function(int value) onSave,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    showModalBottomSheet(
-      context: context,
-      useRootNavigator: true,
-      backgroundColor: colorScheme.surfaceContainerHigh,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 8),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 12, 24, 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: Theme.of(sheetContext).textTheme.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            for (final bitrate in options)
-              ListTile(
-                title: Text('$bitrate kbps'),
-                trailing: bitrate == currentValue
-                    ? Icon(Icons.check, color: colorScheme.primary)
-                    : null,
-                onTap: () {
-                  onSave(bitrate);
-                  Navigator.pop(sheetContext);
-                },
-              ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    );
-  }
-
   void _showMusixmatchLanguagePicker(
     BuildContext context,
     WidgetRef ref,
@@ -2100,7 +2010,7 @@ class _ServiceSelector extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final extState = ref.watch(extensionProvider);
-    final builtInServiceIds = ['tidal', 'qobuz', 'deezer', 'youtube'];
+    final builtInServiceIds = ['tidal', 'qobuz', 'deezer'];
 
     final extensionProviders = extState.extensions
         .where((e) => e.enabled && e.hasDownloadProvider)
@@ -2134,15 +2044,6 @@ class _ServiceSelector extends ConsumerWidget {
                   label: 'Qobuz',
                   isSelected: effectiveService == 'qobuz',
                   onTap: () => onChanged('qobuz'),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _ServiceChip(
-                  icon: Icons.smart_display,
-                  label: 'YouTube',
-                  isSelected: effectiveService == 'youtube',
-                  onTap: () => onChanged('youtube'),
                 ),
               ),
             ],

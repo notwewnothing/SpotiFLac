@@ -1464,16 +1464,6 @@ class AppLocalizationsId extends AppLocalizations {
       'Kualitas sebenarnya tergantung ketersediaan lagu dari layanan';
 
   @override
-  String get youtubeQualityNote =>
-      'YouTube hanya menyediakan audio terkompresi (lossy). Bukan bagian dari fallback lossless.';
-
-  @override
-  String get youtubeOpusBitrateTitle => 'Bitrate YouTube Opus';
-
-  @override
-  String get youtubeMp3BitrateTitle => 'Kecepatan Bit MP3 YouTube';
-
-  @override
   String get downloadAskBeforeDownload => 'Tanya Sebelum Unduh';
 
   @override

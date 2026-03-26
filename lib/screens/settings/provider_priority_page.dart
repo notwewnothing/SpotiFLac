@@ -340,12 +340,6 @@ class _ProviderItem extends StatelessWidget {
           icon: Icons.graphic_eq,
           isBuiltIn: true,
         );
-      case 'youtube':
-        return _ProviderInfo(
-          name: 'YouTube',
-          icon: Icons.play_circle_outline,
-          isBuiltIn: true,
-        );
       default:
         return _ProviderInfo(
           name: provider,

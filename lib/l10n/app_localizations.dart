@@ -2722,24 +2722,6 @@ abstract class AppLocalizations {
   /// **'Actual quality depends on track availability from the service'**
   String get qualityNote;
 
-  /// Note for YouTube service explaining lossy-only quality
-  ///
-  /// In en, this message translates to:
-  /// **'YouTube provides lossy audio only. Not part of lossless fallback.'**
-  String get youtubeQualityNote;
-
-  /// Title for YouTube Opus bitrate setting
-  ///
-  /// In en, this message translates to:
-  /// **'YouTube Opus Bitrate'**
-  String get youtubeOpusBitrateTitle;
-
-  /// Title for YouTube MP3 bitrate setting
-  ///
-  /// In en, this message translates to:
-  /// **'YouTube MP3 Bitrate'**
-  String get youtubeMp3BitrateTitle;
-
   /// Setting - show quality picker
   ///
   /// In en, this message translates to:

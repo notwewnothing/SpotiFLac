@@ -1773,18 +1773,6 @@
   "@qualityNote": {
     "description": "Note about quality availability"
   },
-  "youtubeQualityNote": "YouTube bietet nur verlustbehaftete Audioqualität. Deswegen ist es kein Teil des verlustfreien Fallbacks.",
-  "@youtubeQualityNote": {
-    "description": "Note for YouTube service explaining lossy-only quality"
-  },
-  "youtubeOpusBitrateTitle": "YouTube Opus Bitrate",
-  "@youtubeOpusBitrateTitle": {
-    "description": "Title for YouTube Opus bitrate setting"
-  },
-  "youtubeMp3BitrateTitle": "YouTube MP3 Bitrate",
-  "@youtubeMp3BitrateTitle": {
-    "description": "Title for YouTube MP3 bitrate setting"
-  },
   "downloadAskBeforeDownload": "Qualität vor Download fragen",
   "@downloadAskBeforeDownload": {
     "description": "Setting - show quality picker"

@@ -1909,18 +1909,6 @@
   "@qualityNote": {
     "description": "Note about quality availability"
   },
-  "youtubeQualityNote": "YouTube provides lossy audio only. Not part of lossless fallback.",
-  "@youtubeQualityNote": {
-    "description": "Note for YouTube service explaining lossy-only quality"
-  },
-  "youtubeOpusBitrateTitle": "YouTube Opus Bitrate",
-  "@youtubeOpusBitrateTitle": {
-    "description": "Title for YouTube Opus bitrate setting"
-  },
-  "youtubeMp3BitrateTitle": "YouTube MP3 Bitrate",
-  "@youtubeMp3BitrateTitle": {
-    "description": "Title for YouTube MP3 bitrate setting"
-  },
   "downloadAskBeforeDownload": "Ask Before Download",
   "@downloadAskBeforeDownload": {
     "description": "Setting - show quality picker"

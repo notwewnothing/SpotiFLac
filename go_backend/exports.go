@@ -406,24 +406,6 @@ func DownloadTrack(requestJSON string) (string, error) {
 			}
 		}
 		err = deezerErr
-	case "youtube":
-		youtubeResult, youtubeErr := downloadFromYouTube(req)
-		if youtubeErr == nil {
-			result = DownloadResult{
-				FilePath:    youtubeResult.FilePath,
-				BitDepth:    0,
-				SampleRate:  0,
-				Title:       youtubeResult.Title,
-				Artist:      youtubeResult.Artist,
-				Album:       youtubeResult.Album,
-				ReleaseDate: youtubeResult.ReleaseDate,
-				TrackNumber: youtubeResult.TrackNumber,
-				DiscNumber:  youtubeResult.DiscNumber,
-				ISRC:        youtubeResult.ISRC,
-				LyricsLRC:   youtubeResult.LyricsLRC,
-			}
-		}
-		err = youtubeErr
 	default:
 		return errorResponse("Unknown service: " + req.Service)
 	}
@@ -475,7 +457,7 @@ func DownloadByStrategy(requestJSON string) (string, error) {
 	serviceNormalized := strings.ToLower(serviceRaw)
 
 	normalizedReq := req
-	if serviceNormalized == "youtube" || isBuiltInProvider(serviceNormalized) {
+	if isBuiltInProvider(serviceNormalized) {
 		normalizedReq.Service = serviceNormalized
 	}
 
@@ -484,10 +466,6 @@ func DownloadByStrategy(requestJSON string) (string, error) {
 		return errorResponse("Invalid request: " + err.Error())
 	}
 	normalizedJSON := string(normalizedBytes)
-
-	if serviceNormalized == "youtube" {
-		return DownloadFromYouTube(normalizedJSON)
-	}
 
 	if req.UseExtensions {
 		// Respect strict mode when auto fallback is disabled:
@@ -1666,62 +1644,6 @@ func errorResponse(msg string) (string, error) {
 	}
 	jsonBytes, _ := json.Marshal(resp)
 	return string(jsonBytes), nil
-}
-
-func DownloadFromYouTube(requestJSON string) (string, error) {
-	var req DownloadRequest
-	if err := json.Unmarshal([]byte(requestJSON), &req); err != nil {
-		return errorResponse("Invalid request: " + err.Error())
-	}
-	applySongLinkRegionFromRequest(&req)
-	defer closeOwnedOutputFD(req.OutputFD)
-
-	req.TrackName = strings.TrimSpace(req.TrackName)
-	req.ArtistName = strings.TrimSpace(req.ArtistName)
-	req.AlbumName = strings.TrimSpace(req.AlbumName)
-	req.AlbumArtist = strings.TrimSpace(req.AlbumArtist)
-	req.OutputDir = strings.TrimSpace(req.OutputDir)
-	req.OutputPath = strings.TrimSpace(req.OutputPath)
-	req.OutputExt = strings.TrimSpace(req.OutputExt)
-
-	if req.OutputPath == "" && req.OutputFD <= 0 && req.OutputDir != "" {
-		AddAllowedDownloadDir(req.OutputDir)
-	}
-
-	youtubeResult, err := downloadFromYouTube(req)
-	if err != nil {
-		return errorResponse(err.Error())
-	}
-
-	resp := DownloadResponse{
-		Success:     true,
-		Message:     "Downloaded from YouTube",
-		FilePath:    youtubeResult.FilePath,
-		Service:     "youtube",
-		Title:       youtubeResult.Title,
-		Artist:      youtubeResult.Artist,
-		Album:       youtubeResult.Album,
-		ReleaseDate: youtubeResult.ReleaseDate,
-		TrackNumber: youtubeResult.TrackNumber,
-		DiscNumber:  youtubeResult.DiscNumber,
-		ISRC:        youtubeResult.ISRC,
-		LyricsLRC:   youtubeResult.LyricsLRC,
-		CoverURL:    req.CoverURL,
-		Genre:       req.Genre,
-		Label:       req.Label,
-		Copyright:   req.Copyright,
-	}
-
-	jsonBytes, _ := json.Marshal(resp)
-	return string(jsonBytes), nil
-}
-
-func IsYouTubeURLExport(urlStr string) bool {
-	return IsYouTubeURL(urlStr)
-}
-
-func ExtractYouTubeVideoIDExport(urlStr string) (string, error) {
-	return ExtractYouTubeVideoID(urlStr)
 }
 
 func DownloadCoverToFile(coverURL string, outputPath string, maxQuality bool) error {

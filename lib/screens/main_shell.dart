@@ -742,7 +742,7 @@ class _SwingIconState extends State<SwingIcon>
       TweenSequenceItem(tween: Tween(begin: 0.15, end: -0.1), weight: 20),
       TweenSequenceItem(tween: Tween(begin: -0.1, end: 0.05), weight: 20),
       TweenSequenceItem(tween: Tween(begin: 0.05, end: 0.0), weight: 20),
-    ]).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+    ]).animate(_controller);
 
     _controller.forward();
   }

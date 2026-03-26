@@ -1481,16 +1481,6 @@ class AppLocalizationsRu extends AppLocalizations {
       'Фактическое качество зависит от доступности треков в сервисе';
 
   @override
-  String get youtubeQualityNote =>
-      'YouTube обеспечивает только звук с потерями(Lossy).';
-
-  @override
-  String get youtubeOpusBitrateTitle => 'Битрейт YouTube Opus';
-
-  @override
-  String get youtubeMp3BitrateTitle => 'Битрейт YouTube MP3';
-
-  @override
   String get downloadAskBeforeDownload => 'Спрашивать перед скачиванием';
 
   @override
