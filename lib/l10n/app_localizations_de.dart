@@ -2942,4 +2942,44 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get editMetadataSelectEmpty => 'Empty only';
+
+  @override
+  String get audioAnalysisAnalyzing => 'Analyzing...';
+
+  @override
+  String get audioAnalysisTitle => 'Audio Analysis';
+
+  @override
+  String get audioAnalysisDescription =>
+      'Analyze file for true peak, dynamic range and spectrogram';
+
+  @override
+  String get audioAnalysisSampleRate => 'Sample Rate';
+
+  @override
+  String get audioAnalysisBitDepth => 'Bit Depth';
+
+  @override
+  String get audioAnalysisChannels => 'Channels';
+
+  @override
+  String get audioAnalysisDuration => 'Duration';
+
+  @override
+  String get audioAnalysisNyquist => 'Nyquist Limit';
+
+  @override
+  String get audioAnalysisFileSize => 'File Size';
+
+  @override
+  String get audioAnalysisDynamicRange => 'Dynamic Range';
+
+  @override
+  String get audioAnalysisPeak => 'True Peak';
+
+  @override
+  String get audioAnalysisRms => 'RMS Level';
+
+  @override
+  String get audioAnalysisSamples => 'Total Samples';
 }

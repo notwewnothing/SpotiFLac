@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:spotiflac_android/utils/platform_spoof.dart' as platform;
 import 'package:spotiflac_android/models/settings.dart';
 import 'package:spotiflac_android/constants/app_info.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
@@ -37,7 +36,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
     final prefs = await _prefs;
     final json = prefs.getString(_settingsKey);
     if (json != null) {
-      state = AppSettings.fromJson(jsonDecode(json));
+      state = AppSettings.fromJson(jsonDecode(json) as Map<String, dynamic>);
 
       await _runMigrations(prefs);
       await _normalizeIosDownloadDirectoryIfNeeded();
@@ -54,7 +53,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
   }
 
   void _syncLyricsSettingsToBackend() {
-    PlatformBridge.setLyricsProviders(state.lyricsProviders).catchError((e) {
+    PlatformBridge.setLyricsProviders(state.lyricsProviders).catchError((Object e) {
       _log.w('Failed to sync lyrics providers to backend: $e');
     });
 
@@ -63,7 +62,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
       'include_romanization_netease': state.lyricsIncludeRomanizationNetease,
       'multi_person_word_by_word': state.lyricsMultiPersonWordByWord,
       'musixmatch_language': state.musixmatchLanguage,
-    }).catchError((e) {
+    }).catchError((Object e) {
       _log.w('Failed to sync lyrics fetch options to backend: $e');
     });
   }
@@ -73,7 +72,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
     PlatformBridge.setNetworkCompatibilityOptions(
       allowHttp: compatibilityMode,
       insecureTls: compatibilityMode,
-    ).catchError((e) {
+    ).catchError((Object e) {
       _log.w('Failed to sync network compatibility options to backend: $e');
     });
   }
@@ -531,6 +530,15 @@ class SettingsNotifier extends Notifier<AppSettings> {
 
   void setTutorialComplete() {
     state = state.copyWith(hasCompletedTutorial: true);
+    _saveSettings();
+  }
+
+  void setHomeFeedProvider(String? providerId) {
+    if (providerId == null || providerId.isEmpty) {
+      state = state.copyWith(clearHomeFeedProvider: true);
+    } else {
+      state = state.copyWith(homeFeedProvider: providerId);
+    }
     _saveSettings();
   }
 }

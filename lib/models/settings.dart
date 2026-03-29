@@ -51,8 +51,8 @@ class AppSettings {
   downloadNetworkMode; // 'any' = WiFi + Mobile, 'wifi_only' = WiFi only
   final bool
   networkCompatibilityMode; // Try HTTP + allow invalid TLS cert for API requests
-  final String
-  songLinkRegion; // SongLink userCountry region code used for platform lookup
+  final String songLinkRegion; // SongLink userCountry region code used for platform lookup
+  final String? homeFeedProvider; // Selected extension for home feed
 
   final bool localLibraryEnabled; // Enable local library scanning
   final String localLibraryPath; // Path to scan for audio files
@@ -142,6 +142,7 @@ class AppSettings {
     this.lyricsMultiPersonWordByWord = false,
     this.musixmatchLanguage = '',
     this.lastSeenVersion = '',
+    this.homeFeedProvider,
   });
 
   AppSettings copyWith({
@@ -200,6 +201,8 @@ class AppSettings {
     bool? lyricsMultiPersonWordByWord,
     String? musixmatchLanguage,
     String? lastSeenVersion,
+    String? homeFeedProvider,
+    bool clearHomeFeedProvider = false,
   }) {
     return AppSettings(
       defaultService: defaultService ?? this.defaultService,
@@ -273,6 +276,9 @@ class AppSettings {
           lyricsMultiPersonWordByWord ?? this.lyricsMultiPersonWordByWord,
       musixmatchLanguage: musixmatchLanguage ?? this.musixmatchLanguage,
       lastSeenVersion: lastSeenVersion ?? this.lastSeenVersion,
+      homeFeedProvider: clearHomeFeedProvider
+          ? null
+          : (homeFeedProvider ?? this.homeFeedProvider),
     );
   }
 

@@ -132,6 +132,7 @@ type DownloadResult struct {
 	Label         string
 	Copyright     string
 	LyricsLRC     string
+	CoverURL      string
 	DecryptionKey string
 }
 

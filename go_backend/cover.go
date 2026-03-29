@@ -19,6 +19,9 @@ var deezerSizeRegex = regexp.MustCompile(`/(\d+)x(\d+)-\d+-\d+-\d+-\d+\.jpg$`)
 
 var tidalSizeRegex = regexp.MustCompile(`/\d+x\d+\.jpg$`)
 
+var qobuzImageSizeRe = regexp.MustCompile(`_[0-9]+\.jpg$`)
+
+
 func convertSmallToMedium(imageURL string) string {
 	if strings.Contains(imageURL, spotifySize300) {
 		return strings.Replace(imageURL, spotifySize300, spotifySize640, 1)

@@ -1936,6 +1936,7 @@ type QobuzDownloadResult struct {
 	DiscNumber  int
 	ISRC        string
 	LyricsLRC   string
+	CoverURL    string
 }
 
 func parseQobuzRequestTrackID(raw string) int64 {
@@ -2262,5 +2263,6 @@ func downloadFromQobuz(req DownloadRequest) (QobuzDownloadResult, error) {
 		DiscNumber:  resultDiscNumber,
 		ISRC:        track.ISRC,
 		LyricsLRC:   lyricsLRC,
+		CoverURL:    req.CoverURL,
 	}, nil
 }

@@ -1534,6 +1534,7 @@ type TidalDownloadResult struct {
 	DiscNumber  int
 	ISRC        string
 	LyricsLRC   string // LRC content for embedding in converted files
+	CoverURL    string
 }
 
 func artistsMatch(spotifyArtist, tidalArtist string) bool {

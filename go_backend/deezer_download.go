@@ -34,6 +34,7 @@ type DeezerDownloadResult struct {
 	TrackNumber int
 	DiscNumber  int
 	ISRC        string
+	CoverURL    string
 	LyricsLRC   string
 }
 

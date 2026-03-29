@@ -5000,6 +5000,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Empty only'**
   String get editMetadataSelectEmpty;
+
+  /// No description provided for @audioAnalysisAnalyzing.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyzing...'**
+  String get audioAnalysisAnalyzing;
+
+  /// No description provided for @audioAnalysisTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio Analysis'**
+  String get audioAnalysisTitle;
+
+  /// No description provided for @audioAnalysisDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyze file for true peak, dynamic range and spectrogram'**
+  String get audioAnalysisDescription;
+
+  /// No description provided for @audioAnalysisSampleRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Sample Rate'**
+  String get audioAnalysisSampleRate;
+
+  /// No description provided for @audioAnalysisBitDepth.
+  ///
+  /// In en, this message translates to:
+  /// **'Bit Depth'**
+  String get audioAnalysisBitDepth;
+
+  /// No description provided for @audioAnalysisChannels.
+  ///
+  /// In en, this message translates to:
+  /// **'Channels'**
+  String get audioAnalysisChannels;
+
+  /// No description provided for @audioAnalysisDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get audioAnalysisDuration;
+
+  /// No description provided for @audioAnalysisNyquist.
+  ///
+  /// In en, this message translates to:
+  /// **'Nyquist Limit'**
+  String get audioAnalysisNyquist;
+
+  /// No description provided for @audioAnalysisFileSize.
+  ///
+  /// In en, this message translates to:
+  /// **'File Size'**
+  String get audioAnalysisFileSize;
+
+  /// No description provided for @audioAnalysisDynamicRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Dynamic Range'**
+  String get audioAnalysisDynamicRange;
+
+  /// No description provided for @audioAnalysisPeak.
+  ///
+  /// In en, this message translates to:
+  /// **'True Peak'**
+  String get audioAnalysisPeak;
+
+  /// No description provided for @audioAnalysisRms.
+  ///
+  /// In en, this message translates to:
+  /// **'RMS Level'**
+  String get audioAnalysisRms;
+
+  /// No description provided for @audioAnalysisSamples.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Samples'**
+  String get audioAnalysisSamples;
 }
 
 class _AppLocalizationsDelegate

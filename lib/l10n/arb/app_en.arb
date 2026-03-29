@@ -3847,5 +3847,18 @@
   "editMetadataSelectEmpty": "Empty only",
   "@editMetadataSelectEmpty": {
     "description": "Button to select only fields that are currently empty"
-  }
+  },
+  "audioAnalysisAnalyzing": "Analyzing...",
+  "audioAnalysisTitle": "Audio Analysis",
+  "audioAnalysisDescription": "Analyze file for true peak, dynamic range and spectrogram",
+  "audioAnalysisSampleRate": "Sample Rate",
+  "audioAnalysisBitDepth": "Bit Depth",
+  "audioAnalysisChannels": "Channels",
+  "audioAnalysisDuration": "Duration",
+  "audioAnalysisNyquist": "Nyquist Limit",
+  "audioAnalysisFileSize": "File Size",
+  "audioAnalysisDynamicRange": "Dynamic Range",
+  "audioAnalysisPeak": "True Peak",
+  "audioAnalysisRms": "RMS Level",
+  "audioAnalysisSamples": "Total Samples"
 }

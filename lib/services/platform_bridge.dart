@@ -15,6 +15,10 @@ class PlatformBridge {
     'com.zarz.spotiflac/library_scan_progress_stream',
   );
 
+  static bool get supportsExtensionSystem {
+    return Platform.isAndroid || Platform.isIOS;
+  }
+
   static Future<Map<String, dynamic>> parseSpotifyUrl(String url) async {
     _log.d('parseSpotifyUrl: $url');
     final result = await _channel.invokeMethod('parseSpotifyUrl', {'url': url});

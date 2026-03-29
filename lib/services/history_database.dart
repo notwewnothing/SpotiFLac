@@ -228,7 +228,7 @@ class HistoryDatabase {
     }
 
     try {
-      final List<dynamic> jsonList = jsonDecode(jsonStr);
+      final List<dynamic> jsonList = jsonDecode(jsonStr) as List<dynamic>;
       _log.i(
         'Migrating ${jsonList.length} items from SharedPreferences to SQLite',
       );

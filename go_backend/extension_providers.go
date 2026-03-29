@@ -126,11 +126,8 @@ func NewExtensionProviderWrapper(ext *LoadedExtension) *ExtensionProviderWrapper
 }
 
 func (p *ExtensionProviderWrapper) lockReadyVM() error {
-	vm, err := p.extension.lockReadyVM()
-	if err != nil {
-		return err
-	}
-	p.vm = vm
+	p.extension.VMMu.Lock()
+	p.vm = p.extension.VM
 	return nil
 }
 

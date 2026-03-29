@@ -10,6 +10,7 @@ AppSettings _$AppSettingsFromJson(Map<String, dynamic> json) => AppSettings(
   defaultService: json['defaultService'] as String? ?? 'tidal',
   audioQuality: json['audioQuality'] as String? ?? 'LOSSLESS',
   filenameFormat: json['filenameFormat'] as String? ?? '{title} - {artist}',
+  appmode: json['appmode'] as String? ?? 'download',
   downloadDirectory: json['downloadDirectory'] as String? ?? '',
   storageMode: json['storageMode'] as String? ?? 'app',
   downloadTreeUri: json['downloadTreeUri'] as String? ?? '',
@@ -21,7 +22,6 @@ AppSettings _$AppSettingsFromJson(Map<String, dynamic> json) => AppSettings(
   concurrentDownloads: (json['concurrentDownloads'] as num?)?.toInt() ?? 1,
   checkForUpdates: json['checkForUpdates'] as bool? ?? true,
   updateChannel: json['updateChannel'] as String? ?? 'stable',
-  appmode: json['appmode'] as String? ?? 'download',
   hasSearchedBefore: json['hasSearchedBefore'] as bool? ?? false,
   folderOrganization: json['folderOrganization'] as String? ?? 'none',
   useAlbumArtistForFolders: json['useAlbumArtistForFolders'] as bool? ?? true,
@@ -80,6 +80,7 @@ AppSettings _$AppSettingsFromJson(Map<String, dynamic> json) => AppSettings(
       json['lyricsMultiPersonWordByWord'] as bool? ?? false,
   musixmatchLanguage: json['musixmatchLanguage'] as String? ?? '',
   lastSeenVersion: json['lastSeenVersion'] as String? ?? '',
+  homeFeedProvider: json['homeFeedProvider'] as String?,
 );
 
 Map<String, dynamic> _$AppSettingsToJson(
@@ -89,6 +90,7 @@ Map<String, dynamic> _$AppSettingsToJson(
   'audioQuality': instance.audioQuality,
   'filenameFormat': instance.filenameFormat,
   'downloadDirectory': instance.downloadDirectory,
+  'appmode': instance.appmode,
   'storageMode': instance.storageMode,
   'downloadTreeUri': instance.downloadTreeUri,
   'autoFallback': instance.autoFallback,
@@ -99,7 +101,6 @@ Map<String, dynamic> _$AppSettingsToJson(
   'concurrentDownloads': instance.concurrentDownloads,
   'checkForUpdates': instance.checkForUpdates,
   'updateChannel': instance.updateChannel,
-  'appmode': instance.appmode,
   'hasSearchedBefore': instance.hasSearchedBefore,
   'folderOrganization': instance.folderOrganization,
   'useAlbumArtistForFolders': instance.useAlbumArtistForFolders,
@@ -128,6 +129,7 @@ Map<String, dynamic> _$AppSettingsToJson(
   'downloadNetworkMode': instance.downloadNetworkMode,
   'networkCompatibilityMode': instance.networkCompatibilityMode,
   'songLinkRegion': instance.songLinkRegion,
+  'homeFeedProvider': instance.homeFeedProvider,
   'localLibraryEnabled': instance.localLibraryEnabled,
   'localLibraryPath': instance.localLibraryPath,
   'localLibraryBookmark': instance.localLibraryBookmark,
