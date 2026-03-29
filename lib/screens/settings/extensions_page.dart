@@ -8,6 +8,7 @@ import 'package:spotiflac_android/providers/extension_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/screens/settings/extension_detail_page.dart';
 import 'package:spotiflac_android/screens/settings/provider_priority_page.dart';
+import 'package:spotiflac_android/utils/platform_spoof.dart' as platform;
 import 'package:spotiflac_android/screens/settings/metadata_provider_priority_page.dart';
 import 'package:spotiflac_android/utils/app_bar_layout.dart';
 import 'package:spotiflac_android/widgets/settings_group.dart';
@@ -72,6 +73,7 @@ class _ExtensionsPageState extends ConsumerState<ExtensionsPage> {
               backgroundColor: colorScheme.surface,
               surfaceTintColor: Colors.transparent,
               leading: IconButton(
+                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () => Navigator.pop(context),
               ),

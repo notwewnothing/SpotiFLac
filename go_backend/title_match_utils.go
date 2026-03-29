@@ -68,3 +68,45 @@ func normalizeSymbolOnlyTitle(title string) string {
 
 	return b.String()
 }
+
+// ==================== Shared Track Verification ====================
+
+// resolvedTrackInfo holds the metadata fetched from a provider for verification.
+type resolvedTrackInfo struct {
+	Title      string
+	ArtistName string
+	Duration   int // seconds
+}
+
+// trackMatchesRequest checks whether a resolved track from a provider matches
+// the original download request. Returns true if the track is a plausible match.
+func trackMatchesRequest(req DownloadRequest, resolved resolvedTrackInfo, logPrefix string) bool {
+	if req.ArtistName != "" && resolved.ArtistName != "" &&
+		!artistsMatch(req.ArtistName, resolved.ArtistName) {
+		GoLog("[%s] Verification failed: artist mismatch — expected '%s', got '%s'\n",
+			logPrefix, req.ArtistName, resolved.ArtistName)
+		return false
+	}
+
+	if req.TrackName != "" && resolved.Title != "" &&
+		!titlesMatch(req.TrackName, resolved.Title) {
+		GoLog("[%s] Verification failed: title mismatch — expected '%s', got '%s'\n",
+			logPrefix, req.TrackName, resolved.Title)
+		return false
+	}
+
+	expectedDurationSec := req.DurationMS / 1000
+	if expectedDurationSec > 0 && resolved.Duration > 0 {
+		diff := expectedDurationSec - resolved.Duration
+		if diff < 0 {
+			diff = -diff
+		}
+		if diff > 10 {
+			GoLog("[%s] Verification failed: duration mismatch — expected %ds, got %ds\n",
+				logPrefix, expectedDurationSec, resolved.Duration)
+			return false
+		}
+	}
+
+	return true
+}

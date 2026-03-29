@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import 'package:spotiflac_android/utils/logger.dart';
+import 'package:spotiflac_android/utils/platform_spoof.dart' as platform;
 
 final _log = AppLogger('ShareIntent');
 
@@ -10,8 +12,9 @@ class ShareIntentService {
   ShareIntentService._internal();
 
   // Spotify patterns
-  static final RegExp _spotifyUriPattern =
-      RegExp(r'spotify:(track|album|playlist|artist):[a-zA-Z0-9]+');
+  static final RegExp _spotifyUriPattern = RegExp(
+    r'spotify:(track|album|playlist|artist):[a-zA-Z0-9]+',
+  );
   static final RegExp _spotifyUrlPattern = RegExp(
     r'https?://open\.spotify\.com/(track|album|playlist|artist)/[a-zA-Z0-9]+(\?[^\s]*)?',
   );
@@ -31,7 +34,12 @@ class ShareIntentService {
 
   // YouTube Music patterns
   static final RegExp _ytMusicUrlPattern = RegExp(
-    r'https?://music\.youtube\.com/(watch\?v=|playlist\?list=|channel/)[a-zA-Z0-9_-]+(\&[^\s]*)?',
+    r'https?://music\.youtube\.com/(watch\?v=|playlist\?list=|channel/|browse/)[a-zA-Z0-9_-]+([?&][^\s]*)?',
+  );
+
+  // Standard YouTube patterns (youtu.be short links and www.youtube.com/watch)
+  static final RegExp _youtubeUrlPattern = RegExp(
+    r'https?://(youtu\.be/[a-zA-Z0-9_-]+|www\.youtube\.com/watch\?v=[a-zA-Z0-9_-]+)([?&][^\s]*)?',
   );
 
   final _sharedUrlController = StreamController<String>.broadcast();
@@ -51,6 +59,18 @@ class ShareIntentService {
     if (_initialized) return;
     _initialized = true;
 
+    // receive_sharing_intent is not supported on Linux yet
+    // Check actual platform, not spoofed one
+    if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+      _log.i('Share intent not supported on this platform');
+      return;
+    }
+
+    if (!platform.isAndroid && !platform.isIOS) {
+      _log.i('Share intent not supported on this platform');
+      return;
+    }
+
     _mediaSubscription = ReceiveSharingIntent.instance.getMediaStream().listen(
       _handleSharedMedia,
       onError: (err) => _log.e('Error: $err'),
@@ -63,14 +83,14 @@ class ShareIntentService {
     }
   }
 
-  void _handleSharedMedia(List<SharedMediaFile> files, {bool isInitial = false}) {
+  void _handleSharedMedia(
+    List<SharedMediaFile> files, {
+    bool isInitial = false,
+  }) {
     for (final file in files) {
       // Check both path and message - apps may share URL in either field
-      final textsToCheck = [
-        file.path,
-        if (file.message != null) file.message!,
-      ];
-      
+      final textsToCheck = [file.path, if (file.message != null) file.message!];
+
       for (final textToCheck in textsToCheck) {
         final url = _extractMusicUrl(textToCheck);
         if (url != null) {
@@ -101,14 +121,15 @@ class ShareIntentService {
       _deezerShortLinkPattern,
       _tidalUrlPattern,
       _ytMusicUrlPattern,
+      _youtubeUrlPattern,
     ];
 
     for (final pattern in patterns) {
       final match = pattern.firstMatch(text);
       if (match != null) {
         final fullUrl = match.group(0)!;
-        // Remove query params for cleaner URL (except for YT Music which needs them)
-        if (pattern == _ytMusicUrlPattern) {
+        // Keep query params for YouTube URLs (needed for ?v=, ?list=, etc.)
+        if (pattern == _ytMusicUrlPattern || pattern == _youtubeUrlPattern) {
           return fullUrl;
         }
         final queryIndex = fullUrl.indexOf('?');

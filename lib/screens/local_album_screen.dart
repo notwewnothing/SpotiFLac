@@ -4,16 +4,19 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:spotiflac_android/l10n/l10n.dart';
+import 'package:spotiflac_android/models/track.dart';
+import 'package:spotiflac_android/providers/download_queue_provider.dart';
+import 'package:spotiflac_android/providers/extension_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/utils/file_access.dart';
 import 'package:spotiflac_android/utils/lyrics_metadata_helper.dart';
 import 'package:spotiflac_android/services/library_database.dart';
 import 'package:spotiflac_android/services/ffmpeg_service.dart';
+import 'package:spotiflac_android/services/local_track_redownload_service.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/providers/local_library_provider.dart';
 import 'package:spotiflac_android/providers/playback_provider.dart';
 
-/// Screen to display tracks from a local library album
 class LocalAlbumScreen extends ConsumerStatefulWidget {
   final String albumName;
   final String artistName;
@@ -39,6 +42,13 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
   final ScrollController _scrollController = ScrollController();
   late List<LocalLibraryItem> _sortedTracksCache;
   late Map<int, List<LocalLibraryItem>> _discGroupsCache;
+
+  void _showCueVirtualTrackSnackBar() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text(cueVirtualTrackRequiresSplitMessage)),
+    );
+  }
+
   late List<int> _sortedDiscNumbersCache;
   late bool _hasMultipleDiscsCache;
   String? _commonQualityCache;
@@ -83,7 +93,6 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
   List<LocalLibraryItem> _buildSortedTracks() {
     final tracks = List<LocalLibraryItem>.from(widget.tracks);
     tracks.sort((a, b) {
-      // Sort by disc number first, then by track number
       final aDisc = a.discNumber ?? 1;
       final bDisc = b.discNumber ?? 1;
       if (aDisc != bDisc) return aDisc.compareTo(bDisc);
@@ -180,9 +189,11 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
       for (final id in idsToDelete) {
         final item = tracksById[id];
         if (item != null) {
-          try {
-            await deleteFile(item.filePath);
-          } catch (_) {}
+          if (!isCueVirtualPath(item.filePath)) {
+            try {
+              await deleteFile(item.filePath);
+            } catch (_) {}
+          }
           await libraryNotifier.removeItem(id);
           deletedCount++;
         }
@@ -197,7 +208,6 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
           ),
         );
 
-        // Go back if all tracks were deleted
         if (deletedCount == currentTracks.length) {
           Navigator.pop(context);
         }
@@ -206,6 +216,10 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
   }
 
   Future<void> _openFile(LocalLibraryItem track) async {
+    if (isCueVirtualPath(track.filePath)) {
+      _showCueVirtualTrackSnackBar();
+      return;
+    }
     try {
       await ref
           .read(playbackProvider.notifier)
@@ -233,11 +247,10 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     final tracks = _sortedTracksCache;
 
-    // Show empty state if no tracks found
     if (tracks.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: Text(widget.albumName)),
-        body: const Center(child: Text('No tracks found for this album')),
+        body: Center(child: Text(context.l10n.noTracksFoundForAlbum)),
       );
     }
 
@@ -326,7 +339,6 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
             background: Stack(
               fit: StackFit.expand,
               children: [
-                // Full-screen cover background
                 if (widget.coverPath != null)
                   Image.file(
                     File(widget.coverPath!),
@@ -343,7 +355,6 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
                       color: colorScheme.onSurfaceVariant,
                     ),
                   ),
-                // Bottom gradient for readability
                 Positioned(
                   left: 0,
                   right: 0,
@@ -362,7 +373,6 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
                     ),
                   ),
                 ),
-                // Album info overlay at bottom
                 Positioned(
                   left: 20,
                   right: 20,
@@ -494,6 +504,7 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
         },
       ),
       leading: IconButton(
+        tooltip: MaterialLocalizations.of(context).backButtonTooltip,
         icon: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
@@ -733,6 +744,7 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
           trailing: _isSelectionMode
               ? null
               : IconButton(
+                  tooltip: 'Play track',
                   onPressed: () => _openFile(track),
                   icon: Icon(Icons.play_arrow, color: colorScheme.primary),
                   style: IconButton.styleFrom(
@@ -888,7 +900,127 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
     return false;
   }
 
-  /// Batch re-enrich selected local tracks
+  Future<void> _queueSelectedAsFlac(List<LocalLibraryItem> allTracks) async {
+    final tracksById = {for (final t in allTracks) t.id: t};
+    final selected = <LocalLibraryItem>[];
+
+    for (final id in _selectedIds) {
+      final item = tracksById[id];
+      if (item != null) {
+        selected.add(item);
+      }
+    }
+
+    if (selected.isEmpty) {
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(context.l10n.queueFlacAction),
+        content: Text(context.l10n.queueFlacConfirmMessage(selected.length)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(context.l10n.dialogCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(context.l10n.queueFlacAction),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) {
+      return;
+    }
+
+    final settings = ref.read(settingsProvider);
+    final extensionState = ref.read(extensionProvider);
+    final includeExtensions =
+        settings.useExtensionProviders &&
+        extensionState.extensions.any(
+          (ext) => ext.enabled && ext.hasMetadataProvider,
+        );
+    final targetService = LocalTrackRedownloadService.preferredFlacService(
+      settings,
+    );
+    final targetQuality =
+        LocalTrackRedownloadService.preferredFlacQualityForService(
+          targetService,
+        );
+
+    final matchedTracks = <Track>[];
+    var skippedCount = 0;
+    final total = selected.length;
+
+    for (var i = 0; i < total; i++) {
+      if (!mounted) break;
+
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            context.l10n.queueFlacFindingProgress(i + 1, total),
+          ),
+          duration: const Duration(seconds: 30),
+        ),
+      );
+
+      try {
+        final resolution = await LocalTrackRedownloadService.resolveBestMatch(
+          selected[i],
+          includeExtensions: includeExtensions,
+        );
+        if (resolution.canQueue && resolution.match != null) {
+          matchedTracks.add(resolution.match!);
+        } else {
+          skippedCount++;
+        }
+      } catch (_) {
+        skippedCount++;
+      }
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).clearSnackBars();
+
+    if (matchedTracks.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.queueFlacNoReliableMatches)),
+      );
+      return;
+    }
+
+    ref
+        .read(downloadQueueProvider.notifier)
+        .addMultipleToQueue(
+          matchedTracks,
+          targetService,
+          qualityOverride: targetQuality,
+        );
+
+    final summary = skippedCount == 0
+        ? context.l10n.snackbarAddedTracksToQueue(matchedTracks.length)
+        : context.l10n.queueFlacQueuedWithSkipped(
+            matchedTracks.length,
+            skippedCount,
+          );
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(summary)));
+    setState(() {
+      _selectedIds.clear();
+      _isSelectionMode = false;
+    });
+  }
+
   Future<void> _reEnrichSelected(List<LocalLibraryItem> allTracks) async {
     final tracksById = {for (final t in allTracks) t.id: t};
     final selected = <LocalLibraryItem>[];
@@ -958,13 +1090,18 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
       return;
     }
 
-    final localLibraryPath = ref.read(settingsProvider).localLibraryPath.trim();
+    final settings = ref.read(settingsProvider);
+    final localLibraryPath = settings.localLibraryPath.trim();
+    final iosBookmark = settings.localLibraryBookmark;
     try {
       if (localLibraryPath.isNotEmpty &&
           !ref.read(localLibraryProvider).isScanning) {
         await ref
             .read(localLibraryProvider.notifier)
-            .startScan(localLibraryPath);
+            .startScan(
+              localLibraryPath,
+              iosBookmark: iosBookmark.isNotEmpty ? iosBookmark : null,
+            );
       } else {
         await ref.read(localLibraryProvider.notifier).reloadFromStorage();
       }
@@ -988,13 +1125,60 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
     ).showSnackBar(SnackBar(content: Text(summary)));
   }
 
-  /// Show batch convert bottom sheet
   void _showBatchConvertSheet(
     BuildContext context,
     List<LocalLibraryItem> allTracks,
   ) {
-    String selectedFormat = 'MP3';
-    String selectedBitrate = '320k';
+    final tracksById = {for (final t in allTracks) t.id: t};
+    final sourceFormats = <String>{};
+    for (final id in _selectedIds) {
+      final item = tracksById[id];
+      if (item == null) continue;
+      String? ext;
+      if (item.format != null && item.format!.isNotEmpty) {
+        final fmt = item.format!.toLowerCase();
+        if (fmt == 'flac') {
+          ext = 'FLAC';
+        } else if (fmt == 'm4a') {
+          ext = 'M4A';
+        } else if (fmt == 'mp3') {
+          ext = 'MP3';
+        } else if (fmt == 'opus' || fmt == 'ogg') {
+          ext = 'Opus';
+        }
+      }
+      if (ext == null) {
+        final lower = item.filePath.toLowerCase();
+        if (lower.endsWith('.flac')) {
+          ext = 'FLAC';
+        } else if (lower.endsWith('.m4a')) {
+          ext = 'M4A';
+        } else if (lower.endsWith('.mp3')) {
+          ext = 'MP3';
+        } else if (lower.endsWith('.opus') || lower.endsWith('.ogg')) {
+          ext = 'Opus';
+        }
+      }
+      if (ext != null) sourceFormats.add(ext);
+    }
+
+    final formats = ['ALAC', 'FLAC', 'MP3', 'Opus'].where((target) {
+      return sourceFormats.any((src) {
+        if (src == target) return false;
+        final isLosslessTarget = target == 'ALAC' || target == 'FLAC';
+        final isLosslessSource = src == 'FLAC' || src == 'M4A';
+        if (isLosslessTarget && !isLosslessSource) return false;
+        return true;
+      });
+    }).toList();
+
+    if (formats.isEmpty) return;
+
+    String selectedFormat = formats.first;
+    bool isLosslessTarget =
+        selectedFormat == 'ALAC' || selectedFormat == 'FLAC';
+    String selectedBitrate =
+        isLosslessTarget ? '320k' : (selectedFormat == 'Opus' ? '128k' : '320k');
 
     showModalBottomSheet(
       context: context,
@@ -1006,7 +1190,6 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
         return StatefulBuilder(
           builder: (context, setSheetState) {
             final colorScheme = Theme.of(context).colorScheme;
-            final formats = ['MP3', 'Opus'];
             final bitrates = ['128k', '192k', '256k', '320k'];
 
             return SafeArea(
@@ -1043,51 +1226,75 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Row(
-                      children: formats.map((format) {
-                        final isSelected = format == selectedFormat;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: ChoiceChip(
-                            label: Text(format),
-                            selected: isSelected,
-                            onSelected: (selected) {
-                              if (selected) {
-                                setSheetState(() {
-                                  selectedFormat = format;
-                                  selectedBitrate = format == 'Opus'
-                                      ? '128k'
-                                      : '320k';
-                                });
-                              }
-                            },
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      context.l10n.trackConvertBitrate,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
-                      children: bitrates.map((br) {
-                        final isSelected = br == selectedBitrate;
+                      children: formats.map((format) {
+                        final isSelected = format == selectedFormat;
                         return ChoiceChip(
-                          label: Text(br),
+                          label: Text(format),
                           selected: isSelected,
                           onSelected: (selected) {
                             if (selected) {
-                              setSheetState(() => selectedBitrate = br);
+                              setSheetState(() {
+                                selectedFormat = format;
+                                isLosslessTarget =
+                                    format == 'ALAC' || format == 'FLAC';
+                                if (!isLosslessTarget) {
+                                  selectedBitrate =
+                                      format == 'Opus' ? '128k' : '320k';
+                                }
+                              });
                             }
                           },
                         );
                       }).toList(),
                     ),
+                    if (!isLosslessTarget) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        context.l10n.trackConvertBitrate,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        children: bitrates.map((br) {
+                          final isSelected = br == selectedBitrate;
+                          return ChoiceChip(
+                            label: Text(br),
+                            selected: isSelected,
+                            onSelected: (selected) {
+                              if (selected) {
+                                setSheetState(() => selectedBitrate = br);
+                              }
+                            },
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                    if (isLosslessTarget) ...[
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.verified,
+                            size: 16,
+                            color: colorScheme.primary,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            context.l10n.trackConvertLosslessHint,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.copyWith(
+                              color: colorScheme.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                     const SizedBox(height: 24),
                     SizedBox(
                       width: double.infinity,
@@ -1140,6 +1347,8 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
         final fmt = item.format!.toLowerCase();
         if (fmt == 'flac') {
           currentFormat = 'FLAC';
+        } else if (fmt == 'm4a') {
+          currentFormat = 'M4A';
         } else if (fmt == 'mp3') {
           currentFormat = 'MP3';
         } else if (fmt == 'opus' || fmt == 'ogg') {
@@ -1151,15 +1360,20 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
         final lower = item.filePath.toLowerCase();
         if (lower.endsWith('.flac')) {
           currentFormat = 'FLAC';
+        } else if (lower.endsWith('.m4a')) {
+          currentFormat = 'M4A';
         } else if (lower.endsWith('.mp3')) {
           currentFormat = 'MP3';
         } else if (lower.endsWith('.opus') || lower.endsWith('.ogg')) {
           currentFormat = 'Opus';
         }
       }
-      if (currentFormat != null && currentFormat != targetFormat) {
-        selected.add(item);
-      }
+      if (currentFormat == null || currentFormat == targetFormat) continue;
+      // Skip lossy sources when target is lossless (pointless re-encoding)
+      final isLosslessTarget = targetFormat == 'ALAC' || targetFormat == 'FLAC';
+      final isLosslessSource = currentFormat == 'FLAC' || currentFormat == 'M4A';
+      if (isLosslessTarget && !isLosslessSource) continue;
+      selected.add(item);
     }
 
     if (selected.isEmpty) {
@@ -1171,16 +1385,22 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
       return;
     }
 
+    final isLossless = targetFormat == 'ALAC' || targetFormat == 'FLAC';
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(context.l10n.selectionBatchConvertConfirmTitle),
         content: Text(
-          context.l10n.selectionBatchConvertConfirmMessage(
-            selected.length,
-            targetFormat,
-            bitrate,
-          ),
+          isLossless
+              ? context.l10n.selectionBatchConvertConfirmMessageLossless(
+                  selected.length,
+                  targetFormat,
+                )
+              : context.l10n.selectionBatchConvertConfirmMessage(
+                  selected.length,
+                  targetFormat,
+                  bitrate,
+                ),
         ),
         actions: [
           TextButton(
@@ -1261,7 +1481,6 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
         String? safTempPath;
 
         if (isSaf) {
-          // Copy SAF file to temp for conversion
           safTempPath = await PlatformBridge.copyContentUriToTemp(
             item.filePath,
           );
@@ -1296,7 +1515,6 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
         if (isSaf) {
           // For SAF: derive the parent tree URI and relative dir from the content URI,
           // then create new SAF file and delete old one
-          //
           // Parse the SAF URI to get the tree document path:
           // content://...tree/...document/.../oldName.flac
           // We need tree URI and relative dir to create the new file
@@ -1347,13 +1565,27 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
             final baseName = dotIdx > 0
                 ? oldFileName.substring(0, dotIdx)
                 : oldFileName;
-            final newExt = targetFormat.toLowerCase() == 'opus'
-                ? '.opus'
-                : '.mp3';
+            String newExt;
+            String mimeType;
+            switch (targetFormat.toLowerCase()) {
+              case 'opus':
+                newExt = '.opus';
+                mimeType = 'audio/opus';
+                break;
+              case 'alac':
+                newExt = '.m4a';
+                mimeType = 'audio/mp4';
+                break;
+              case 'flac':
+                newExt = '.flac';
+                mimeType = 'audio/flac';
+                break;
+              default:
+                newExt = '.mp3';
+                mimeType = 'audio/mpeg';
+                break;
+            }
             final newFileName = '$baseName$newExt';
-            final mimeType = targetFormat.toLowerCase() == 'opus'
-                ? 'audio/opus'
-                : 'audio/mpeg';
 
             final safUri = await PlatformBridge.createSafFileFromPath(
               treeUri: treeUri,
@@ -1375,14 +1607,12 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
               continue;
             }
 
-            // Delete old SAF file
             try {
               await PlatformBridge.safDelete(item.filePath);
             } catch (_) {}
             await localDb.deleteByPath(item.filePath);
           }
 
-          // Clean up temp files
           try {
             await File(newPath).delete();
           } catch (_) {}
@@ -1400,7 +1630,6 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
       } catch (_) {}
     }
 
-    // Reload local library to pick up converted files
     ref.read(localLibraryProvider.notifier).reloadFromStorage();
     _exitSelectionMode();
 
@@ -1461,6 +1690,9 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
                 children: [
                   IconButton.filledTonal(
                     onPressed: _exitSelectionMode,
+                    tooltip: MaterialLocalizations.of(
+                      context,
+                    ).closeButtonTooltip,
                     icon: const Icon(Icons.close),
                     style: IconButton.styleFrom(
                       backgroundColor: colorScheme.surfaceContainerHighest,
@@ -1513,9 +1745,19 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
               ),
               const SizedBox(height: 12),
 
-              // Action buttons row: Re-enrich, Convert
               Row(
                 children: [
+                  Expanded(
+                    child: _LocalAlbumSelectionActionButton(
+                      icon: Icons.download_for_offline_outlined,
+                      label: '${context.l10n.queueFlacAction} ($selectedCount)',
+                      onPressed: selectedCount > 0
+                          ? () => _queueSelectedAsFlac(tracks)
+                          : null,
+                      colorScheme: colorScheme,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: _LocalAlbumSelectionActionButton(
                       icon: Icons.auto_fix_high_outlined,

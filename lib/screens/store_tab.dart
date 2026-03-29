@@ -16,6 +16,7 @@ class StoreTab extends ConsumerStatefulWidget {
 
 class _StoreTabState extends ConsumerState<StoreTab> {
   final _searchController = TextEditingController();
+  final _repoUrlController = TextEditingController();
   bool _isInitialized = false;
 
   @override
@@ -38,6 +39,7 @@ class _StoreTabState extends ConsumerState<StoreTab> {
   @override
   void dispose() {
     _searchController.dispose();
+    _repoUrlController.dispose();
     super.dispose();
   }
 
@@ -56,6 +58,8 @@ class _StoreTabState extends ConsumerState<StoreTab> {
     final downloadingId = ref.watch(
       storeProvider.select((s) => s.downloadingId),
     );
+    final hasRegistryUrl = ref.watch(storeProvider.select((s) => s.hasRegistryUrl));
+    final registryUrl = ref.watch(storeProvider.select((s) => s.registryUrl));
     final filteredExtensions = StoreState(
       extensions: extensions,
       selectedCategory: selectedCategory,
@@ -84,6 +88,14 @@ class _StoreTabState extends ConsumerState<StoreTab> {
               backgroundColor: colorScheme.surface,
               surfaceTintColor: Colors.transparent,
               automaticallyImplyLeading: false,
+              actions: [
+                if (hasRegistryUrl)
+                  IconButton(
+                    icon: const Icon(Icons.link),
+                    tooltip: context.l10n.storeChangeRepoTooltip,
+                    onPressed: () => _showChangeRepoDialog(registryUrl),
+                  ),
+              ],
               flexibleSpace: LayoutBuilder(
                 builder: (context, constraints) {
                   final maxHeight = 120 + topPadding;
@@ -109,150 +121,154 @@ class _StoreTabState extends ConsumerState<StoreTab> {
               ),
             ),
 
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                child: ValueListenableBuilder<TextEditingValue>(
-                  valueListenable: _searchController,
-                  builder: (context, value, _) {
-                    return TextField(
-                      controller: _searchController,
-                      decoration: InputDecoration(
-                        hintText: context.l10n.storeSearch,
-                        prefixIcon: const Icon(Icons.search),
-                        suffixIcon: value.text.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  ref
-                                      .read(storeProvider.notifier)
-                                      .setSearchQuery('');
-                                },
-                              )
-                            : null,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(28),
-                          borderSide: BorderSide.none,
-                        ),
-                        filled: true,
-                        fillColor:
-                            Theme.of(context).brightness == Brightness.dark
-                            ? Color.alphaBlend(
-                                Colors.white.withValues(alpha: 0.08),
-                                colorScheme.surface,
-                              )
-                            : colorScheme.surfaceContainerHighest,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                      ),
-                      onChanged: (value) {
-                        ref.read(storeProvider.notifier).setSearchQuery(value);
-                      },
-                    );
-                  },
-                ),
-              ),
-            ),
-
-            SliverToBoxAdapter(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                child: Row(
-                  children: [
-                    _CategoryChip(
-                      label: context.l10n.storeFilterAll,
-                      icon: Icons.apps,
-                      isSelected: selectedCategory == null,
-                      onTap: () =>
-                          ref.read(storeProvider.notifier).setCategory(null),
-                    ),
-                    const SizedBox(width: 8),
-                    _CategoryChip(
-                      label: context.l10n.storeFilterMetadata,
-                      icon: Icons.label_outline,
-                      isSelected: selectedCategory == StoreCategory.metadata,
-                      onTap: () => ref
-                          .read(storeProvider.notifier)
-                          .setCategory(StoreCategory.metadata),
-                    ),
-                    const SizedBox(width: 8),
-                    _CategoryChip(
-                      label: context.l10n.storeFilterDownload,
-                      icon: Icons.download_outlined,
-                      isSelected: selectedCategory == StoreCategory.download,
-                      onTap: () => ref
-                          .read(storeProvider.notifier)
-                          .setCategory(StoreCategory.download),
-                    ),
-                    const SizedBox(width: 8),
-                    _CategoryChip(
-                      label: context.l10n.storeFilterUtility,
-                      icon: Icons.build_outlined,
-                      isSelected: selectedCategory == StoreCategory.utility,
-                      onTap: () => ref
-                          .read(storeProvider.notifier)
-                          .setCategory(StoreCategory.utility),
-                    ),
-                    const SizedBox(width: 8),
-                    _CategoryChip(
-                      label: context.l10n.storeFilterLyrics,
-                      icon: Icons.lyrics_outlined,
-                      isSelected: selectedCategory == StoreCategory.lyrics,
-                      onTap: () => ref
-                          .read(storeProvider.notifier)
-                          .setCategory(StoreCategory.lyrics),
-                    ),
-                    const SizedBox(width: 8),
-                    _CategoryChip(
-                      label: context.l10n.storeFilterIntegration,
-                      icon: Icons.link,
-                      isSelected: selectedCategory == StoreCategory.integration,
-                      onTap: () => ref
-                          .read(storeProvider.notifier)
-                          .setCategory(StoreCategory.integration),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            if (isLoading && extensions.isEmpty)
-              const SliverFillRemaining(
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else if (error != null && extensions.isEmpty)
-              SliverFillRemaining(child: _buildErrorState(error, colorScheme))
-            else if (filteredExtensions.isEmpty)
+            if (!hasRegistryUrl)
               SliverFillRemaining(
-                child: _buildEmptyState(
-                  hasFilters:
-                      searchQuery.isNotEmpty || selectedCategory != null,
-                  colorScheme: colorScheme,
-                ),
+                child: _buildSetupRepoState(colorScheme, error),
               )
             else ...[
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                  child: Text(
-                    '${filteredExtensions.length} ${filteredExtensions.length == 1 ? 'extension' : 'extensions'}',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+                  child: ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: _searchController,
+                    builder: (context, value, _) {
+                      return TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          hintText: context.l10n.storeSearch,
+                          prefixIcon: const Icon(Icons.search),
+                          suffixIcon: value.text.isNotEmpty
+                              ? IconButton(
+                                  tooltip: 'Clear search',
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    ref
+                                        .read(storeProvider.notifier)
+                                        .setSearchQuery('');
+                                  },
+                                )
+                              : null,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(28),
+                            borderSide: BorderSide.none,
+                          ),
+                          filled: true,
+                          fillColor:
+                              Theme.of(context).brightness == Brightness.dark
+                              ? Color.alphaBlend(
+                                  Colors.white.withValues(alpha: 0.08),
+                                  colorScheme.surface,
+                                )
+                              : colorScheme.surfaceContainerHighest,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
+                        onChanged: (value) {
+                          ref.read(storeProvider.notifier).setSearchQuery(value);
+                        },
+                      );
+                    },
                   ),
                 ),
               ),
 
               SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: Row(
+                    children: [
+                      _CategoryChip(
+                        label: context.l10n.storeFilterAll,
+                        icon: Icons.apps,
+                        isSelected: selectedCategory == null,
+                        onTap: () =>
+                            ref.read(storeProvider.notifier).setCategory(null),
+                      ),
+                      const SizedBox(width: 8),
+                      _CategoryChip(
+                        label: context.l10n.storeFilterMetadata,
+                        icon: Icons.label_outline,
+                        isSelected: selectedCategory == StoreCategory.metadata,
+                        onTap: () => ref
+                            .read(storeProvider.notifier)
+                            .setCategory(StoreCategory.metadata),
+                      ),
+                      const SizedBox(width: 8),
+                      _CategoryChip(
+                        label: context.l10n.storeFilterDownload,
+                        icon: Icons.download_outlined,
+                        isSelected: selectedCategory == StoreCategory.download,
+                        onTap: () => ref
+                            .read(storeProvider.notifier)
+                            .setCategory(StoreCategory.download),
+                      ),
+                      const SizedBox(width: 8),
+                      _CategoryChip(
+                        label: context.l10n.storeFilterUtility,
+                        icon: Icons.build_outlined,
+                        isSelected: selectedCategory == StoreCategory.utility,
+                        onTap: () => ref
+                            .read(storeProvider.notifier)
+                            .setCategory(StoreCategory.utility),
+                      ),
+                      const SizedBox(width: 8),
+                      _CategoryChip(
+                        label: context.l10n.storeFilterLyrics,
+                        icon: Icons.lyrics_outlined,
+                        isSelected: selectedCategory == StoreCategory.lyrics,
+                        onTap: () => ref
+                            .read(storeProvider.notifier)
+                            .setCategory(StoreCategory.lyrics),
+                      ),
+                      const SizedBox(width: 8),
+                      _CategoryChip(
+                        label: context.l10n.storeFilterIntegration,
+                        icon: Icons.link,
+                        isSelected: selectedCategory == StoreCategory.integration,
+                        onTap: () => ref
+                            .read(storeProvider.notifier)
+                            .setCategory(StoreCategory.integration),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              if (isLoading && extensions.isEmpty)
+                const SliverFillRemaining(
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (error != null && extensions.isEmpty)
+                SliverFillRemaining(child: _buildErrorState(error, colorScheme))
+              else if (filteredExtensions.isEmpty)
+                SliverFillRemaining(
+                  child: _buildEmptyState(
+                    hasFilters:
+                        searchQuery.isNotEmpty || selectedCategory != null,
+                    colorScheme: colorScheme,
+                  ),
+                )
+              else ...[
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                    child: Text(
+                      '${filteredExtensions.length} ${filteredExtensions.length == 1 ? 'extension' : 'extensions'}',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ),
+
+                SliverToBoxAdapter(
                   child: SettingsGroup(
                     children: filteredExtensions.asMap().entries.map((entry) {
                       final index = entry.key;
@@ -268,14 +284,174 @@ class _StoreTabState extends ConsumerState<StoreTab> {
                     }).toList(),
                   ),
                 ),
-              ),
 
-              const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                const SliverToBoxAdapter(child: SizedBox(height: 16)),
+              ],
             ],
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildSetupRepoState(ColorScheme colorScheme, String? error) {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.store_outlined,
+              size: 72,
+              color: colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(height: 24),
+            Text(
+              context.l10n.storeAddRepoTitle,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            TextField(
+              controller: _repoUrlController,
+              decoration: InputDecoration(
+                hintText: context.l10n.storeRepoUrlHint,
+                labelText: context.l10n.storeRepoUrlLabel,
+                prefixIcon: const Icon(Icons.link),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: colorScheme.outline),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: colorScheme.primary, width: 2),
+                ),
+              ),
+              keyboardType: TextInputType.url,
+              autocorrect: false,
+              onSubmitted: (_) => _submitRepoUrl(),
+            ),
+            if (error != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colorScheme.errorContainer,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.error_outline, size: 20, color: colorScheme.onErrorContainer),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        error,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onErrorContainer,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: _submitRepoUrl,
+                icon: const Icon(Icons.add),
+                label: Text(context.l10n.storeAddRepoButton),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _submitRepoUrl() {
+    final url = _repoUrlController.text.trim();
+    if (url.isEmpty) return;
+    ref.read(storeProvider.notifier).setRegistryUrl(url);
+  }
+
+  void _showChangeRepoDialog(String currentUrl) {
+    final changeUrlController = TextEditingController(text: currentUrl);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(context.l10n.storeRepoDialogTitle),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              context.l10n.storeRepoDialogCurrent,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              currentUrl,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                fontFamily: 'monospace',
+                fontSize: 11,
+              ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: changeUrlController,
+              decoration: InputDecoration(
+                hintText: context.l10n.storeRepoUrlHint,
+                labelText: context.l10n.storeNewRepoUrlLabel,
+                prefixIcon: const Icon(Icons.link),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              keyboardType: TextInputType.url,
+              autocorrect: false,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              ref.read(storeProvider.notifier).removeRegistryUrl();
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: Text(context.l10n.dialogRemove),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(context.l10n.dialogCancel),
+          ),
+          FilledButton(
+            onPressed: () {
+              final newUrl = changeUrlController.text.trim();
+              Navigator.of(context).pop();
+              if (newUrl.isNotEmpty) {
+                ref.read(storeProvider.notifier).setRegistryUrl(newUrl);
+              }
+            },
+            child: Text(context.l10n.dialogSave),
+          ),
+        ],
+      ),
+    ).then((_) => changeUrlController.dispose());
   }
 
   Widget _buildErrorState(String error, ColorScheme colorScheme) {
@@ -288,7 +464,7 @@ class _StoreTabState extends ConsumerState<StoreTab> {
             Icon(Icons.error_outline, size: 64, color: colorScheme.error),
             const SizedBox(height: 16),
             Text(
-              'Failed to load store',
+              context.l10n.storeLoadError,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
@@ -327,7 +503,7 @@ class _StoreTabState extends ConsumerState<StoreTab> {
           ),
           const SizedBox(height: 16),
           Text(
-            hasFilters ? 'No extensions found' : 'No extensions available',
+            hasFilters ? context.l10n.storeEmptyNoResults : context.l10n.storeEmptyNoExtensions,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),

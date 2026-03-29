@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const DefaultSpotFetchAPIBaseURL = "https://spotify.afkarxyz.fun/api"
+const DefaultSpotFetchAPIBaseURL = "https://sp.afkarxyz.qzz.io/api"
 
 // GetSpotifyDataWithAPI fetches Spotify metadata through SpotFetch-compatible API.
 // This is used as a fallback when direct Spotify API access is blocked/limited.

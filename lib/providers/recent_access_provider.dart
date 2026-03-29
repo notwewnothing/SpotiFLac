@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:spotiflac_android/services/app_state_database.dart';
+import 'package:spotiflac_android/utils/platform_spoof.dart' as platform;
 
 const _maxRecentItems = 20;
 
@@ -70,7 +71,7 @@ class RecentAccessItem {
 /// State for recent access history
 class RecentAccessState {
   final List<RecentAccessItem> items;
-  final Set<String> hiddenDownloadIds; // IDs of downloads hidden from recents
+  final Set<String> hiddenDownloadIds;
   final bool isLoaded;
 
   const RecentAccessState({

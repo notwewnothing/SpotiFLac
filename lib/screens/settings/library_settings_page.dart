@@ -8,6 +8,7 @@ import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/providers/local_library_provider.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
+import 'package:spotiflac_android/utils/platform_spoof.dart' as platform;
 import 'package:spotiflac_android/utils/app_bar_layout.dart';
 import 'package:spotiflac_android/widgets/settings_group.dart';
 
@@ -51,7 +52,7 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
   }
 
   Future<void> _initDeviceInfo() async {
-    if (Platform.isAndroid) {
+    if (platform.isAndroid) {
       final deviceInfo = DeviceInfoPlugin();
       final androidInfo = await deviceInfo.androidInfo;
       final sdkVersion = androidInfo.version.sdkInt;
@@ -70,14 +71,21 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
           }
         }
       }
-    } else if (Platform.isIOS) {
+    } else if (platform.isIOS) {
       // iOS doesn't need explicit storage permission for app documents
+      setState(() => _hasStoragePermission = true);
+    } else {
+      // Linux, macOS, Windows: Direct file system access
       setState(() => _hasStoragePermission = true);
     }
   }
 
   Future<bool> _requestStoragePermission() async {
-    if (Platform.isIOS) return true;
+    if (platform.isIOS) return true;
+    if (!platform.isAndroid) {
+      // Linux, macOS, Windows: Direct file system access
+      return true;
+    }
     // SAF on Android 10+ doesn't need MANAGE_EXTERNAL_STORAGE
     if (_androidSdkVersion >= 29) return true;
 
@@ -114,7 +122,7 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
   }
 
   Future<void> _pickLibraryFolder() async {
-    if (Platform.isAndroid && _androidSdkVersion >= 29) {
+    if (platform.isAndroid && _androidSdkVersion >= 29) {
       // Use SAF tree picker - no MANAGE_EXTERNAL_STORAGE needed
       final result = await PlatformBridge.pickSafTree();
       if (result != null) {
@@ -132,7 +140,23 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
       // Fallback for older devices
       final result = await FilePicker.platform.getDirectoryPath();
       if (result != null) {
-        ref.read(settingsProvider.notifier).setLocalLibraryPath(result);
+        if (Platform.isIOS) {
+          // On iOS, create a security-scoped bookmark so we can access
+          // this folder across app restarts and from the Go backend.
+          final bookmark =
+              await PlatformBridge.createIosBookmarkFromPath(result);
+          if (bookmark != null && bookmark.isNotEmpty) {
+            ref
+                .read(settingsProvider.notifier)
+                .setLocalLibraryPathAndBookmark(result, bookmark);
+          } else {
+            // Bookmark creation failed; save path anyway (works for
+            // app-internal folders like Documents/).
+            ref.read(settingsProvider.notifier).setLocalLibraryPath(result);
+          }
+        } else {
+          ref.read(settingsProvider.notifier).setLocalLibraryPath(result);
+        }
       }
     }
   }
@@ -140,6 +164,7 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
   Future<void> _startScan({bool forceFullScan = false}) async {
     final settings = ref.read(settingsProvider);
     final libraryPath = settings.localLibraryPath;
+    final iosBookmark = settings.localLibraryBookmark;
 
     if (libraryPath.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -148,7 +173,14 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
       return;
     }
 
-    if (!libraryPath.startsWith('content://') &&
+    // On iOS with a bookmark, try resolving the bookmark first to validate
+    // access instead of checking the path directly (which may fail outside
+    // the app sandbox).
+    if (Platform.isIOS && iosBookmark.isNotEmpty) {
+      // Bookmark will be resolved inside startScan; skip Directory.exists
+      // check since security-scoped paths are not accessible without the
+      // bookmark being activated.
+    } else if (!libraryPath.startsWith('content://') &&
         !await Directory(libraryPath).exists()) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -158,9 +190,11 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
       return;
     }
 
-    await ref
-        .read(localLibraryProvider.notifier)
-        .startScan(libraryPath, forceFullScan: forceFullScan);
+    await ref.read(localLibraryProvider.notifier).startScan(
+      libraryPath,
+      forceFullScan: forceFullScan,
+      iosBookmark: iosBookmark.isNotEmpty ? iosBookmark : null,
+    );
   }
 
   Future<void> _cancelScan() async {
@@ -200,9 +234,12 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
   }
 
   Future<void> _cleanupMissingFiles() async {
+    final iosBookmark = ref.read(settingsProvider).localLibraryBookmark;
     final removed = await ref
         .read(localLibraryProvider.notifier)
-        .cleanupMissingFiles();
+        .cleanupMissingFiles(
+          iosBookmark: iosBookmark.isNotEmpty ? iosBookmark : null,
+        );
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -210,6 +247,99 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
         ),
       );
     }
+  }
+
+  String _getAutoScanLabel(BuildContext context, String mode) {
+    switch (mode) {
+      case 'on_open':
+        return context.l10n.libraryAutoScanOnOpen;
+      case 'daily':
+        return context.l10n.libraryAutoScanDaily;
+      case 'weekly':
+        return context.l10n.libraryAutoScanWeekly;
+      default:
+        return context.l10n.libraryAutoScanOff;
+    }
+  }
+
+  void _showAutoScanPicker(BuildContext context, String current) {
+    final colorScheme = Theme.of(context).colorScheme;
+    showModalBottomSheet(
+      context: context,
+      useRootNavigator: true,
+      backgroundColor: colorScheme.surfaceContainerHigh,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+              child: Text(
+                context.l10n.libraryAutoScan,
+                style: Theme.of(context)
+                    .textTheme
+                    .titleLarge
+                    ?.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+              child: Text(
+                context.l10n.libraryAutoScanSubtitle,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            _AutoScanOption(
+              icon: Icons.block,
+              title: context.l10n.libraryAutoScanOff,
+              selected: current == 'off',
+              colorScheme: colorScheme,
+              onTap: () {
+                ref.read(settingsProvider.notifier).setLocalLibraryAutoScan('off');
+                Navigator.pop(context);
+              },
+            ),
+            _AutoScanOption(
+              icon: Icons.open_in_new,
+              title: context.l10n.libraryAutoScanOnOpen,
+              selected: current == 'on_open',
+              colorScheme: colorScheme,
+              onTap: () {
+                ref.read(settingsProvider.notifier).setLocalLibraryAutoScan('on_open');
+                Navigator.pop(context);
+              },
+            ),
+            _AutoScanOption(
+              icon: Icons.today,
+              title: context.l10n.libraryAutoScanDaily,
+              selected: current == 'daily',
+              colorScheme: colorScheme,
+              onTap: () {
+                ref.read(settingsProvider.notifier).setLocalLibraryAutoScan('daily');
+                Navigator.pop(context);
+              },
+            ),
+            _AutoScanOption(
+              icon: Icons.date_range,
+              title: context.l10n.libraryAutoScanWeekly,
+              selected: current == 'weekly',
+              colorScheme: colorScheme,
+              onTap: () {
+                ref.read(settingsProvider.notifier).setLocalLibraryAutoScan('weekly');
+                Navigator.pop(context);
+              },
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -230,6 +360,7 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
             backgroundColor: colorScheme.surface,
             surfaceTintColor: Colors.transparent,
             leading: IconButton(
+              tooltip: MaterialLocalizations.of(context).backButtonTooltip,
               icon: const Icon(Icons.arrow_back),
               onPressed: () => Navigator.pop(context),
             ),
@@ -271,7 +402,6 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
             ),
           ),
 
-          // Scan Settings Section
           SliverToBoxAdapter(
             child: SettingsSectionHeader(
               title: context.l10n.libraryScanSettings,
@@ -315,7 +445,18 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
                   onChanged: (value) => ref
                       .read(settingsProvider.notifier)
                       .setLocalLibraryShowDuplicates(value),
-                  showDivider: false,
+                ),
+                Opacity(
+                  opacity: settings.localLibraryEnabled ? 1.0 : 0.5,
+                  child: SettingsItem(
+                    icon: Icons.autorenew_rounded,
+                    title: context.l10n.libraryAutoScan,
+                    subtitle: _getAutoScanLabel(context, settings.localLibraryAutoScan),
+                    onTap: settings.localLibraryEnabled
+                        ? () => _showAutoScanPicker(context, settings.localLibraryAutoScan)
+                        : null,
+                    showDivider: false,
+                  ),
                 ),
               ],
             ),
@@ -442,7 +583,6 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
             ),
           ],
 
-          // Info Section
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
@@ -558,7 +698,6 @@ class _LibraryHeroCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          // Background decorative elements
           Positioned(
             right: -20,
             top: -20,
@@ -581,7 +720,6 @@ class _LibraryHeroCard extends StatelessWidget {
             ),
           ),
 
-          // Content
           Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
@@ -796,6 +934,34 @@ class _ScanProgressTile extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+class _AutoScanOption extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final bool selected;
+  final ColorScheme colorScheme;
+  final VoidCallback onTap;
+
+  const _AutoScanOption({
+    required this.icon,
+    required this.title,
+    required this.selected,
+    required this.colorScheme,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(title),
+      trailing: selected
+          ? Icon(Icons.check, color: colorScheme.primary)
+          : null,
+      onTap: onTap,
     );
   }
 }

@@ -151,7 +151,6 @@ func (m *ExtensionManager) LoadExtensionFromFile(filePath string) (*LoadedExtens
 	if exists {
 		versionCompare := compareVersions(manifest.Version, existingVersion)
 		if versionCompare > 0 {
-			// This is an upgrade - call UpgradeExtension
 			return m.UpgradeExtension(filePath)
 		} else if versionCompare == 0 {
 			return nil, fmt.Errorf("Extension '%s' v%s is already installed", existingDisplayName, existingVersion)
@@ -401,7 +400,6 @@ func (m *ExtensionManager) loadExtensionFromDirectory(dirPath string) (*LoadedEx
 		return nil, fmt.Errorf("failed to read manifest.json: %w", err)
 	}
 
-	// Parse and validate manifest
 	manifest, err := ParseManifest(manifestData)
 	if err != nil {
 		return nil, fmt.Errorf("Invalid extension manifest: %w", err)
@@ -430,7 +428,6 @@ func (m *ExtensionManager) loadExtensionFromDirectory(dirPath string) (*LoadedEx
 		SourceDir: dirPath,
 	}
 
-	// Restore enabled state from settings store
 	store := GetExtensionSettingsStore()
 	if enabledVal, err := store.Get(manifest.Name, "_enabled"); err == nil {
 		if enabled, ok := enabledVal.(bool); ok {
@@ -467,17 +464,11 @@ func (m *ExtensionManager) RemoveExtension(extensionID string) error {
 		}
 	}
 
-	// Optionally remove data directory (keep for now to preserve settings)
-	// if ext.DataDir != "" {
-	//     os.RemoveAll(ext.DataDir)
-	// }
-
 	return nil
 }
 
 // Only allows upgrades (new version > current version), not downgrades
 func (m *ExtensionManager) UpgradeExtension(filePath string) (*LoadedExtension, error) {
-	// Validate file extension
 	if !strings.HasSuffix(strings.ToLower(filePath), ".spotiflac-ext") {
 		return nil, fmt.Errorf("Invalid file format. Please select a .spotiflac-ext file")
 	}
@@ -529,7 +520,6 @@ func (m *ExtensionManager) UpgradeExtension(filePath string) (*LoadedExtension, 
 		return nil, fmt.Errorf("Extension '%s' is not installed. Use install instead of upgrade.", newManifest.DisplayName)
 	}
 
-	// Compare versions - only allow upgrade, not downgrade
 	versionCompare := compareVersions(newManifest.Version, existing.Manifest.Version)
 	if versionCompare < 0 {
 		return nil, fmt.Errorf("Cannot downgrade extension. Current version: %s, New version: %s", existing.Manifest.Version, newManifest.Version)
@@ -540,7 +530,6 @@ func (m *ExtensionManager) UpgradeExtension(filePath string) (*LoadedExtension, 
 
 	GoLog("[Extension] Upgrading %s from v%s to v%s\n", newManifest.DisplayName, existing.Manifest.Version, newManifest.Version)
 
-	// Save data directory path and enabled state (we want to preserve them)
 	extDataDir := existing.DataDir
 	extDir := existing.SourceDir
 	wasEnabled := existing.Enabled
@@ -601,7 +590,6 @@ func (m *ExtensionManager) UpgradeExtension(filePath string) (*LoadedExtension, 
 		SourceDir: extDir,
 	}
 
-	// Initialize Goja VM
 	if err := m.initializeVM(ext); err != nil {
 		ext.Error = err.Error()
 		ext.Enabled = false
@@ -626,7 +614,6 @@ type ExtensionUpgradeInfo struct {
 }
 
 func (m *ExtensionManager) checkExtensionUpgradeInternal(filePath string) (*ExtensionUpgradeInfo, error) {
-	// Validate file extension
 	if !strings.HasSuffix(strings.ToLower(filePath), ".spotiflac-ext") {
 		return nil, fmt.Errorf("Invalid file format. Please select a .spotiflac-ext file")
 	}
@@ -675,7 +662,6 @@ func (m *ExtensionManager) checkExtensionUpgradeInternal(filePath string) (*Exte
 	}
 
 	if !exists {
-		// Not installed - this is a new install, not upgrade
 		info.CurrentVersion = ""
 		info.CanUpgrade = false
 	} else {
@@ -739,7 +725,6 @@ func (m *ExtensionManager) GetInstalledExtensionsJSON() (string, error) {
 			permissions = append(permissions, "storage:enabled")
 		}
 
-		// Determine status
 		status := "loaded"
 		if ext.Error != "" {
 			status = "error"
@@ -940,7 +925,6 @@ func (m *ExtensionManager) InvokeAction(extensionID string, actionName string) (
 		return nil, fmt.Errorf("extension is disabled")
 	}
 
-	// Call the action function on the extension object
 	script := fmt.Sprintf(`
 		(function() {
 			if (typeof extension !== 'undefined' && typeof extension.%s === 'function') {

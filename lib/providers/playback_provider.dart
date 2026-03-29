@@ -2,7 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:spotiflac_android/models/track.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/providers/local_library_provider.dart';
+import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/services/library_database.dart';
+import 'package:spotiflac_android/providers/streaming_audio_provider.dart';
 import 'package:spotiflac_android/utils/file_access.dart';
 import 'package:spotiflac_android/utils/logger.dart';
 
@@ -16,6 +18,62 @@ class PlaybackController extends Notifier<PlaybackState> {
   @override
   PlaybackState build() => const PlaybackState();
 
+  /// Play a track based on app mode (streaming or download)
+  Future<void> playTrack({
+    required Track track,
+    required String service,
+    List<Track>? playlist,
+    int? playlistStartIndex = 0,
+  }) async {
+    final settings = ref.read(settingsProvider);
+    _log.d('playTrack: ${track.name} (mode: ${settings.appmode})');
+
+    if (settings.appmode == 'stream') {
+      await playStreamingTrack(
+        track: track,
+        service: service,
+        playlist: playlist,
+        playlistStartIndex: playlistStartIndex,
+      );
+    } else {
+      // Download mode - force use internal player for local files
+      _log.d('Download mode: checking for downloaded file');
+      final resolvedPath = await _resolveTrackPath(track);
+      if (resolvedPath != null) {
+        await playStreamingTrack(
+          track: track.copyWith(
+            source: 'local_file',
+            id: resolvedPath, // So JustAudio can play the raw URI
+          ),
+          service: service,
+          playlist: playlist,
+          playlistStartIndex: playlistStartIndex,
+        );
+      } else {
+        _log.w(
+          'No local file found for ${track.name}, cannot play in download mode',
+        );
+      }
+    }
+  }
+
+  /// Play a track in streaming mode using in-app player
+  Future<void> playStreamingTrack({
+    required Track track,
+    required String service,
+    List<Track>? playlist,
+    int? playlistStartIndex = 0,
+  }) async {
+    _log.i('Starting streaming playback for "${track.name}"');
+
+    await ref.read(streamingAudioProvider.notifier).playTrack(
+          track,
+          service,
+          playlist: playlist,
+          playlistStartIndex: playlistStartIndex,
+        );
+  }
+
   Future<void> playLocalPath({
     required String path,
     required String title,
@@ -24,6 +82,9 @@ class PlaybackController extends Notifier<PlaybackState> {
     String coverUrl = '',
     Track? track,
   }) async {
+    if (isCueVirtualPath(path)) {
+      throw Exception(cueVirtualTrackRequiresSplitMessage);
+    }
     _log.d('Opening external player for "$title" by $artist: $path');
     await openFile(path);
   }
@@ -32,9 +93,14 @@ class PlaybackController extends Notifier<PlaybackState> {
     if (tracks.isEmpty) return;
 
     final orderedTracks = _orderedTracksFromStartIndex(tracks, startIndex);
+    var skippedCueVirtualTrack = false;
     for (final track in orderedTracks) {
       final resolvedPath = await _resolveTrackPath(track);
       if (resolvedPath == null) {
+        continue;
+      }
+      if (isCueVirtualPath(resolvedPath)) {
+        skippedCueVirtualTrack = true;
         continue;
       }
 
@@ -44,6 +110,10 @@ class PlaybackController extends Notifier<PlaybackState> {
       );
       await openFile(resolvedPath);
       return;
+    }
+
+    if (skippedCueVirtualTrack) {
+      throw Exception(cueVirtualTrackRequiresSplitMessage);
     }
 
     throw Exception(

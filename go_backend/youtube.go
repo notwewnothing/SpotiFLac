@@ -1,4 +1,3 @@
-// Package gobackend - YouTube download via Cobalt API (lossy-only provider)
 package gobackend
 
 import (
@@ -12,7 +11,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 )
 
 type YouTubeDownloader struct {
@@ -31,6 +29,7 @@ var (
 type YouTubeQuality string
 
 const (
+	YouTubeQualityOpus320 YouTubeQuality = "opus_320"
 	YouTubeQualityOpus256 YouTubeQuality = "opus_256"
 	YouTubeQualityOpus128 YouTubeQuality = "opus_128"
 	YouTubeQualityMP3128  YouTubeQuality = "mp3_128"
@@ -39,7 +38,7 @@ const (
 )
 
 var (
-	youtubeOpusSupportedBitrates = []int{128, 256}
+	youtubeOpusSupportedBitrates = []int{128, 256, 320}
 	youtubeMp3SupportedBitrates  = []int{128, 256, 320}
 )
 
@@ -83,7 +82,7 @@ type YouTubeDownloadResult struct {
 func NewYouTubeDownloader() *YouTubeDownloader {
 	youtubeDownloaderOnce.Do(func() {
 		globalYouTubeDownloader = &YouTubeDownloader{
-			client: NewHTTPClientWithTimeout(120 * time.Second),
+			client: NewHTTPClientWithTimeout(DownloadTimeout),
 			apiURL: "https://api.qwkuns.me",
 		}
 	})
@@ -148,6 +147,8 @@ func parseYouTubeQualityInput(raw string) (format string, bitrate int, normalize
 	switch normalizedRaw {
 	case "opus_256", "opus256", "opus":
 		return "opus", 256, YouTubeQualityOpus256
+	case "opus_320", "opus320":
+		return "opus", 320, YouTubeQualityOpus320
 	case "opus_128", "opus128":
 		return "opus", 128, YouTubeQualityOpus128
 	case "mp3_320", "mp3320", "mp3", "":
@@ -161,7 +162,6 @@ func parseYouTubeQualityInput(raw string) (format string, bitrate int, normalize
 	}
 }
 
-// SearchYouTube returns a YouTube Music search URL for the given track
 func (y *YouTubeDownloader) SearchYouTube(trackName, artistName string) (string, error) {
 	query := fmt.Sprintf("%s %s", artistName, trackName)
 	searchQuery := url.QueryEscape(query)
@@ -213,7 +213,6 @@ func (y *YouTubeDownloader) GetDownloadURL(youtubeURL string, quality YouTubeQua
 	return resp, nil
 }
 
-// requestCobaltDirect sends a download request to the primary Cobalt API.
 func (y *YouTubeDownloader) requestCobaltDirect(videoURL, audioFormat, audioBitrate string) (*CobaltResponse, error) {
 	reqBody := CobaltRequest{
 		URL:             videoURL,
@@ -470,7 +469,6 @@ func BuildYouTubeWatchURL(videoID string) string {
 	return fmt.Sprintf("https://music.youtube.com/watch?v=%s", videoID)
 }
 
-// isYouTubeVideoID checks if s is an 11-char YouTube video ID
 func isYouTubeVideoID(s string) bool {
 	if len(s) != 11 {
 		return false
@@ -515,12 +513,10 @@ func ExtractYouTubeVideoID(urlStr string) (string, error) {
 		return "", fmt.Errorf("invalid URL: %w", err)
 	}
 
-	// /watch?v=
 	if v := parsed.Query().Get("v"); v != "" {
 		return v, nil
 	}
 
-	// /embed/
 	if strings.Contains(parsed.Path, "/embed/") {
 		parts := strings.Split(parsed.Path, "/embed/")
 		if len(parts) >= 2 {
@@ -528,7 +524,6 @@ func ExtractYouTubeVideoID(urlStr string) (string, error) {
 		}
 	}
 
-	// /v/
 	if strings.Contains(parsed.Path, "/v/") {
 		parts := strings.Split(parsed.Path, "/v/")
 		if len(parts) >= 2 {
@@ -707,7 +702,6 @@ func downloadFromYouTube(req DownloadRequest) (YouTubeDownloadResult, error) {
 
 	GoLog("[YouTube] Downloading to: %s\n", outputPath)
 
-	// Parallel fetch cover art + lyrics
 	var parallelResult *ParallelDownloadResult
 	if req.EmbedLyrics || req.CoverURL != "" {
 		GoLog("[YouTube] Starting parallel fetch for cover and lyrics...\n")

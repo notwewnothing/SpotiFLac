@@ -256,6 +256,7 @@ type deezerAlbumFull struct {
 	NbTracks    int    `json:"nb_tracks"`
 	RecordType  string `json:"record_type"`
 	Label       string `json:"label"`
+	Copyright   string `json:"copyright"`
 	Genres      struct {
 		Data []deezerGenre `json:"data"`
 	} `json:"genres"`
@@ -1084,8 +1085,9 @@ func (c *DeezerClient) getBestAlbumImage(album deezerAlbumFull) string {
 }
 
 type AlbumExtendedMetadata struct {
-	Genre string
-	Label string
+	Genre     string
+	Label     string
+	Copyright string
 }
 
 func (c *DeezerClient) GetAlbumExtendedMetadata(ctx context.Context, albumID string) (*AlbumExtendedMetadata, error) {
@@ -1116,8 +1118,9 @@ func (c *DeezerClient) GetAlbumExtendedMetadata(ctx context.Context, albumID str
 	}
 
 	result := &AlbumExtendedMetadata{
-		Genre: strings.Join(genres, ", "),
-		Label: album.Label,
+		Genre:     strings.Join(genres, ", "),
+		Label:     album.Label,
+		Copyright: album.Copyright,
 	}
 
 	c.cacheMu.Lock()
@@ -1129,7 +1132,7 @@ func (c *DeezerClient) GetAlbumExtendedMetadata(ctx context.Context, albumID str
 	c.maybeCleanupCachesLocked(now)
 	c.cacheMu.Unlock()
 
-	GoLog("[Deezer] Album metadata fetched - Genre: %s, Label: %s\n", result.Genre, result.Label)
+	GoLog("[Deezer] Album metadata fetched - Genre: %s, Label: %s, Copyright: %s\n", result.Genre, result.Label, result.Copyright)
 
 	return result, nil
 }

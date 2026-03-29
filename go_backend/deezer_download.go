@@ -120,7 +120,7 @@ func (c *DeezerClient) DownloadFromYoinkify(spotifyURL, outputPath string, outpu
 	req.Header.Set("Accept", "*/*")
 	req.Header.Set("User-Agent", getRandomUserAgent())
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := GetDownloadClient().Do(req)
 	if err != nil {
 		if isDownloadCancelled(itemID) {
 			return ErrDownloadCancelled
@@ -203,34 +203,73 @@ func resolveDeezerTrackURL(req DownloadRequest) (string, error) {
 		}
 	}
 	if deezerID != "" {
-		return fmt.Sprintf("https://www.deezer.com/track/%s", deezerID), nil
+		trackURL := fmt.Sprintf("https://www.deezer.com/track/%s", deezerID)
+		if err := verifyDeezerTrack(req, deezerID); err != nil {
+			GoLog("[Deezer] Direct ID %s verification failed: %v\n", deezerID, err)
+			// Don't reject direct IDs from request payload — they're presumably correct.
+		}
+		return trackURL, nil
 	}
 
-	// Try resolving Deezer ID from Spotify ID via SongLink
+	// Try SongLink
 	spotifyID := strings.TrimSpace(req.SpotifyID)
 	if spotifyID != "" && isLikelySpotifyTrackID(spotifyID) {
 		songlink := NewSongLinkClient()
 		availability, err := songlink.CheckTrackAvailability(spotifyID, "")
 		if err == nil && availability.Deezer && availability.DeezerURL != "" {
-			return availability.DeezerURL, nil
+			resolvedID := extractDeezerIDFromURL(availability.DeezerURL)
+			if resolvedID != "" {
+				if verifyErr := verifyDeezerTrack(req, resolvedID); verifyErr != nil {
+					GoLog("[Deezer] SongLink ID %s rejected: %v\n", resolvedID, verifyErr)
+					// Fall through to ISRC search instead of using wrong track.
+				} else {
+					return availability.DeezerURL, nil
+				}
+			} else {
+				return availability.DeezerURL, nil
+			}
 		}
 	}
 
-	// Try resolving from ISRC
+	// Try ISRC
 	isrc := strings.TrimSpace(req.ISRC)
 	if isrc != "" {
 		ctx, cancel := context.WithTimeout(context.Background(), SongLinkTimeout)
 		defer cancel()
 		track, err := GetDeezerClient().SearchByISRC(ctx, isrc)
 		if err == nil && track != nil {
-			deezerID = songLinkExtractDeezerTrackID(track)
-			if deezerID != "" {
-				return fmt.Sprintf("https://www.deezer.com/track/%s", deezerID), nil
+			resolvedID := songLinkExtractDeezerTrackID(track)
+			if resolvedID != "" {
+				if verifyErr := verifyDeezerTrack(req, resolvedID); verifyErr != nil {
+					GoLog("[Deezer] ISRC-resolved ID %s rejected: %v\n", resolvedID, verifyErr)
+					return "", fmt.Errorf("deezer track resolved via ISRC does not match: %w", verifyErr)
+				}
+				return fmt.Sprintf("https://www.deezer.com/track/%s", resolvedID), nil
 			}
 		}
 	}
 
 	return "", fmt.Errorf("could not resolve Deezer track URL")
+}
+
+func verifyDeezerTrack(req DownloadRequest, deezerID string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), SongLinkTimeout)
+	defer cancel()
+	trackResp, err := GetDeezerClient().GetTrack(ctx, deezerID)
+	if err != nil {
+		return nil // Can't verify — don't block the download.
+	}
+	resolved := resolvedTrackInfo{
+		Title:      trackResp.Track.Name,
+		ArtistName: trackResp.Track.Artists,
+		Duration:   trackResp.Track.DurationMS / 1000,
+	}
+	if !trackMatchesRequest(req, resolved, "Deezer") {
+		return fmt.Errorf("expected '%s - %s', got '%s - %s'",
+			req.ArtistName, req.TrackName, resolved.ArtistName, resolved.Title)
+	}
+	GoLog("[Deezer] Track %s verified: '%s - %s' ✓\n", deezerID, resolved.ArtistName, resolved.Title)
+	return nil
 }
 
 type deezerMusicDLRequest struct {
@@ -324,7 +363,7 @@ func (c *DeezerClient) DownloadFromMusicDL(deezerTrackURL, outputPath string, ou
 	}
 	req.Header.Set("User-Agent", getRandomUserAgent())
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := GetDownloadClient().Do(req)
 	if err != nil {
 		if isDownloadCancelled(itemID) {
 			return ErrDownloadCancelled
@@ -394,11 +433,6 @@ func downloadFromDeezer(req DownloadRequest) (DeezerDownloadResult, error) {
 		}
 	}
 
-	spotifyURL, err := resolveSpotifyURLForYoinkify(req)
-	if err != nil {
-		return DeezerDownloadResult{}, err
-	}
-
 	filename := buildFilenameFromTemplate(req.FilenameFormat, map[string]interface{}{
 		"title":  req.TrackName,
 		"artist": req.ArtistName,
@@ -461,6 +495,17 @@ func downloadFromDeezer(req DownloadRequest) (DeezerDownloadResult, error) {
 	}
 
 	if downloadErr != nil || deezerURLErr != nil {
+		spotifyURL, err := resolveSpotifyURLForYoinkify(req)
+		if err != nil {
+			if deezerURLErr != nil {
+				return DeezerDownloadResult{}, fmt.Errorf(
+					"deezer download failed: direct Deezer resolution error: %v; Yoinkify fallback error: %w",
+					deezerURLErr,
+					err,
+				)
+			}
+			return DeezerDownloadResult{}, err
+		}
 		downloadErr = deezerClient.DownloadFromYoinkify(spotifyURL, outputPath, req.OutputFD, req.ItemID)
 		if downloadErr != nil {
 			if errors.Is(downloadErr, ErrDownloadCancelled) {

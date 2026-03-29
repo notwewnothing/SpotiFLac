@@ -34,7 +34,6 @@ func GetISRCIndex(outputDir string) *ISRCIndex {
 		return idx
 	}
 
-	// Slow path: need to build index
 	// Use per-directory mutex to prevent multiple goroutines from building simultaneously
 	buildLock, _ := isrcBuildingMu.LoadOrStore(outputDir, &sync.Mutex{})
 	mu := buildLock.(*sync.Mutex)

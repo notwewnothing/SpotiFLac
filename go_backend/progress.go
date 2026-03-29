@@ -34,9 +34,15 @@ var (
 	downloadDir   string
 	downloadDirMu sync.RWMutex
 
-	multiProgress = MultiProgress{Items: make(map[string]*ItemProgress)}
-	multiMu       sync.RWMutex
+	multiProgress       = MultiProgress{Items: make(map[string]*ItemProgress)}
+	multiMu             sync.RWMutex
+	multiProgressDirty  = true
+	cachedMultiProgress = "{\"items\":{}}"
 )
+
+func markMultiProgressDirtyLocked() {
+	multiProgressDirty = true
+}
 
 func getProgress() DownloadProgress {
 	multiMu.RLock()
@@ -58,13 +64,25 @@ func getProgress() DownloadProgress {
 
 func GetMultiProgress() string {
 	multiMu.RLock()
-	defer multiMu.RUnlock()
+	if !multiProgressDirty {
+		cached := cachedMultiProgress
+		multiMu.RUnlock()
+		return cached
+	}
+	multiMu.RUnlock()
 
+	multiMu.Lock()
+	defer multiMu.Unlock()
+	if !multiProgressDirty {
+		return cachedMultiProgress
+	}
 	jsonBytes, err := json.Marshal(multiProgress)
 	if err != nil {
 		return "{\"items\":{}}"
 	}
-	return string(jsonBytes)
+	cachedMultiProgress = string(jsonBytes)
+	multiProgressDirty = false
+	return cachedMultiProgress
 }
 
 func GetItemProgress(itemID string) string {
@@ -90,6 +108,7 @@ func StartItemProgress(itemID string) {
 		IsDownloading: true,
 		Status:        "downloading",
 	}
+	markMultiProgressDirtyLocked()
 }
 
 func SetItemBytesTotal(itemID string, total int64) {
@@ -98,6 +117,7 @@ func SetItemBytesTotal(itemID string, total int64) {
 
 	if item, ok := multiProgress.Items[itemID]; ok {
 		item.BytesTotal = total
+		markMultiProgressDirtyLocked()
 	}
 }
 
@@ -110,6 +130,7 @@ func SetItemBytesReceived(itemID string, received int64) {
 		if item.BytesTotal > 0 {
 			item.Progress = float64(received) / float64(item.BytesTotal)
 		}
+		markMultiProgressDirtyLocked()
 	}
 }
 
@@ -123,6 +144,7 @@ func SetItemBytesReceivedWithSpeed(itemID string, received int64, speedMBps floa
 		if item.BytesTotal > 0 {
 			item.Progress = float64(received) / float64(item.BytesTotal)
 		}
+		markMultiProgressDirtyLocked()
 	}
 }
 
@@ -134,6 +156,7 @@ func CompleteItemProgress(itemID string) {
 		item.Progress = 1.0
 		item.IsDownloading = false
 		item.Status = "completed"
+		markMultiProgressDirtyLocked()
 	}
 }
 
@@ -149,6 +172,7 @@ func SetItemProgress(itemID string, progress float64, bytesReceived, bytesTotal 
 		if bytesTotal > 0 {
 			item.BytesTotal = bytesTotal
 		}
+		markMultiProgressDirtyLocked()
 	}
 }
 
@@ -159,6 +183,7 @@ func SetItemFinalizing(itemID string) {
 	if item, ok := multiProgress.Items[itemID]; ok {
 		item.Progress = 1.0
 		item.Status = "finalizing"
+		markMultiProgressDirtyLocked()
 	}
 }
 
@@ -167,6 +192,7 @@ func RemoveItemProgress(itemID string) {
 	defer multiMu.Unlock()
 
 	delete(multiProgress.Items, itemID)
+	markMultiProgressDirtyLocked()
 }
 
 func ClearAllItemProgress() {
@@ -174,6 +200,7 @@ func ClearAllItemProgress() {
 	defer multiMu.Unlock()
 
 	multiProgress.Items = make(map[string]*ItemProgress)
+	markMultiProgressDirtyLocked()
 }
 
 func setDownloadDir(path string) error {

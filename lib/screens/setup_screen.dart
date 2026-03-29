@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/l10n/l10n.dart';
+
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/utils/file_access.dart';
 
@@ -22,7 +23,6 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
   final PageController _pageController = PageController();
   int _currentStep = 0;
 
-  // State variables
   bool _storagePermissionGranted = false;
   bool _notificationPermissionGranted = false;
   String? _selectedDirectory;
@@ -30,7 +30,15 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
   bool _isLoading = false;
   int _androidSdkVersion = 0;
 
-  int get _totalSteps => _androidSdkVersion >= 33 ? 4 : 3;
+  int get _totalSteps {
+    // Welcome + Storage + Directory = 3 steps minimum
+    // Android 13+ adds Notification step = 4 steps
+    // Linux/macOS/Windows: No notification permission needed, just 3 steps
+    if (Platform.isAndroid && _androidSdkVersion >= 33) {
+      return 4;
+    }
+    return 3;
+  }
 
   @override
   void initState() {
@@ -92,6 +100,14 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
           _notificationPermissionGranted = notificationStatus.isGranted;
         });
       }
+    } else {
+      // Linux, macOS, Windows: Direct file system access, no permission system needed
+      if (mounted) {
+        setState(() {
+          _storagePermissionGranted = true;
+          _notificationPermissionGranted = true;
+        });
+      }
     }
   }
 
@@ -140,6 +156,9 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
             SnackBar(content: Text(context.l10n.setupPermissionDeniedMessage)),
           );
         }
+      } else {
+        // Linux, macOS, Windows: Direct file system access, automatically granted
+        setState(() => _storagePermissionGranted = true);
       }
     } catch (e) {
       debugPrint('Permission error: $e');
@@ -226,7 +245,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
     try {
       if (Platform.isIOS) {
         await _showIOSDirectoryOptions();
-      } else {
+      } else if (Platform.isAndroid) {
         final result = await PlatformBridge.pickSafTree();
         if (result != null) {
           final treeUri = result['tree_uri'] as String? ?? '';
@@ -271,6 +290,15 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
               });
             }
           }
+        }
+      } else {
+        // Linux, macOS, Windows: Use FilePicker
+        final result = await FilePicker.platform.getDirectoryPath();
+        if (result != null) {
+          setState(() {
+            _selectedDirectory = result;
+            _selectedTreeUri = '';
+          });
         }
       }
     } finally {
@@ -322,7 +350,26 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
               title: Text(context.l10n.setupChooseFromFiles),
               onTap: () async {
                 Navigator.pop(ctx);
-                final result = await FilePicker.platform.getDirectoryPath();
+                if (Platform.isIOS) {
+                  await Future<void>.delayed(const Duration(milliseconds: 250));
+                }
+
+                String? result;
+                try {
+                  result = await FilePicker.platform.getDirectoryPath();
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to open folder picker: $e'),
+                        backgroundColor: Theme.of(context).colorScheme.error,
+                        duration: const Duration(seconds: 4),
+                      ),
+                    );
+                  }
+                  return;
+                }
+
                 if (result != null) {
                   // iOS: Validate the selected path is writable
                   if (Platform.isIOS) {
@@ -474,7 +521,6 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    // Calculate progress
     final progress = (_currentStep + 1) / _totalSteps;
 
     return Scaffold(
@@ -482,7 +528,6 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Top Bar
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               child: Row(
@@ -490,6 +535,9 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
                   if (_currentStep > 0)
                     IconButton.filledTonal(
                       onPressed: _prevPage,
+                      tooltip: MaterialLocalizations.of(
+                        context,
+                      ).backButtonTooltip,
                       icon: const Icon(Icons.arrow_back),
                       style: IconButton.styleFrom(
                         backgroundColor: colorScheme.surfaceContainerHighest,
@@ -497,9 +545,8 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
                       ),
                     )
                   else
-                    const SizedBox(width: 48), // Spacer
+                    const SizedBox(width: 48),
                   const Spacer(),
-                  // Progress Indicator
                   SizedBox(
                     width: 48,
                     height: 48,
@@ -530,7 +577,6 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
               ),
             ),
 
-            // Content
             Expanded(
               child: PageView(
                 controller: _pageController,
@@ -713,6 +759,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 trailing: IconButton(
+                  tooltip: 'Change folder',
                   icon: const Icon(Icons.edit),
                   onPressed: _selectDirectory,
                 ),

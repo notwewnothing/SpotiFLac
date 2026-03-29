@@ -104,7 +104,6 @@ func upgradeDeezerCover(coverURL string) string {
 		return coverURL
 	}
 
-	// Replace any size pattern with 1800x1800
 	upgraded := deezerSizeRegex.ReplaceAllString(coverURL, "/1800x1800-000000-80-0-0.jpg")
 	if upgraded != coverURL {
 		GoLog("[Cover] Deezer: upgraded to 1800x1800")

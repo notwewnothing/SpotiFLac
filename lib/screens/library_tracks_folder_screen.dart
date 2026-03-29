@@ -12,6 +12,7 @@ import 'package:spotiflac_android/providers/library_collections_provider.dart';
 import 'package:spotiflac_android/providers/local_library_provider.dart';
 import 'package:spotiflac_android/services/library_database.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
+import 'package:spotiflac_android/providers/streaming_audio_provider.dart';
 import 'package:spotiflac_android/services/cover_cache_manager.dart';
 import 'package:spotiflac_android/screens/track_metadata_screen.dart';
 import 'package:spotiflac_android/widgets/download_service_picker.dart';
@@ -37,9 +38,9 @@ class _LibraryTracksFolderScreenState
   bool _showTitleInAppBar = false;
   final ScrollController _scrollController = ScrollController();
 
-  // ── Multi-select state ──
   bool _isSelectionMode = false;
   final Set<String> _selectedKeys = {};
+  UserPlaylistCollection? playlist;
 
   @override
   void initState() {
@@ -145,8 +146,6 @@ class _LibraryTracksFolderScreenState
     return url;
   }
 
-  // ── Selection helpers ──
-
   void _enterSelectionMode(String key) {
     HapticFeedback.mediumImpact();
     setState(() {
@@ -180,8 +179,6 @@ class _LibraryTracksFolderScreenState
       _selectedKeys.addAll(entries.map((e) => e.key));
     });
   }
-
-  // ── Batch actions ──
 
   Future<void> _removeSelected(List<CollectionTrackEntry> entries) async {
     final keysToRemove = _selectedKeys.toSet();
@@ -248,7 +245,6 @@ class _LibraryTracksFolderScreenState
     final colorScheme = Theme.of(context).colorScheme;
     ref.watch(localLibraryProvider.select((s) => s.items));
     final localState = ref.read(localLibraryProvider);
-    final UserPlaylistCollection? playlist;
     final List<CollectionTrackEntry> entries;
 
     switch (widget.mode) {
@@ -426,7 +422,6 @@ class _LibraryTracksFolderScreenState
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Drag handle
               Container(
                 width: 32,
                 height: 4,
@@ -437,11 +432,13 @@ class _LibraryTracksFolderScreenState
                 ),
               ),
 
-              // Header: [X close] [count] [Select All / Deselect]
               Row(
                 children: [
                   IconButton.filledTonal(
                     onPressed: _exitSelectionMode,
+                    tooltip: MaterialLocalizations.of(
+                      context,
+                    ).closeButtonTooltip,
                     icon: const Icon(Icons.close),
                     style: IconButton.styleFrom(
                       backgroundColor: colorScheme.surfaceContainerHighest,
@@ -493,7 +490,6 @@ class _LibraryTracksFolderScreenState
 
               const SizedBox(height: 12),
 
-              // Action buttons row
               Row(
                 children: [
                   if (isWishlist)
@@ -525,7 +521,6 @@ class _LibraryTracksFolderScreenState
 
               const SizedBox(height: 8),
 
-              // Remove button (full width, red)
               SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
@@ -714,7 +709,6 @@ class _LibraryTracksFolderScreenState
                         )
                 else
                   coverFallback,
-                // Bottom gradient for readability
                 Positioned(
                   left: 0,
                   right: 0,
@@ -733,7 +727,6 @@ class _LibraryTracksFolderScreenState
                     ),
                   ),
                 ),
-                // Title and track count overlay
                 Positioned(
                   left: 20,
                   right: 20,
@@ -811,6 +804,9 @@ class _LibraryTracksFolderScreenState
         },
       ),
       leading: IconButton(
+        tooltip: _isSelectionMode
+            ? MaterialLocalizations.of(context).closeButtonTooltip
+            : MaterialLocalizations.of(context).backButtonTooltip,
         icon: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
@@ -829,16 +825,28 @@ class _LibraryTracksFolderScreenState
     );
   }
 
-  // ── Header actions ──
-
-  Widget _buildHeaderActionPlaceholder() => const SizedBox(width: 48, height: 48);
+  Widget _buildHeaderActionPlaceholder() =>
+      const SizedBox(width: 48, height: 48);
 
   Widget _buildDownloadAllCenterButton(List<CollectionTrackEntry> entries) {
     final tracks = entries.map((e) => e.track).toList(growable: false);
+    final settings = ref.watch(settingsProvider);
+    final isStreamMode = settings.appmode == 'stream';
+
     return FilledButton.icon(
-      onPressed: tracks.isEmpty ? null : () => _confirmDownloadAll(tracks),
-      icon: const Icon(Icons.download_rounded, size: 18),
-      label: Text(context.l10n.downloadAllCount(tracks.length)),
+      onPressed: tracks.isEmpty ? null : () {
+        if (isStreamMode) {
+          ref.read(streamingAudioProvider.notifier).playTrack(
+            tracks.first,
+            settings.defaultService,
+            playlist: tracks,
+          );
+        } else {
+          _confirmDownloadAll(tracks);
+        }
+      },
+      icon: Icon(isStreamMode ? Icons.play_arrow_rounded : Icons.download_rounded, size: 18),
+      label: Text(isStreamMode ? "Play All" : context.l10n.downloadAllCount(tracks.length)),
       style: FilledButton.styleFrom(
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
@@ -856,8 +864,8 @@ class _LibraryTracksFolderScreenState
         final colorScheme = Theme.of(dialogContext).colorScheme;
         return AlertDialog(
           backgroundColor: colorScheme.surfaceContainerHigh,
-          title: const Text('Download All'),
-          content: Text('Download ${tracks.length} tracks?'),
+          title: Text(context.l10n.dialogDownloadAllTitle),
+          content: Text(context.l10n.dialogDownloadAllMessage(tracks.length)),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
@@ -868,7 +876,7 @@ class _LibraryTracksFolderScreenState
                 Navigator.pop(dialogContext);
                 _downloadAll(tracks);
               },
-              child: const Text('Download'),
+              child: Text(context.l10n.dialogDownload),
             ),
           ],
         );
@@ -879,6 +887,7 @@ class _LibraryTracksFolderScreenState
   void _downloadAll(List<Track> tracks) {
     if (tracks.isEmpty) return;
     final settings = ref.read(settingsProvider);
+    final playlistName = widget.mode == LibraryTracksFolderMode.playlist ? playlist?.name ?? context.l10n.collectionPlaylist : null;
     if (settings.askQualityBeforeDownload) {
       DownloadServicePicker.show(
         context,
@@ -891,7 +900,7 @@ class _LibraryTracksFolderScreenState
         onSelect: (quality, service) {
           ref
               .read(downloadQueueProvider.notifier)
-              .addMultipleToQueue(tracks, service, qualityOverride: quality);
+              .addMultipleToQueue(tracks, service, qualityOverride: quality, playlistName: playlistName);
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -905,7 +914,7 @@ class _LibraryTracksFolderScreenState
     } else {
       ref
           .read(downloadQueueProvider.notifier)
-          .addMultipleToQueue(tracks, settings.defaultService);
+          .addMultipleToQueue(tracks, settings.defaultService, playlistName: playlistName);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(context.l10n.snackbarAddedTracksToQueue(tracks.length)),
@@ -1152,6 +1161,7 @@ class _CollectionTrackTile extends ConsumerWidget {
           trailing: isSelectionMode
               ? null
               : IconButton(
+                  tooltip: MaterialLocalizations.of(context).showMenuTooltip,
                   icon: Icon(
                     Icons.more_vert,
                     color: colorScheme.onSurfaceVariant,
@@ -1263,7 +1273,6 @@ class _CollectionTrackTile extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Header: drag handle + cover + track info
             Column(
               children: [
                 const SizedBox(height: 8),

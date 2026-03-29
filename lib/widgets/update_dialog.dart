@@ -157,7 +157,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _VersionChip(version: AppInfo.version, label: context.l10n.updateCurrent, colorScheme: colorScheme),
+                  _VersionChip(version: AppInfo.displayVersion, label: context.l10n.updateCurrent, colorScheme: colorScheme),
                   const SizedBox(width: 12),
                   Icon(Icons.arrow_forward_rounded, size: 20, color: colorScheme.primary),
                   const SizedBox(width: 12),

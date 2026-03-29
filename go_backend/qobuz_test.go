@@ -2,6 +2,95 @@ package gobackend
 
 import "testing"
 
+func TestParseQobuzURL(t *testing.T) {
+	tests := []struct {
+		name      string
+		input     string
+		wantType  string
+		wantID    string
+		expectErr bool
+	}{
+		{
+			name:     "store album url",
+			input:    "https://www.qobuz.com/us-en/album/harry-styles-harry-styles/0886446451985",
+			wantType: "album",
+			wantID:   "0886446451985",
+		},
+		{
+			name:     "store playlist url",
+			input:    "https://www.qobuz.com/us-en/playlists/new-releases/2049430",
+			wantType: "playlist",
+			wantID:   "2049430",
+		},
+		{
+			name:     "store artist url",
+			input:    "https://www.qobuz.com/us-en/interpreter/harry-styles/729886",
+			wantType: "artist",
+			wantID:   "729886",
+		},
+		{
+			name:     "play track url",
+			input:    "https://play.qobuz.com/track/40681594",
+			wantType: "track",
+			wantID:   "40681594",
+		},
+		{
+			name:     "custom scheme playlist url",
+			input:    "qobuzapp://playlist/2049430",
+			wantType: "playlist",
+			wantID:   "2049430",
+		},
+		{
+			name:      "unsupported url",
+			input:     "https://example.com/not-qobuz",
+			expectErr: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			gotType, gotID, err := parseQobuzURL(test.input)
+			if test.expectErr {
+				if err == nil {
+					t.Fatalf("expected error, got none")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
+			if gotType != test.wantType || gotID != test.wantID {
+				t.Fatalf("parseQobuzURL(%q) = (%q, %q), want (%q, %q)", test.input, gotType, gotID, test.wantType, test.wantID)
+			}
+		})
+	}
+}
+
+func TestExtractQobuzArtistAlbumIDs(t *testing.T) {
+	body := []byte(`
+<div class="product__item">
+  <button data-itemtype="album" data-itemId="yrpbt0lwm3g0y"></button>
+</div>
+<div class="product__item">
+  <button data-itemtype="album" data-itemId="yrpbt0lwm3g0y"></button>
+</div>
+<div class="product__item">
+  <button data-itemtype="album" data-itemId="0886446451985"></button>
+</div>
+`)
+
+	matches := qobuzArtistAlbumIDRegex.FindAllSubmatch(body, -1)
+	if len(matches) != 3 {
+		t.Fatalf("expected 3 regex matches, got %d", len(matches))
+	}
+	if string(matches[0][1]) != "yrpbt0lwm3g0y" {
+		t.Fatalf("unexpected first album id: %q", matches[0][1])
+	}
+	if string(matches[2][1]) != "0886446451985" {
+		t.Fatalf("unexpected last album id: %q", matches[2][1])
+	}
+}
+
 func TestExtractQobuzDownloadURLFromBody(t *testing.T) {
 	t.Run("reads top-level download_url and quality metadata", func(t *testing.T) {
 		body := []byte(`{"success":true,"download_url":"https://example.test/new.flac","bit_depth":24,"sampling_rate":96}`)
@@ -106,16 +195,34 @@ func TestGetQobuzDebugKey(t *testing.T) {
 	}
 }
 
+func TestExtractQobuzAlbumIDsFromArtistHTML(t *testing.T) {
+	body := []byte(`
+		<button data-itemtype="album" data-itemId="0886446451985"></button>
+		<button data-itemtype="album" data-itemId="0886446451985"></button>
+		<button data-itemtype="album" data-itemId="pvv406bth40ya"></button>
+	`)
+
+	got := extractQobuzAlbumIDsFromArtistHTML(body)
+	if len(got) != 2 {
+		t.Fatalf("expected 2 unique album IDs, got %d (%v)", len(got), got)
+	}
+	if got[0] != "0886446451985" || got[1] != "pvv406bth40ya" {
+		t.Fatalf("unexpected album IDs: %v", got)
+	}
+}
+
 func TestQobuzAvailableProviders(t *testing.T) {
 	providers := NewQobuzDownloader().GetAvailableProviders()
-	if len(providers) != 3 {
-		t.Fatalf("expected 3 Qobuz providers, got %d", len(providers))
+	if len(providers) != 5 {
+		t.Fatalf("expected 5 Qobuz providers, got %d", len(providers))
 	}
 
 	want := map[string]string{
 		"musicdl":  qobuzAPIKindMusicDL,
 		"dabmusic": qobuzAPIKindStandard,
 		"deeb":     qobuzAPIKindStandard,
+		"qbz":      qobuzAPIKindStandard,
+		"squid":    qobuzAPIKindStandard,
 	}
 
 	for _, provider := range providers {
@@ -131,5 +238,176 @@ func TestQobuzAvailableProviders(t *testing.T) {
 
 	if len(want) != 0 {
 		t.Fatalf("missing providers: %v", want)
+	}
+}
+
+func testQobuzTrack(id int64, title, artist string, duration int) *QobuzTrack {
+	track := &QobuzTrack{
+		ID:       id,
+		Title:    title,
+		Duration: duration,
+	}
+	track.Performer.Name = artist
+	return track
+}
+
+func TestResolveQobuzTrackForRequestRejectsSongLinkMismatch(t *testing.T) {
+	origGetTrackByID := qobuzGetTrackByIDFunc
+	origSearchISRC := qobuzSearchTrackByISRCWithDurationFunc
+	origSearchMetadata := qobuzSearchTrackByMetadataWithDurationFunc
+	origSongLinkCheck := songLinkCheckTrackAvailabilityFunc
+	t.Cleanup(func() {
+		qobuzGetTrackByIDFunc = origGetTrackByID
+		qobuzSearchTrackByISRCWithDurationFunc = origSearchISRC
+		qobuzSearchTrackByMetadataWithDurationFunc = origSearchMetadata
+		songLinkCheckTrackAvailabilityFunc = origSongLinkCheck
+		GetTrackIDCache().Clear()
+	})
+	GetTrackIDCache().Clear()
+
+	qobuzGetTrackByIDFunc = func(_ *QobuzDownloader, trackID int64) (*QobuzTrack, error) {
+		if trackID != 111 {
+			t.Fatalf("unexpected track ID lookup: %d", trackID)
+		}
+		return testQobuzTrack(111, "Aperture", "Harry Styles", 180), nil
+	}
+	qobuzSearchTrackByISRCWithDurationFunc = func(_ *QobuzDownloader, isrc string, expectedDurationSec int) (*QobuzTrack, error) {
+		if isrc != "TESTISRC1" {
+			t.Fatalf("unexpected ISRC lookup: %q", isrc)
+		}
+		if expectedDurationSec != 180 {
+			t.Fatalf("unexpected duration: %d", expectedDurationSec)
+		}
+		return testQobuzTrack(222, "Taste Back", "Harry Styles", 180), nil
+	}
+	qobuzSearchTrackByMetadataWithDurationFunc = func(_ *QobuzDownloader, _, _ string, _ int) (*QobuzTrack, error) {
+		t.Fatal("metadata fallback should not run when ISRC fallback succeeds")
+		return nil, nil
+	}
+	songLinkCheckTrackAvailabilityFunc = func(_ *SongLinkClient, spotifyTrackID string, isrc string) (*TrackAvailability, error) {
+		if spotifyTrackID != "spotify-track-id" {
+			t.Fatalf("unexpected spotify ID: %q", spotifyTrackID)
+		}
+		if isrc != "TESTISRC1" {
+			t.Fatalf("unexpected SongLink ISRC: %q", isrc)
+		}
+		return &TrackAvailability{QobuzID: "111"}, nil
+	}
+
+	req := DownloadRequest{
+		ISRC:       "TESTISRC1",
+		SpotifyID:  "spotify-track-id",
+		TrackName:  "Taste Back",
+		ArtistName: "Harry Styles",
+		DurationMS: 180000,
+	}
+
+	track, err := resolveQobuzTrackForRequest(req, &QobuzDownloader{}, "Test")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if track == nil || track.ID != 222 || track.Title != "Taste Back" {
+		t.Fatalf("unexpected resolved track: %+v", track)
+	}
+
+	cached := GetTrackIDCache().Get(req.ISRC)
+	if cached == nil || cached.QobuzTrackID != 222 {
+		t.Fatalf("expected validated fallback track to be cached, got %+v", cached)
+	}
+}
+
+func TestResolveQobuzTrackForRequestRejectsOdesliMismatch(t *testing.T) {
+	origGetTrackByID := qobuzGetTrackByIDFunc
+	origSearchISRC := qobuzSearchTrackByISRCWithDurationFunc
+	origSearchMetadata := qobuzSearchTrackByMetadataWithDurationFunc
+	origSongLinkCheck := songLinkCheckTrackAvailabilityFunc
+	t.Cleanup(func() {
+		qobuzGetTrackByIDFunc = origGetTrackByID
+		qobuzSearchTrackByISRCWithDurationFunc = origSearchISRC
+		qobuzSearchTrackByMetadataWithDurationFunc = origSearchMetadata
+		songLinkCheckTrackAvailabilityFunc = origSongLinkCheck
+	})
+
+	qobuzGetTrackByIDFunc = func(_ *QobuzDownloader, trackID int64) (*QobuzTrack, error) {
+		if trackID != 333 {
+			t.Fatalf("unexpected track ID lookup: %d", trackID)
+		}
+		return testQobuzTrack(333, "American Girls", "Harry Styles", 181), nil
+	}
+	qobuzSearchTrackByISRCWithDurationFunc = func(_ *QobuzDownloader, _ string, _ int) (*QobuzTrack, error) {
+		t.Fatal("ISRC fallback should not run without an ISRC")
+		return nil, nil
+	}
+	qobuzSearchTrackByMetadataWithDurationFunc = func(_ *QobuzDownloader, trackName, artistName string, expectedDurationSec int) (*QobuzTrack, error) {
+		if trackName != "Taste Back" || artistName != "Harry Styles" || expectedDurationSec != 181 {
+			t.Fatalf("unexpected metadata fallback arguments: %q / %q / %d", trackName, artistName, expectedDurationSec)
+		}
+		return testQobuzTrack(444, "Taste Back", "Harry Styles", 181), nil
+	}
+	songLinkCheckTrackAvailabilityFunc = func(_ *SongLinkClient, _, _ string) (*TrackAvailability, error) {
+		t.Fatal("SongLink should not run when Odesli QobuzID is provided")
+		return nil, nil
+	}
+
+	req := DownloadRequest{
+		QobuzID:    "333",
+		TrackName:  "Taste Back",
+		ArtistName: "Harry Styles",
+		DurationMS: 181000,
+	}
+
+	track, err := resolveQobuzTrackForRequest(req, &QobuzDownloader{}, "Test")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if track == nil || track.ID != 444 || track.Title != "Taste Back" {
+		t.Fatalf("unexpected resolved track: %+v", track)
+	}
+}
+
+func TestResolveQobuzTrackForRequestUsesPrefixedQobuzIDWithoutSongLink(t *testing.T) {
+	origGetTrackByID := qobuzGetTrackByIDFunc
+	origSearchISRC := qobuzSearchTrackByISRCWithDurationFunc
+	origSearchMetadata := qobuzSearchTrackByMetadataWithDurationFunc
+	origSongLinkCheck := songLinkCheckTrackAvailabilityFunc
+	t.Cleanup(func() {
+		qobuzGetTrackByIDFunc = origGetTrackByID
+		qobuzSearchTrackByISRCWithDurationFunc = origSearchISRC
+		qobuzSearchTrackByMetadataWithDurationFunc = origSearchMetadata
+		songLinkCheckTrackAvailabilityFunc = origSongLinkCheck
+	})
+
+	qobuzGetTrackByIDFunc = func(_ *QobuzDownloader, trackID int64) (*QobuzTrack, error) {
+		if trackID != 40681594 {
+			t.Fatalf("unexpected track ID lookup: %d", trackID)
+		}
+		return testQobuzTrack(40681594, "Sign of the Times", "Harry Styles", 341), nil
+	}
+	qobuzSearchTrackByISRCWithDurationFunc = func(_ *QobuzDownloader, _ string, _ int) (*QobuzTrack, error) {
+		t.Fatal("ISRC fallback should not run when request qobuz id succeeds")
+		return nil, nil
+	}
+	qobuzSearchTrackByMetadataWithDurationFunc = func(_ *QobuzDownloader, _, _ string, _ int) (*QobuzTrack, error) {
+		t.Fatal("metadata fallback should not run when request qobuz id succeeds")
+		return nil, nil
+	}
+	songLinkCheckTrackAvailabilityFunc = func(_ *SongLinkClient, _, _ string) (*TrackAvailability, error) {
+		t.Fatal("SongLink should not run when request qobuz id is provided")
+		return nil, nil
+	}
+
+	req := DownloadRequest{
+		QobuzID:    "qobuz:40681594",
+		TrackName:  "Sign of the Times",
+		ArtistName: "Harry Styles",
+		DurationMS: 341000,
+	}
+
+	track, err := resolveQobuzTrackForRequest(req, &QobuzDownloader{}, "Test")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if track == nil || track.ID != 40681594 {
+		t.Fatalf("unexpected resolved track: %+v", track)
 	}
 }

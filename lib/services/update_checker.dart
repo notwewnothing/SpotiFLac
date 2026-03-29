@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:spotiflac_android/constants/app_info.dart';
 import 'package:spotiflac_android/utils/logger.dart';
+import 'package:spotiflac_android/utils/platform_spoof.dart' as platform;
 
 final _log = AppLogger('UpdateChecker');
 
@@ -24,20 +25,24 @@ class UpdateInfo {
 }
 
 class UpdateChecker {
-  static const String _latestApiUrl = 'https://api.github.com/repos/${AppInfo.githubRepo}/releases/latest';
-  static const String _allReleasesApiUrl = 'https://api.github.com/repos/${AppInfo.githubRepo}/releases';
+  static const String _latestApiUrl =
+      'https://api.github.com/repos/${AppInfo.githubRepo}/releases/latest';
+  static const String _allReleasesApiUrl =
+      'https://api.github.com/repos/${AppInfo.githubRepo}/releases';
 
   /// Check for updates based on channel preference
   /// [channel] can be 'stable' or 'preview'
   static Future<UpdateInfo?> checkForUpdate({String channel = 'stable'}) async {
     try {
       Map<String, dynamic>? releaseData;
-      
+
       if (channel == 'preview') {
-        final response = await http.get(
-          Uri.parse('$_allReleasesApiUrl?per_page=10'),
-          headers: {'Accept': 'application/vnd.github.v3+json'},
-        ).timeout(const Duration(seconds: 10));
+        final response = await http
+            .get(
+              Uri.parse('$_allReleasesApiUrl?per_page=10'),
+              headers: {'Accept': 'application/vnd.github.v3+json'},
+            )
+            .timeout(const Duration(seconds: 10));
 
         if (response.statusCode != 200) {
           _log.w('GitHub API returned ${response.statusCode}');
@@ -49,13 +54,15 @@ class UpdateChecker {
           _log.i('No releases found');
           return null;
         }
-        
+
         releaseData = releases.first as Map<String, dynamic>;
       } else {
-        final response = await http.get(
-          Uri.parse(_latestApiUrl),
-          headers: {'Accept': 'application/vnd.github.v3+json'},
-        ).timeout(const Duration(seconds: 10));
+        final response = await http
+            .get(
+              Uri.parse(_latestApiUrl),
+              headers: {'Accept': 'application/vnd.github.v3+json'},
+            )
+            .timeout(const Duration(seconds: 10));
 
         if (response.statusCode != 200) {
           _log.w('GitHub API returned ${response.statusCode}');
@@ -68,19 +75,24 @@ class UpdateChecker {
       final tagName = releaseData['tag_name'] as String? ?? '';
       final latestVersion = tagName.replaceFirst('v', '');
       final isPrerelease = releaseData['prerelease'] as bool? ?? false;
-      
+
       if (!_isNewerVersion(latestVersion, AppInfo.version)) {
-        _log.i('No update available (current: ${AppInfo.version}, latest: $latestVersion, channel: $channel)');
+        _log.i(
+          'No update available (current: ${AppInfo.version}, latest: $latestVersion, channel: $channel)',
+        );
         return null;
       }
 
       final body = releaseData['body'] as String? ?? 'No changelog available';
-      final htmlUrl = releaseData['html_url'] as String? ?? '${AppInfo.githubUrl}/releases';
-      final publishedAt = DateTime.tryParse(releaseData['published_at'] as String? ?? '') ?? DateTime.now();
+      final htmlUrl =
+          releaseData['html_url'] as String? ?? '${AppInfo.githubUrl}/releases';
+      final publishedAt =
+          DateTime.tryParse(releaseData['published_at'] as String? ?? '') ??
+          DateTime.now();
 
       String? arm64Url;
       String? universalUrl;
-      
+
       final assets = releaseData['assets'] as List<dynamic>? ?? [];
       for (final asset in assets) {
         final name = (asset['name'] as String? ?? '').toLowerCase();
@@ -98,12 +110,14 @@ class UpdateChecker {
           }
         }
       }
-      
+
       // Only arm64 is supported; fall back to universal if available
       final apkUrl = arm64Url ?? universalUrl;
 
-      _log.i('Update available: $latestVersion (prerelease: $isPrerelease), APK URL: $apkUrl');
-      
+      _log.i(
+        'Update available: $latestVersion (prerelease: $isPrerelease), APK URL: $apkUrl',
+      );
+
       return UpdateInfo(
         version: latestVersion,
         changelog: body,
@@ -122,7 +136,7 @@ class UpdateChecker {
     try {
       final latestBase = latest.split('-').first;
       final currentBase = current.split('-').first;
-      
+
       final latestParts = latestBase.split('.').map(int.parse).toList();
       final currentParts = currentBase.split('.').map(int.parse).toList();
 
@@ -137,12 +151,12 @@ class UpdateChecker {
         if (latestParts[i] > currentParts[i]) return true;
         if (latestParts[i] < currentParts[i]) return false;
       }
-      
+
       final latestHasSuffix = latest.contains('-');
       final currentHasSuffix = current.contains('-');
-      
+
       if (!latestHasSuffix && currentHasSuffix) return true;
-      
+
       return false;
     } catch (e) {
       _log.e('Error comparing versions: $e');

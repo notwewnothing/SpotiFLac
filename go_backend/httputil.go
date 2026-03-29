@@ -31,7 +31,7 @@ func getRandomUserAgent() string {
 
 const (
 	DefaultTimeout    = 60 * time.Second
-	DownloadTimeout   = 120 * time.Second
+	DownloadTimeout   = 24 * time.Hour
 	SongLinkTimeout   = 30 * time.Second
 	DefaultMaxRetries = 3
 	DefaultRetryDelay = 1 * time.Second
@@ -350,7 +350,7 @@ func calculateNextDelay(currentDelay time.Duration, config RetryConfig) time.Dur
 func getRetryAfterDuration(resp *http.Response) time.Duration {
 	retryAfter := resp.Header.Get("Retry-After")
 	if retryAfter == "" {
-		return 60 * time.Second // Default wait time
+		return 60 * time.Second
 	}
 
 	if seconds, err := strconv.Atoi(retryAfter); err == nil {
@@ -364,7 +364,7 @@ func getRetryAfterDuration(resp *http.Response) time.Duration {
 		}
 	}
 
-	return 60 * time.Second // Default
+	return 60 * time.Second
 }
 
 func ReadResponseBody(resp *http.Response) ([]byte, error) {
@@ -489,7 +489,6 @@ func IsISPBlocking(err error, requestURL string) *ISPBlockingError {
 		}
 	}
 
-	// Check error message patterns for common ISP blocking indicators
 	blockingPatterns := []struct {
 		pattern string
 		reason  string
@@ -532,7 +531,6 @@ func CheckAndLogISPBlocking(err error, requestURL string, tag string) bool {
 	return false
 }
 
-// extractDomain extracts the domain from a URL string
 func extractDomain(rawURL string) string {
 	if rawURL == "" {
 		return "unknown"

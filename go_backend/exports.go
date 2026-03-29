@@ -32,126 +32,6 @@ func ParseSpotifyURL(url string) (string, error) {
 	return string(jsonBytes), nil
 }
 
-func SetSpotifyAPICredentials(clientID, clientSecret string) {
-	SetSpotifyCredentials(clientID, clientSecret)
-}
-
-func CheckSpotifyCredentials() bool {
-	return HasSpotifyCredentials()
-}
-
-func GetSpotifyMetadata(spotifyURL string) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	client, err := NewSpotifyMetadataClient()
-	if err != nil {
-		if shouldTrySpotFetchFallback(err) {
-			data, apiErr := GetSpotifyDataWithAPI(ctx, spotifyURL, DefaultSpotFetchAPIBaseURL)
-			if apiErr == nil {
-				jsonBytes, marshalErr := json.Marshal(data)
-				if marshalErr != nil {
-					return "", marshalErr
-				}
-				return string(jsonBytes), nil
-			}
-		}
-		return "", err
-	}
-	data, err := client.GetFilteredData(ctx, spotifyURL, false, 0)
-	if err != nil {
-		if shouldTrySpotFetchFallback(err) {
-			fallbackData, apiErr := GetSpotifyDataWithAPI(ctx, spotifyURL, DefaultSpotFetchAPIBaseURL)
-			if apiErr == nil {
-				jsonBytes, marshalErr := json.Marshal(fallbackData)
-				if marshalErr != nil {
-					return "", marshalErr
-				}
-				return string(jsonBytes), nil
-			}
-		}
-		return "", err
-	}
-
-	jsonBytes, err := json.Marshal(data)
-	if err != nil {
-		return "", err
-	}
-
-	return string(jsonBytes), nil
-}
-
-func SearchSpotify(query string, limit int) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-
-	client, err := NewSpotifyMetadataClient()
-	if err != nil {
-		return "", err
-	}
-	results, err := client.SearchTracks(ctx, query, limit)
-	if err != nil {
-		return "", err
-	}
-
-	jsonBytes, err := json.Marshal(results)
-	if err != nil {
-		return "", err
-	}
-
-	return string(jsonBytes), nil
-}
-
-func SearchSpotifyAll(query string, trackLimit, artistLimit int) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-
-	client, err := NewSpotifyMetadataClient()
-	if err != nil {
-		return "", err
-	}
-	results, err := client.SearchAll(ctx, query, trackLimit, artistLimit)
-	if err != nil {
-		return "", err
-	}
-
-	jsonBytes, err := json.Marshal(results)
-	if err != nil {
-		return "", err
-	}
-
-	return string(jsonBytes), nil
-}
-
-func GetSpotifyRelatedArtists(artistID string, limit int) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
-
-	client, err := NewSpotifyMetadataClient()
-	if err != nil {
-		return "", err
-	}
-
-	normalizedArtistID := strings.TrimSpace(strings.TrimPrefix(artistID, "spotify:"))
-	if normalizedArtistID == "" {
-		return "", fmt.Errorf("invalid Spotify artist ID")
-	}
-
-	artists, err := client.GetRelatedArtists(ctx, normalizedArtistID, limit)
-	if err != nil {
-		return "", err
-	}
-
-	resp := map[string]interface{}{
-		"artists": artists,
-	}
-	jsonBytes, err := json.Marshal(resp)
-	if err != nil {
-		return "", err
-	}
-	return string(jsonBytes), nil
-}
-
 func CheckAvailability(spotifyID, isrc string) (string, error) {
 	client := NewSongLinkClient()
 	availability, err := client.CheckTrackAvailability(spotifyID, isrc)
@@ -255,6 +135,36 @@ type DownloadResult struct {
 	DecryptionKey string
 }
 
+func preferredReleaseMetadata(
+	req DownloadRequest,
+	album string,
+	releaseDate string,
+	trackNumber int,
+	discNumber int,
+) (string, string, int, int) {
+	preferredAlbum := strings.TrimSpace(req.AlbumName)
+	if preferredAlbum == "" {
+		preferredAlbum = album
+	}
+
+	preferredReleaseDate := strings.TrimSpace(req.ReleaseDate)
+	if preferredReleaseDate == "" {
+		preferredReleaseDate = releaseDate
+	}
+
+	preferredTrackNumber := req.TrackNumber
+	if preferredTrackNumber == 0 {
+		preferredTrackNumber = trackNumber
+	}
+
+	preferredDiscNumber := req.DiscNumber
+	if preferredDiscNumber == 0 {
+		preferredDiscNumber = discNumber
+	}
+
+	return preferredAlbum, preferredReleaseDate, preferredTrackNumber, preferredDiscNumber
+}
+
 func buildDownloadSuccessResponse(
 	req DownloadRequest,
 	result DownloadResult,
@@ -273,25 +183,16 @@ func buildDownloadSuccessResponse(
 		artist = req.ArtistName
 	}
 
-	album := result.Album
-	if album == "" {
-		album = req.AlbumName
-	}
-
-	releaseDate := result.ReleaseDate
-	if releaseDate == "" {
-		releaseDate = req.ReleaseDate
-	}
-
-	trackNumber := result.TrackNumber
-	if trackNumber == 0 {
-		trackNumber = req.TrackNumber
-	}
-
-	discNumber := result.DiscNumber
-	if discNumber == 0 {
-		discNumber = req.DiscNumber
-	}
+	// Preserve requested release metadata when available so mixed-provider
+	// fallback downloads from the same source album do not get split into
+	// different albums just because Tidal/Qobuz report variant titles/dates.
+	album, releaseDate, trackNumber, discNumber := preferredReleaseMetadata(
+		req,
+		result.Album,
+		result.ReleaseDate,
+		result.TrackNumber,
+		result.DiscNumber,
+	)
 
 	isrc := result.ISRC
 	if isrc == "" {
@@ -382,7 +283,7 @@ func enrichRequestExtendedMetadata(req *DownloadRequest) {
 		return
 	}
 
-	if req.ISRC == "" || (req.Genre != "" && req.Label != "") {
+	if req.ISRC == "" || (req.Genre != "" && req.Label != "" && req.Copyright != "") {
 		return
 	}
 
@@ -404,8 +305,11 @@ func enrichRequestExtendedMetadata(req *DownloadRequest) {
 	if req.Label == "" && extMeta.Label != "" {
 		req.Label = extMeta.Label
 	}
-	if req.Genre != "" || req.Label != "" {
-		GoLog("[DownloadWithFallback] Extended metadata ready: genre=%s, label=%s\n", req.Genre, req.Label)
+	if req.Copyright == "" && extMeta.Copyright != "" {
+		req.Copyright = extMeta.Copyright
+	}
+	if req.Genre != "" || req.Label != "" || req.Copyright != "" {
+		GoLog("[DownloadWithFallback] Extended metadata ready: genre=%s, label=%s, copyright=%s\n", req.Genre, req.Label, req.Copyright)
 	}
 }
 
@@ -478,25 +382,6 @@ func DownloadTrack(requestJSON string) (string, error) {
 			}
 		}
 		err = qobuzErr
-	case "amazon":
-		amazonResult, amazonErr := downloadFromAmazon(req)
-		if amazonErr == nil {
-			result = DownloadResult{
-				FilePath:      amazonResult.FilePath,
-				BitDepth:      amazonResult.BitDepth,
-				SampleRate:    amazonResult.SampleRate,
-				Title:         amazonResult.Title,
-				Artist:        amazonResult.Artist,
-				Album:         amazonResult.Album,
-				ReleaseDate:   amazonResult.ReleaseDate,
-				TrackNumber:   amazonResult.TrackNumber,
-				DiscNumber:    amazonResult.DiscNumber,
-				ISRC:          amazonResult.ISRC,
-				LyricsLRC:     amazonResult.LyricsLRC,
-				DecryptionKey: amazonResult.DecryptionKey,
-			}
-		}
-		err = amazonErr
 	case "deezer":
 		deezerResult, deezerErr := downloadFromDeezer(req)
 		if deezerErr == nil {
@@ -640,7 +525,7 @@ func DownloadWithFallback(requestJSON string) (string, error) {
 
 	enrichRequestExtendedMetadata(&req)
 
-	allServices := []string{"tidal", "qobuz", "amazon", "deezer"}
+	allServices := []string{"tidal", "qobuz", "deezer"}
 	preferredService := req.Service
 	if preferredService == "" {
 		preferredService = "tidal"
@@ -707,27 +592,6 @@ func DownloadWithFallback(requestJSON string) (string, error) {
 				GoLog("[DownloadWithFallback] Qobuz error: %v\n", qobuzErr)
 			}
 			err = qobuzErr
-		case "amazon":
-			amazonResult, amazonErr := downloadFromAmazon(req)
-			if amazonErr == nil {
-				result = DownloadResult{
-					FilePath:      amazonResult.FilePath,
-					BitDepth:      amazonResult.BitDepth,
-					SampleRate:    amazonResult.SampleRate,
-					Title:         amazonResult.Title,
-					Artist:        amazonResult.Artist,
-					Album:         amazonResult.Album,
-					ReleaseDate:   amazonResult.ReleaseDate,
-					TrackNumber:   amazonResult.TrackNumber,
-					DiscNumber:    amazonResult.DiscNumber,
-					ISRC:          amazonResult.ISRC,
-					LyricsLRC:     amazonResult.LyricsLRC,
-					DecryptionKey: amazonResult.DecryptionKey,
-				}
-			} else if !errors.Is(amazonErr, ErrDownloadCancelled) {
-				GoLog("[DownloadWithFallback] Amazon error: %v\n", amazonErr)
-			}
-			err = amazonErr
 		case "deezer":
 			deezerResult, deezerErr := downloadFromDeezer(req)
 			if deezerErr == nil {
@@ -824,6 +688,7 @@ func CleanupConnections() {
 func ReadFileMetadata(filePath string) (string, error) {
 	lower := strings.ToLower(filePath)
 	isFlac := strings.HasSuffix(lower, ".flac")
+	isM4A := strings.HasSuffix(lower, ".m4a") || strings.HasSuffix(lower, ".aac")
 	isMp3 := strings.HasSuffix(lower, ".mp3")
 	isOgg := strings.HasSuffix(lower, ".opus") || strings.HasSuffix(lower, ".ogg")
 
@@ -872,6 +737,12 @@ func ReadFileMetadata(filePath string) (string, error) {
 			if quality.SampleRate > 0 && quality.TotalSamples > 0 {
 				result["duration"] = int(quality.TotalSamples / int64(quality.SampleRate))
 			}
+		}
+	} else if isM4A {
+		quality, qualityErr := GetM4AQuality(filePath)
+		if qualityErr == nil {
+			result["bit_depth"] = quality.BitDepth
+			result["sample_rate"] = quality.SampleRate
 		}
 	} else if isMp3 {
 		meta, err := ReadID3Tags(filePath)
@@ -931,6 +802,32 @@ func ReadFileMetadata(filePath string) (string, error) {
 		return "", err
 	}
 
+	return string(jsonBytes), nil
+}
+
+// ParseCueSheet parses a .cue file and returns JSON with split information.
+// This is called from Dart to get track listing and timing data for CUE splitting.
+// audioDir, if non-empty, overrides the directory used for resolving the
+// referenced audio file (useful for SAF temp file scenarios).
+func ParseCueSheet(cuePath string, audioDir string) (string, error) {
+	return ParseCueFileJSON(cuePath, audioDir)
+}
+
+// ScanCueSheetForLibrary parses a .cue file and returns a JSON array of
+// LibraryScanResult entries (one per track). This is the SAF-friendly variant:
+//   - audioDir overrides where the referenced audio file is resolved
+//   - virtualPathPrefix replaces cuePath in filePath / id fields (e.g. a content:// URI)
+//   - fileModTime is stamped on every result (pass 0 to stat cuePath instead)
+func ScanCueSheetForLibrary(cuePath, audioDir, virtualPathPrefix string, fileModTime int64) (string, error) {
+	scanTime := time.Now().UTC().Format(time.RFC3339)
+	results, err := ScanCueFileForLibraryExt(cuePath, audioDir, virtualPathPrefix, fileModTime, scanTime)
+	if err != nil {
+		return "[]", err
+	}
+	jsonBytes, err := json.Marshal(results)
+	if err != nil {
+		return "[]", fmt.Errorf("failed to marshal cue scan results: %w", err)
+	}
 	return string(jsonBytes), nil
 }
 
@@ -1283,8 +1180,87 @@ func GetDeezerMetadata(resourceType, resourceID string) (string, error) {
 	return string(jsonBytes), nil
 }
 
+func GetQobuzMetadata(resourceType, resourceID string) (string, error) {
+	downloader := NewQobuzDownloader()
+
+	var data interface{}
+	var err error
+
+	switch resourceType {
+	case "track":
+		data, err = downloader.GetTrackMetadata(resourceID)
+	case "album":
+		data, err = downloader.GetAlbumMetadata(resourceID)
+	case "artist":
+		data, err = downloader.GetArtistMetadata(resourceID)
+	case "playlist":
+		data, err = downloader.GetPlaylistMetadata(resourceID)
+	default:
+		return "", fmt.Errorf("unsupported Qobuz resource type: %s", resourceType)
+	}
+	if err != nil {
+		return "", err
+	}
+
+	jsonBytes, err := json.Marshal(data)
+	if err != nil {
+		return "", err
+	}
+
+	return string(jsonBytes), nil
+}
+
+func GetTidalMetadata(resourceType, resourceID string) (string, error) {
+	downloader := NewTidalDownloader()
+
+	var data interface{}
+	var err error
+
+	switch resourceType {
+	case "track":
+		data, err = downloader.GetTrackMetadata(resourceID)
+	case "album":
+		data, err = downloader.GetAlbumMetadata(resourceID)
+	case "artist":
+		data, err = downloader.GetArtistMetadata(resourceID)
+	case "playlist":
+		data, err = downloader.GetPlaylistMetadata(resourceID)
+	default:
+		return "", fmt.Errorf("unsupported Tidal resource type: %s", resourceType)
+	}
+	if err != nil {
+		return "", err
+	}
+
+	jsonBytes, err := json.Marshal(data)
+	if err != nil {
+		return "", err
+	}
+
+	return string(jsonBytes), nil
+}
+
 func ParseDeezerURLExport(url string) (string, error) {
 	resourceType, resourceID, err := parseDeezerURL(url)
+	if err != nil {
+		return "", err
+	}
+
+	result := map[string]string{
+		"type": resourceType,
+		"id":   resourceID,
+	}
+
+	jsonBytes, err := json.Marshal(result)
+	if err != nil {
+		return "", err
+	}
+
+	return string(jsonBytes), nil
+}
+
+func ParseQobuzURLExport(url string) (string, error) {
+	resourceType, resourceID, err := parseQobuzURL(url)
 	if err != nil {
 		return "", err
 	}
@@ -1362,10 +1338,7 @@ func GetDeezerExtendedMetadata(trackID string) (string, error) {
 		return "", err
 	}
 
-	result := map[string]string{
-		"genre": metadata.Genre,
-		"label": metadata.Label,
-	}
+	result := buildDeezerExtendedMetadataResult(metadata)
 
 	jsonBytes, err := json.Marshal(result)
 	if err != nil {
@@ -1385,12 +1358,62 @@ func SearchDeezerByISRC(isrc string) (string, error) {
 		return "", err
 	}
 
-	jsonBytes, err := json.Marshal(track)
+	result := buildDeezerISRCSearchResult(track)
+	jsonBytes, err := json.Marshal(result)
 	if err != nil {
 		return "", err
 	}
 
 	return string(jsonBytes), nil
+}
+
+func buildDeezerExtendedMetadataResult(metadata *AlbumExtendedMetadata) map[string]string {
+	if metadata == nil {
+		return map[string]string{
+			"genre":     "",
+			"label":     "",
+			"copyright": "",
+		}
+	}
+
+	return map[string]string{
+		"genre":     metadata.Genre,
+		"label":     metadata.Label,
+		"copyright": metadata.Copyright,
+	}
+}
+
+func buildDeezerISRCSearchResult(track *TrackMetadata) map[string]interface{} {
+	if track == nil {
+		return map[string]interface{}{}
+	}
+
+	result := map[string]interface{}{
+		"spotify_id":    track.SpotifyID,
+		"artists":       track.Artists,
+		"name":          track.Name,
+		"album_name":    track.AlbumName,
+		"album_artist":  track.AlbumArtist,
+		"duration_ms":   track.DurationMS,
+		"images":        track.Images,
+		"release_date":  track.ReleaseDate,
+		"track_number":  track.TrackNumber,
+		"total_tracks":  track.TotalTracks,
+		"disc_number":   track.DiscNumber,
+		"external_urls": track.ExternalURL,
+		"isrc":          track.ISRC,
+		"album_id":      track.AlbumID,
+		"artist_id":     track.ArtistID,
+		"album_type":    track.AlbumType,
+	}
+
+	if deezerID := strings.TrimSpace(strings.TrimPrefix(track.SpotifyID, "deezer:")); deezerID != "" {
+		result["id"] = deezerID
+		result["track_id"] = deezerID
+		result["success"] = true
+	}
+
+	return result
 }
 
 func ConvertSpotifyToDeezer(resourceType, spotifyID string) (string, error) {
@@ -1438,35 +1461,12 @@ func ConvertSpotifyToDeezer(resourceType, spotifyID string) (string, error) {
 		return string(jsonBytes), nil
 	}
 
-	// For artists/playlists, SongLink doesn't provide direct mapping
 	return "", fmt.Errorf("Spotify to Deezer conversion only supported for tracks and albums. Please search by name for %s", resourceType)
 }
 
 func GetSpotifyMetadataWithDeezerFallback(spotifyURL string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-
-	var spotifyErr error
-
-	client, err := NewSpotifyMetadataClient()
-	if err != nil {
-		LogWarn("Spotify", "Credentials not configured, falling back to Deezer")
-		spotifyErr = err
-	} else {
-		data, err := client.GetFilteredData(ctx, spotifyURL, false, 0)
-		if err == nil {
-			jsonBytes, err := json.Marshal(data)
-			if err != nil {
-				return "", err
-			}
-			return string(jsonBytes), nil
-		}
-
-		spotifyErr = err
-		if !shouldTrySpotFetchFallback(err) {
-			return "", err
-		}
-	}
 
 	spotFetchData, apiErr := GetSpotifyDataWithAPI(ctx, spotifyURL, DefaultSpotFetchAPIBaseURL)
 	if apiErr == nil {
@@ -1481,9 +1481,6 @@ func GetSpotifyMetadataWithDeezerFallback(spotifyURL string) (string, error) {
 
 	parsed, parseErr := parseSpotifyURI(spotifyURL)
 	if parseErr != nil {
-		if spotifyErr != nil {
-			return "", fmt.Errorf("spotify failed (%v), SpotFetch fallback failed (%v), and URL parsing failed: %w", spotifyErr, apiErr, parseErr)
-		}
 		return "", fmt.Errorf("SpotFetch fallback failed (%v) and URL parsing failed: %w", apiErr, parseErr)
 	}
 
@@ -1494,15 +1491,9 @@ func GetSpotifyMetadataWithDeezerFallback(spotifyURL string) (string, error) {
 	}
 
 	if parsed.Type == "artist" {
-		if spotifyErr != nil {
-			return "", fmt.Errorf("spotify metadata unavailable (%v) and SpotFetch fallback failed (%v). Artist pages require Spotify/SpotFetch API", spotifyErr, apiErr)
-		}
-		return "", fmt.Errorf("SpotFetch fallback failed (%v). Artist pages require Spotify/SpotFetch API", apiErr)
+		return "", fmt.Errorf("SpotFetch fallback failed (%v). Artist pages now require SpotFetch or a metadata extension such as spotify-web", apiErr)
 	}
 
-	if spotifyErr != nil {
-		return "", fmt.Errorf("spotify metadata unavailable (%v), SpotFetch fallback failed (%v), and Deezer conversion is unavailable for playlists", spotifyErr, apiErr)
-	}
 	return "", fmt.Errorf("SpotFetch fallback failed (%v), and Deezer conversion is unavailable for playlists", apiErr)
 }
 
@@ -1579,10 +1570,164 @@ func GetTidalURLFromDeezerTrack(deezerTrackID string) (string, error) {
 	return client.GetTidalURLFromDeezer(deezerTrackID)
 }
 
+
 func GetAmazonURLFromDeezerTrack(deezerTrackID string) (string, error) {
 	client := NewSongLinkClient()
 	return client.GetAmazonURLFromDeezer(deezerTrackID)
 }
+
+// GetStreamingUrl fetches a direct streaming URL without downloading the file.
+func GetStreamingUrl(requestJSON string) (string, error) {
+	var req DownloadRequest
+	if err := json.Unmarshal([]byte(requestJSON), &req); err != nil {
+		return errorResponse("Invalid request: " + err.Error())
+	}
+	applySongLinkRegionFromRequest(&req)
+
+	req.TrackName = strings.TrimSpace(req.TrackName)
+	req.ArtistName = strings.TrimSpace(req.ArtistName)
+	req.AlbumName = strings.TrimSpace(req.AlbumName)
+	req.AlbumArtist = strings.TrimSpace(req.AlbumArtist)
+
+	enrichRequestExtendedMetadata(&req)
+
+	serviceNormalized := strings.ToLower(strings.TrimSpace(req.Service))
+
+	var resp struct {
+		URL           string `json:"url"`
+		DecryptionKey string `json:"decryption_key,omitempty"`
+		BitDepth      int    `json:"bit_depth,omitempty"`
+		SampleRate    int    `json:"sample_rate,omitempty"`
+		Format        string `json:"format,omitempty"`
+		Service       string `json:"service"`
+	}
+	resp.Service = serviceNormalized
+
+	switch serviceNormalized {
+	case "tidal":
+		downloader := NewTidalDownloader()
+		track, err := resolveTidalTrackForRequest(req, downloader, "Tidal")
+		if err != nil {
+			return errorResponse(err.Error())
+		}
+		quality := "HI_RES"
+		switch req.Quality {
+		case "LOSSLESS":
+			quality = "LOSSLESS"
+		case "HI_RES":
+			quality = "HI_RES"
+		case "HI_RES_LOSSLESS":
+			quality = "HI_RES_LOSSLESS"
+		}
+		info, err := downloader.GetDownloadURL(track.ID, quality)
+		if err != nil {
+			return errorResponse(err.Error())
+		}
+		if strings.HasPrefix(info.URL, "MANIFEST:") {
+			manifestB64 := strings.TrimPrefix(info.URL, "MANIFEST:")
+			directURL, _, _, parseErr := parseManifest(manifestB64)
+			if parseErr != nil {
+				return errorResponse("failed to parse Tidal manifest: " + parseErr.Error())
+			}
+			if directURL == "" {
+				return errorResponse("Tidal returned DASH format which is not supported for direct streaming")
+			}
+			resp.URL = directURL
+		} else {
+			resp.URL = info.URL
+		}
+		resp.BitDepth = info.BitDepth
+		resp.SampleRate = info.SampleRate
+		resp.Format = "flac"
+
+	case "qobuz":
+		downloader := NewQobuzDownloader()
+		track, err := resolveQobuzTrackForRequest(req, downloader, "Qobuz")
+		if err != nil {
+			return errorResponse(err.Error())
+		}
+		qobuzQuality := "27"
+		switch req.Quality {
+		case "LOSSLESS":
+			qobuzQuality = "6"
+		case "HI_RES":
+			qobuzQuality = "7"
+		case "HI_RES_LOSSLESS":
+			qobuzQuality = "27"
+		}
+		info, err := downloader.GetDownloadURL(track.ID, qobuzQuality)
+		if err != nil {
+			return errorResponse(err.Error())
+		}
+		resp.URL = info.DownloadURL
+		resp.BitDepth = info.BitDepth
+		resp.SampleRate = info.SampleRate
+		resp.Format = "flac"
+
+	case "deezer":
+		deezerClient := GetDeezerClient()
+		deezerTrackURL, err := resolveDeezerTrackURL(req)
+		if err == nil {
+			url, err := deezerClient.GetMusicDLDownloadURL(deezerTrackURL)
+			if err == nil {
+				resp.URL = url
+				resp.Format = "flac"
+				break
+			}
+		}
+		return errorResponse("Deezer streaming requires a direct URL which Yoinkify does not provide (only MusicDL supported)")
+
+	case "amazon":
+		return errorResponse("Amazon streaming is not yet supported")
+
+	case "youtube":
+		downloader := NewYouTubeDownloader()
+		format, bitrate, quality := parseYouTubeQualityInput(req.Quality)
+		var youtubeURL string
+		
+		if req.SpotifyID != "" && isYouTubeVideoID(req.SpotifyID) {
+			youtubeURL = BuildYouTubeWatchURL(req.SpotifyID)
+		} else if youtubeURL == "" && (req.TrackName != "" || req.ArtistName != "") {
+			youtubeURL = searchYouTubeMusicViaExtension(req.ArtistName, req.TrackName)
+		}
+		if youtubeURL == "" && req.SpotifyID != "" && !isYouTubeVideoID(req.SpotifyID) {
+			songlink := NewSongLinkClient()
+			youtubeURL, _ = songlink.GetYouTubeURLFromSpotify(req.SpotifyID)
+		}
+		if youtubeURL == "" && req.ISRC != "" {
+			songlink := NewSongLinkClient()
+			availability, _ := songlink.CheckTrackAvailability("", req.ISRC)
+			if availability != nil && availability.YouTube {
+				youtubeURL = availability.YouTubeURL
+			}
+		}
+		if youtubeURL == "" {
+			return errorResponse("could not find YouTube URL for streaming")
+		}
+		cobaltResp, err := downloader.GetDownloadURL(youtubeURL, quality)
+		if err != nil {
+			return errorResponse(err.Error())
+		}
+		resp.URL = cobaltResp.URL
+		resp.Format = format
+		resp.BitDepth = 16
+		resp.SampleRate = bitrate * 1000
+
+	default:
+		return errorResponse(fmt.Sprintf("streaming not supported for service: %s", serviceNormalized))
+	}
+
+	jsonBytes, err := json.Marshal(map[string]interface{}{
+		"success": true,
+		"data":    resp,
+	})
+	if err != nil {
+		return errorResponse("failed to marshal streaming response: " + err.Error())
+	}
+
+	return string(jsonBytes), nil
+}
+
 
 func errorResponse(msg string) (string, error) {
 	errorType := "unknown"
@@ -1708,6 +1853,8 @@ func ExtractCoverToFile(audioPath string, outputPath string) error {
 
 	if strings.HasSuffix(lower, ".flac") {
 		coverData, err = ExtractCoverArt(audioPath)
+	} else if strings.HasSuffix(lower, ".m4a") || strings.HasSuffix(lower, ".aac") {
+		coverData, err = extractCoverFromM4A(audioPath)
 	} else if strings.HasSuffix(lower, ".mp3") {
 		coverData, _, err = extractMP3CoverArt(audioPath)
 	} else if strings.HasSuffix(lower, ".opus") || strings.HasSuffix(lower, ".ogg") {
@@ -1838,114 +1985,58 @@ func ReEnrichFile(requestJSON string) (string, error) {
 
 	GoLog("[ReEnrich] Starting re-enrichment for: %s\n", req.FilePath)
 
-	// When search_online is true, search for metadata from internet
-	// Priority: 1) Deezer (reliable, no credentials) 2) Extension providers (spotify-web etc) 3) Spotify built-in API (last resort, deprecated)
+	// When search_online is true, search for metadata from internet using the
+	// configured metadata-provider priority.
 	if req.SearchOnline && req.TrackName != "" && req.ArtistName != "" {
 		GoLog("[ReEnrich] Searching online metadata for: %s - %s\n", req.TrackName, req.ArtistName)
 		searchQuery := req.TrackName + " " + req.ArtistName
 		found := false
 
-		// 1) Try Deezer first (reliable, no credentials needed)
-		GoLog("[ReEnrich] Trying Deezer search...\n")
 		deezerClient := GetDeezerClient()
-		{
-			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-			deezerResults, err := deezerClient.SearchAll(ctx, searchQuery, 5, 0, "track")
-			cancel()
-			if err == nil && len(deezerResults.Tracks) > 0 {
-				track := deezerResults.Tracks[0]
-				GoLog("[ReEnrich] Deezer match: %s - %s (album: %s)\n", track.Name, track.Artists, track.AlbumName)
-				req.SpotifyID = "deezer:" + track.SpotifyID
-				req.AlbumName = track.AlbumName
-				req.AlbumArtist = track.AlbumArtist
-				req.TrackNumber = track.TrackNumber
-				req.DiscNumber = track.DiscNumber
-				req.ReleaseDate = track.ReleaseDate
-				req.ISRC = track.ISRC
-				if track.Images != "" {
-					req.CoverURL = track.Images
-				}
-				req.DurationMs = int64(track.DurationMS)
-				found = true
-			} else if err != nil {
-				GoLog("[ReEnrich] Deezer search failed: %v\n", err)
-			}
-		}
-
-		// 2) Try extension metadata providers (spotify-web etc) if Deezer failed
-		if !found {
-			GoLog("[ReEnrich] Trying extension metadata providers...\n")
-			manager := GetExtensionManager()
-			extTracks, extErr := manager.SearchTracksWithExtensions(searchQuery, 5)
-			if extErr == nil && len(extTracks) > 0 {
-				track := extTracks[0]
-				GoLog("[ReEnrich] Extension match (%s): %s - %s (album: %s)\n", track.ProviderID, track.Name, track.Artists, track.AlbumName)
-				if track.SpotifyID != "" {
-					req.SpotifyID = track.SpotifyID
-				} else if track.DeezerID != "" {
-					req.SpotifyID = "deezer:" + track.DeezerID
-				} else {
-					req.SpotifyID = track.ID
-				}
-				req.AlbumName = track.AlbumName
-				req.AlbumArtist = track.AlbumArtist
-				req.TrackNumber = track.TrackNumber
-				req.DiscNumber = track.DiscNumber
-				req.ReleaseDate = track.ReleaseDate
-				req.ISRC = track.ISRC
-				coverURL := track.ResolvedCoverURL()
-				if coverURL != "" {
-					req.CoverURL = coverURL
-				}
-				req.DurationMs = int64(track.DurationMS)
-				if track.Genre != "" {
-					req.Genre = track.Genre
-				}
-				if track.Label != "" {
-					req.Label = track.Label
-				}
-				if track.Copyright != "" {
-					req.Copyright = track.Copyright
-				}
-				found = true
-			} else if extErr != nil {
-				GoLog("[ReEnrich] Extension search failed: %v\n", extErr)
-			}
-		}
-
-		// 3) Try Spotify built-in API as last resort (will be deprecated)
-		if !found {
-			GoLog("[ReEnrich] Trying Spotify API (fallback)...\n")
-			spotifyClient, spotifyErr := NewSpotifyMetadataClient()
-			if spotifyErr == nil {
-				ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-				results, err := spotifyClient.SearchTracks(ctx, searchQuery, 5)
-				cancel()
-				if err == nil && len(results.Tracks) > 0 {
-					track := results.Tracks[0]
-					GoLog("[ReEnrich] Spotify match: %s - %s (album: %s)\n", track.Name, track.Artists, track.AlbumName)
-					req.SpotifyID = track.SpotifyID
-					req.AlbumName = track.AlbumName
-					req.AlbumArtist = track.AlbumArtist
-					req.TrackNumber = track.TrackNumber
-					req.DiscNumber = track.DiscNumber
-					req.ReleaseDate = track.ReleaseDate
-					req.ISRC = track.ISRC
-					if track.Images != "" {
-						req.CoverURL = track.Images
-					}
-					req.DurationMs = int64(track.DurationMS)
-					found = true
-				} else if err != nil {
-					GoLog("[ReEnrich] Spotify search failed: %v\n", err)
-				}
+		GoLog("[ReEnrich] Trying metadata providers in configured priority...\n")
+		manager := GetExtensionManager()
+		tracks, searchErr := manager.SearchTracksWithMetadataProviders(searchQuery, 5, true)
+		if searchErr == nil && len(tracks) > 0 {
+			track := tracks[0]
+			GoLog("[ReEnrich] Metadata match (%s): %s - %s (album: %s)\n", track.ProviderID, track.Name, track.Artists, track.AlbumName)
+			if track.SpotifyID != "" {
+				req.SpotifyID = track.SpotifyID
+			} else if track.DeezerID != "" {
+				req.SpotifyID = "deezer:" + track.DeezerID
+			} else if track.QobuzID != "" {
+				req.SpotifyID = "qobuz:" + track.QobuzID
+			} else if track.TidalID != "" {
+				req.SpotifyID = "tidal:" + track.TidalID
 			} else {
-				GoLog("[ReEnrich] Spotify client unavailable: %v\n", spotifyErr)
+				req.SpotifyID = track.ID
 			}
+			req.AlbumName = track.AlbumName
+			req.AlbumArtist = track.AlbumArtist
+			req.TrackNumber = track.TrackNumber
+			req.DiscNumber = track.DiscNumber
+			req.ReleaseDate = track.ReleaseDate
+			req.ISRC = track.ISRC
+			coverURL := track.ResolvedCoverURL()
+			if coverURL != "" {
+				req.CoverURL = coverURL
+			}
+			req.DurationMs = int64(track.DurationMS)
+			if track.Genre != "" {
+				req.Genre = track.Genre
+			}
+			if track.Label != "" {
+				req.Label = track.Label
+			}
+			if track.Copyright != "" {
+				req.Copyright = track.Copyright
+			}
+			found = true
+		} else if searchErr != nil {
+			GoLog("[ReEnrich] Metadata provider search failed: %v\n", searchErr)
 		}
 
-		// Try to get extended metadata (genre, label) from Deezer if not already set
-		if found && req.ISRC != "" && (req.Genre == "" || req.Label == "") {
+		// Try to get extended metadata from Deezer if not already set
+		if found && req.ISRC != "" && (req.Genre == "" || req.Label == "" || req.Copyright == "") {
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			extMeta, err := deezerClient.GetExtendedMetadataByISRC(ctx, req.ISRC)
 			cancel()
@@ -1956,7 +2047,10 @@ func ReEnrichFile(requestJSON string) (string, error) {
 				if req.Label == "" && extMeta.Label != "" {
 					req.Label = extMeta.Label
 				}
-				GoLog("[ReEnrich] Extended metadata: genre=%s, label=%s\n", req.Genre, req.Label)
+				if req.Copyright == "" && extMeta.Copyright != "" {
+					req.Copyright = extMeta.Copyright
+				}
+				GoLog("[ReEnrich] Extended metadata: genre=%s, label=%s, copyright=%s\n", req.Genre, req.Label, req.Copyright)
 			}
 		}
 
@@ -2145,8 +2239,6 @@ func ReEnrichFile(requestJSON string) (string, error) {
 	jsonBytes, _ := json.Marshal(result)
 	return string(jsonBytes), nil
 }
-
-// ==================== EXTENSION SYSTEM ====================
 
 func InitExtensionSystem(extensionsDir, dataDir string) error {
 	manager := GetExtensionManager()
@@ -2345,6 +2437,21 @@ func SearchTracksWithExtensionsJSON(query string, limit int) (string, error) {
 	return string(jsonBytes), nil
 }
 
+func SearchTracksWithMetadataProvidersJSON(query string, limit int, includeExtensions bool) (string, error) {
+	manager := GetExtensionManager()
+	tracks, err := manager.SearchTracksWithMetadataProviders(query, limit, includeExtensions)
+	if err != nil {
+		return "", err
+	}
+
+	jsonBytes, err := json.Marshal(tracks)
+	if err != nil {
+		return "", err
+	}
+
+	return string(jsonBytes), nil
+}
+
 func DownloadWithExtensionsJSON(requestJSON string) (string, error) {
 	var req DownloadRequest
 	if err := json.Unmarshal([]byte(requestJSON), &req); err != nil {
@@ -2518,8 +2625,6 @@ func GetAllPendingFFmpegCommandsJSON() (string, error) {
 
 	return string(jsonBytes), nil
 }
-
-// ==================== EXTENSION CUSTOM SEARCH ====================
 
 func EnrichTrackWithExtensionJSON(extensionID, trackJSON string) (string, error) {
 	manager := GetExtensionManager()
@@ -2730,6 +2835,28 @@ func HandleURLWithExtensionJSON(url string) (string, error) {
 				}
 			}
 			artistResponse["albums"] = albums
+		}
+
+		if len(result.Artist.Releases) > 0 {
+			releases := make([]map[string]interface{}, len(result.Artist.Releases))
+			for i, release := range result.Artist.Releases {
+				releaseType := release.AlbumType
+				if releaseType == "" {
+					releaseType = "album"
+				}
+				releases[i] = map[string]interface{}{
+					"id":           release.ID,
+					"name":         release.Name,
+					"artists":      release.Artists,
+					"images":       release.CoverURL,
+					"cover_url":    release.CoverURL,
+					"release_date": release.ReleaseDate,
+					"total_tracks": release.TotalTracks,
+					"album_type":   releaseType,
+					"provider_id":  release.ProviderID,
+				}
+			}
+			artistResponse["releases"] = releases
 		}
 
 		if len(result.Artist.TopTracks) > 0 {
@@ -2981,6 +3108,27 @@ func GetArtistWithExtensionJSON(extensionID, artistID string) (string, error) {
 		"provider_id": artist.ProviderID,
 	}
 
+	if len(artist.Releases) > 0 {
+		releases := make([]map[string]interface{}, len(artist.Releases))
+		for i, release := range artist.Releases {
+			releaseType := release.AlbumType
+			if releaseType == "" {
+				releaseType = "album"
+			}
+			releases[i] = map[string]interface{}{
+				"id":           release.ID,
+				"name":         release.Name,
+				"artists":      release.Artists,
+				"cover_url":    release.CoverURL,
+				"release_date": release.ReleaseDate,
+				"total_tracks": release.TotalTracks,
+				"album_type":   releaseType,
+				"provider_id":  release.ProviderID,
+			}
+		}
+		response["releases"] = releases
+	}
+
 	if artist.HeaderImage != "" {
 		response["header_image"] = artist.HeaderImage
 	}
@@ -3128,6 +3276,45 @@ func InitExtensionStoreJSON(cacheDir string) error {
 	return nil
 }
 
+func SetStoreRegistryURLJSON(registryURL string) error {
+	store := GetExtensionStore()
+	if store == nil {
+		return fmt.Errorf("extension store not initialized")
+	}
+
+	resolved, err := ResolveRegistryURL(registryURL)
+	if err != nil {
+		return err
+	}
+
+	if err := requireHTTPSURL(resolved, "registry"); err != nil {
+		return err
+	}
+
+	store.SetRegistryURL(resolved)
+	return nil
+}
+
+func ClearStoreRegistryURLJSON() error {
+	store := GetExtensionStore()
+	if store == nil {
+		return fmt.Errorf("extension store not initialized")
+	}
+
+	store.SetRegistryURL("")
+	store.ClearCache()
+	return nil
+}
+
+func GetStoreRegistryURLJSON() (string, error) {
+	store := GetExtensionStore()
+	if store == nil {
+		return "", fmt.Errorf("extension store not initialized")
+	}
+
+	return store.GetRegistryURL(), nil
+}
+
 func GetStoreExtensionsJSON(forceRefresh bool) (string, error) {
 	store := GetExtensionStore()
 	if store == nil {
@@ -3273,9 +3460,6 @@ func GetExtensionBrowseCategoriesJSON(extensionID string) (string, error) {
 	return callExtensionFunctionJSON(extensionID, "getBrowseCategories", 30*time.Second)
 }
 
-// ==================== LOCAL LIBRARY SCANNING ====================
-
-// SetLibraryCoverCacheDirJSON sets the directory for caching extracted cover art
 func SetLibraryCoverCacheDirJSON(cacheDir string) {
 	SetLibraryCoverCacheDir(cacheDir)
 }
@@ -3284,11 +3468,12 @@ func ScanLibraryFolderJSON(folderPath string) (string, error) {
 	return ScanLibraryFolder(folderPath)
 }
 
-// ScanLibraryFolderIncrementalJSON performs an incremental library scan
-// existingFilesJSON: JSON object mapping filePath -> modTime (unix millis)
-// Returns IncrementalScanResult as JSON
 func ScanLibraryFolderIncrementalJSON(folderPath, existingFilesJSON string) (string, error) {
 	return ScanLibraryFolderIncremental(folderPath, existingFilesJSON)
+}
+
+func ScanLibraryFolderIncrementalFromSnapshotJSON(folderPath, snapshotPath string) (string, error) {
+	return ScanLibraryFolderIncrementalFromSnapshot(folderPath, snapshotPath)
 }
 
 func GetLibraryScanProgressJSON() string {
@@ -3301,4 +3486,8 @@ func CancelLibraryScanJSON() {
 
 func ReadAudioMetadataJSON(filePath string) (string, error) {
 	return ReadAudioMetadata(filePath)
+}
+
+func ReadAudioMetadataWithHintJSON(filePath, displayName string) (string, error) {
+	return ReadAudioMetadataWithDisplayName(filePath, displayName)
 }

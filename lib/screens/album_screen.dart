@@ -7,6 +7,7 @@ import 'package:spotiflac_android/models/track.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/providers/recent_access_provider.dart';
+import 'package:spotiflac_android/providers/streaming_audio_provider.dart';
 import 'package:spotiflac_android/providers/local_library_provider.dart';
 import 'package:spotiflac_android/providers/playback_provider.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
@@ -81,16 +82,20 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
     _scrollController.addListener(_onScroll);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Use extensionId if available, otherwise detect from albumId prefix
       final providerId =
           widget.extensionId ??
-          (widget.albumId.startsWith('deezer:') ? 'deezer' : 'spotify');
+          (() {
+            if (widget.albumId.startsWith('deezer:')) return 'deezer';
+            if (widget.albumId.startsWith('qobuz:')) return 'qobuz';
+            if (widget.albumId.startsWith('tidal:')) return 'tidal';
+            return 'spotify';
+          })();
       ref
           .read(recentAccessProvider.notifier)
           .recordAlbumAccess(
             id: widget.albumId,
             name: widget.albumName,
-            artistName: widget.tracks?.firstOrNull?.artistName,
+            artistName: widget.artistName ?? widget.tracks?.firstOrNull?.albumArtist ?? widget.tracks?.firstOrNull?.artistName,
             imageUrl: widget.coverUrl,
             providerId: providerId,
           );
@@ -129,9 +134,7 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
     return (mediaSize.height * 0.55).clamp(360.0, 520.0);
   }
 
-  /// Upgrade cover URL to a reasonable resolution for full-screen display.
-  /// Spotify CDN only has 300, 640, ~2000 — we stay at 640 (no intermediate).
-  /// Deezer CDN: upgrade to 1000x1000 (available: 56, 250, 500, 1000, 1400, 1800).
+  /// Upgrade cover URL to a higher resolution for full-screen display.
   String? _highResCoverUrl(String? url) {
     if (url == null) return null;
     // Spotify CDN: upgrade 300 → 640 only (no intermediate between 640 and 2000)
@@ -175,6 +178,12 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
           'album',
           deezerAlbumId,
         );
+      } else if (widget.albumId.startsWith('qobuz:')) {
+        final qobuzAlbumId = widget.albumId.replaceFirst('qobuz:', '');
+        metadata = await PlatformBridge.getQobuzMetadata('album', qobuzAlbumId);
+      } else if (widget.albumId.startsWith('tidal:')) {
+        final tidalAlbumId = widget.albumId.replaceFirst('tidal:', '');
+        metadata = await PlatformBridge.getTidalMetadata('album', tidalAlbumId);
       } else {
         final url = 'https://open.spotify.com/album/${widget.albumId}';
         metadata = await PlatformBridge.getSpotifyMetadataWithFallback(url);
@@ -224,68 +233,56 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
       trackNumber: data['track_number'] as int?,
       discNumber: data['disc_number'] as int?,
       releaseDate: data['release_date'] as String?,
+      albumType: data['album_type'] as String?,
+      totalTracks: data['total_tracks'] as int?,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final tracks = _tracks ?? [];
-    final pageBackgroundColor = colorScheme.surface;
 
     return Scaffold(
-      backgroundColor: pageBackgroundColor,
+      backgroundColor: Colors.black, // OLED black
       body: CustomScrollView(
         controller: _scrollController,
         slivers: [
-          _buildAppBar(context, colorScheme, pageBackgroundColor),
-          _buildInfoCard(context, colorScheme),
+          _buildAppBar(context),
+          if (!_isLoading && _error == null) _buildHeader(context, tracks),
           if (_isLoading)
             const SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.all(32),
-                child: Center(child: CircularProgressIndicator()),
+                child: Center(child: CircularProgressIndicator(color: Colors.white)),
               ),
             ),
           if (_error != null)
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: _buildErrorWidget(_error!, colorScheme),
+                child: _buildErrorWidget(_error!),
               ),
             ),
-          if (!_isLoading && _error == null && tracks.isNotEmpty) ...[
-            _buildTrackList(context, colorScheme, tracks),
-          ],
+          if (!_isLoading && _error == null && tracks.isNotEmpty)
+            _buildTrackList(context, tracks),
           const SliverToBoxAdapter(child: SizedBox(height: 32)),
         ],
       ),
     );
   }
 
-  Widget _buildAppBar(
-    BuildContext context,
-    ColorScheme colorScheme,
-    Color pageBackgroundColor,
-  ) {
-    final expandedHeight = _calculateExpandedHeight(context);
-    final tracks = _tracks ?? [];
-    final artistName = tracks.isNotEmpty ? tracks.first.artistName : null;
-    final releaseDate = tracks.isNotEmpty ? tracks.first.releaseDate : null;
-
+  Widget _buildAppBar(BuildContext context) {
     return SliverAppBar(
-      expandedHeight: expandedHeight,
       pinned: true,
-      stretch: true,
-      backgroundColor: pageBackgroundColor,
-      surfaceTintColor: Colors.transparent,
+      backgroundColor: Colors.black.withValues(alpha: _showTitleInAppBar ? 0.9 : 0.0),
+      elevation: 0,
       title: AnimatedOpacity(
         duration: const Duration(milliseconds: 200),
         opacity: _showTitleInAppBar ? 1.0 : 0.0,
         child: Text(
           widget.albumName,
-          style: TextStyle(
-            color: colorScheme.onSurface,
+          style: const TextStyle(
+            color: Colors.white,
             fontWeight: FontWeight.w600,
             fontSize: 16,
           ),
@@ -293,227 +290,207 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
           overflow: TextOverflow.ellipsis,
         ),
       ),
-      flexibleSpace: LayoutBuilder(
-        builder: (context, constraints) {
-          final collapseRatio =
-              (constraints.maxHeight - kToolbarHeight) /
-              (expandedHeight - kToolbarHeight);
-          final showContent = collapseRatio > 0.3;
-
-          return FlexibleSpaceBar(
-            collapseMode: CollapseMode.pin,
-            background: Stack(
-              fit: StackFit.expand,
-              children: [
-                // Full-screen cover background (no blur, full resolution)
-                if (widget.coverUrl != null)
-                  CachedNetworkImage(
-                    imageUrl:
-                        _highResCoverUrl(widget.coverUrl) ?? widget.coverUrl!,
-                    fit: BoxFit.cover,
-                    cacheManager: CoverCacheManager.instance,
-                    placeholder: (_, _) =>
-                        Container(color: colorScheme.surface),
-                    errorWidget: (_, _, _) =>
-                        Container(color: colorScheme.surface),
-                  )
-                else
-                  Container(
-                    color: colorScheme.surfaceContainerHighest,
-                    child: Icon(
-                      Icons.album,
-                      size: 80,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                // Bottom gradient for readability
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  height: expandedHeight * 0.65,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withValues(alpha: 0.85),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                // Album info overlay at bottom
-                Positioned(
-                  left: 20,
-                  right: 20,
-                  bottom: 40,
-                  child: AnimatedOpacity(
-                    duration: const Duration(milliseconds: 150),
-                    opacity: showContent ? 1.0 : 0.0,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          widget.albumName,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            height: 1.2,
-                          ),
-                          textAlign: TextAlign.center,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (artistName != null && artistName.isNotEmpty) ...[
-                          const SizedBox(height: 6),
-                          ClickableArtistName(
-                            artistName: artistName,
-                            artistId: _artistId,
-                            coverUrl: widget.coverUrl,
-                            extensionId: widget.extensionId,
-                            style: TextStyle(
-                              color: colorScheme.primary,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            textAlign: TextAlign.center,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                        if (tracks.isNotEmpty) ...[
-                          const SizedBox(height: 12),
-                          Wrap(
-                            alignment: WrapAlignment.center,
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Icons.music_note,
-                                      size: 14,
-                                      color: Colors.white,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      context.l10n.tracksCount(tracks.length),
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              if (releaseDate != null && releaseDate.isNotEmpty)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(
-                                        Icons.calendar_today,
-                                        size: 14,
-                                        color: Colors.white,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        _formatReleaseDate(releaseDate),
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              _buildLoveAllButton(),
-                              const SizedBox(width: 12),
-                              FilledButton.icon(
-                                onPressed: () => _downloadAll(context),
-                                icon: Icon(Icons.download, size: 18),
-                                label: Text(
-                                  context.l10n.downloadAllCount(tracks.length),
-                                ),
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: Colors.white,
-                                  foregroundColor: Colors.black87,
-                                  minimumSize: const Size(0, 48),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(24),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              _buildAddToPlaylistButton(context),
-                            ],
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            stretchModes: const [StretchMode.zoomBackground],
-          );
-        },
-      ),
       leading: IconButton(
-        icon: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.4),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(Icons.arrow_back, color: Colors.white),
-        ),
+        icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
         onPressed: () => Navigator.pop(context),
       ),
     );
   }
 
-  Widget _buildInfoCard(BuildContext context, ColorScheme colorScheme) {
-    // Info is now displayed in the full-screen cover overlay
-    return const SliverToBoxAdapter(child: SizedBox.shrink());
+  Widget _buildHeader(BuildContext context, List<Track> tracks) {
+    final artistName = tracks.isNotEmpty ? tracks.first.artistName : null;
+    final releaseDate = tracks.isNotEmpty ? tracks.first.releaseDate : null;
+    
+    // Calculate total duration
+    int totalSecs = 0;
+    for (var t in tracks) totalSecs += t.duration;
+    final mins = totalSecs ~/ 60;
+
+    final collectionsState = ref.watch(libraryCollectionsProvider);
+    final allLoved = tracks.isNotEmpty && tracks.every((t) => collectionsState.isLoved(t));
+
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const SizedBox(height: 10),
+            // Large Square Album Art
+            Container(
+              width: MediaQuery.of(context).size.width * 0.75,
+              height: MediaQuery.of(context).size.width * 0.75,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    blurRadius: 30,
+                    offset: const Offset(0, 10),
+                  )
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: widget.coverUrl != null
+                    ? CachedNetworkImage(
+                        imageUrl: _highResCoverUrl(widget.coverUrl) ?? widget.coverUrl!,
+                        fit: BoxFit.cover,
+                        cacheManager: CoverCacheManager.instance,
+                        placeholder: (_, __) => Container(color: Colors.grey[900]),
+                        errorWidget: (_, _, _) => Container(color: Colors.grey[900]),
+                      )
+                    : Container(
+                        color: Colors.grey[900],
+                        child: Icon(Icons.album, size: 80, color: Colors.grey[800]),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            // ALL CAPS Title
+            Text(
+              widget.albumName.toUpperCase(),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.2,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 8),
+            // Clickable Artist name
+            if (artistName != null && artistName.isNotEmpty)
+              ClickableArtistName(
+                artistName: artistName,
+                artistId: _artistId,
+                coverUrl: widget.coverUrl,
+                extensionId: widget.extensionId,
+                style: const TextStyle(
+                  color: Colors.redAccent, // Or a primary color
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            const SizedBox(height: 6),
+            // Track count / duration
+            Text(
+              'Album · ${releaseDate != null ? _formatReleaseDate(releaseDate) + ' · ' : ''}${tracks.length} tracks, $mins min',
+              style: TextStyle(color: Colors.grey[500], fontSize: 13, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 24),
+            // Primary Actions Row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Play Button (Left)
+                Expanded(
+                  child: Builder(
+                    builder: (context) {
+                      final settings = ref.watch(settingsProvider);
+                      return FilledButton.icon(
+                        onPressed: tracks.isEmpty ? null : () {
+                          ref.read(streamingAudioProvider.notifier).playTrack(
+                            tracks.first,
+                            settings.defaultService,
+                            playlist: tracks,
+                          );
+                        },
+                        icon: const Icon(Icons.play_arrow_rounded, size: 24, color: Colors.black),
+                        label: const Text('Play', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16)),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        ),
+                      );
+                    }
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Download Button (Center)
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: tracks.isEmpty ? null : () => _downloadAll(context, tracks),
+                    icon: const Icon(Icons.cloud_download_rounded, size: 22, color: Colors.white),
+                    label: const Text('Download', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.grey[850],
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Like Album Button (Right)
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[850],
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: IconButton(
+                    onPressed: tracks.isEmpty ? null : () => _loveAll(tracks),
+                    icon: Icon(
+                      allLoved ? Icons.favorite : Icons.favorite_border_rounded,
+                      color: allLoved ? Colors.white : Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
   }
 
-  Widget _buildTrackList(
-    BuildContext context,
-    ColorScheme colorScheme,
-    List<Track> tracks,
-  ) {
+  void _downloadAll(BuildContext context, List<Track> tracks) {
+    if (tracks.isEmpty) return;
+    final settings = ref.read(settingsProvider);
+    if (settings.askQualityBeforeDownload) {
+      DownloadServicePicker.show(
+        context,
+        trackName: '${tracks.length} tracks',
+        artistName: widget.albumName,
+        onSelect: (quality, service) {
+          ref.read(downloadQueueProvider.notifier).addMultipleToQueue(tracks, service, qualityOverride: quality);
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.snackbarAddedTracksToQueue(tracks.length))));
+        },
+      );
+    } else {
+      ref.read(downloadQueueProvider.notifier).addMultipleToQueue(tracks, settings.defaultService);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.snackbarAddedTracksToQueue(tracks.length))));
+    }
+  }
+
+  Future<void> _loveAll(List<Track> tracks) async {
+    final notifier = ref.read(libraryCollectionsProvider.notifier);
+    final state = ref.read(libraryCollectionsProvider);
+    final allLoved = tracks.every((t) => state.isLoved(t));
+
+    if (allLoved) {
+      for (final track in tracks) {
+        await notifier.removeFromLoved(trackCollectionKey(track));
+      }
+    } else {
+      for (final track in tracks) {
+        if (!state.isLoved(track)) {
+          await notifier.toggleLoved(track);
+        }
+      }
+    }
+  }
+
+  Widget _buildTrackList(BuildContext context, List<Track> tracks) {
     return SliverList(
       delegate: SliverChildBuilderDelegate((context, index) {
         final track = tracks[index];
@@ -529,7 +506,9 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
   }
 
   void _downloadTrack(BuildContext context, Track track) {
-    final settings = ref.read(settingsProvider);
+  // Unused inside the unified track item which uses a Like button instead of down arrow directly, 
+  // but kept for API compat. 
+        final settings = ref.read(settingsProvider);
     if (settings.askQualityBeforeDownload) {
       DownloadServicePicker.show(
         context,
@@ -557,191 +536,23 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
     }
   }
 
-  void _downloadAll(BuildContext context) {
-    final tracks = _tracks;
-    if (tracks == null || tracks.isEmpty) return;
-    final settings = ref.read(settingsProvider);
-    if (settings.askQualityBeforeDownload) {
-      DownloadServicePicker.show(
-        context,
-        trackName: '${tracks.length} tracks',
-        artistName: widget.albumName,
-        onSelect: (quality, service) {
-          ref
-              .read(downloadQueueProvider.notifier)
-              .addMultipleToQueue(tracks, service, qualityOverride: quality);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                context.l10n.snackbarAddedTracksToQueue(tracks.length),
-              ),
-            ),
-          );
-        },
-      );
-    } else {
-      ref
-          .read(downloadQueueProvider.notifier)
-          .addMultipleToQueue(tracks, settings.defaultService);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.l10n.snackbarAddedTracksToQueue(tracks.length)),
-        ),
-      );
-    }
-  }
-
-  Widget _buildLoveAllButton() {
-    final collectionsState = ref.watch(libraryCollectionsProvider);
-    final tracks = _tracks;
-    final allLoved =
-        tracks != null &&
-        tracks.isNotEmpty &&
-        tracks.every((t) => collectionsState.isLoved(t));
-
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.white.withValues(alpha: 0.15),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.3),
-          width: 1,
-        ),
-      ),
-      child: IconButton(
-        onPressed: tracks == null || tracks.isEmpty
-            ? null
-            : () => _loveAll(tracks),
-        icon: Icon(
-          allLoved ? Icons.favorite : Icons.favorite_border,
-          size: 22,
-          color: allLoved ? Colors.redAccent : Colors.white,
-        ),
-        tooltip: allLoved ? 'Remove from Loved' : 'Love All',
-        padding: EdgeInsets.zero,
-      ),
-    );
-  }
-
-  Widget _buildAddToPlaylistButton(BuildContext context) {
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.white.withValues(alpha: 0.15),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.3),
-          width: 1,
-        ),
-      ),
-      child: IconButton(
-        onPressed: _tracks == null || _tracks!.isEmpty
-            ? null
-            : () => showAddTracksToPlaylistSheet(context, ref, _tracks!),
-        icon: const Icon(Icons.add, size: 22, color: Colors.white),
-        tooltip: 'Add to Playlist',
-        padding: EdgeInsets.zero,
-      ),
-    );
-  }
-
-  Future<void> _loveAll(List<Track> tracks) async {
-    final notifier = ref.read(libraryCollectionsProvider.notifier);
-    final state = ref.read(libraryCollectionsProvider);
-    final allLoved = tracks.every((t) => state.isLoved(t));
-
-    if (allLoved) {
-      for (final track in tracks) {
-        final key = trackCollectionKey(track);
-        await notifier.removeFromLoved(key);
-      }
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Removed ${tracks.length} tracks from Loved')),
-        );
-      }
-    } else {
-      int addedCount = 0;
-      for (final track in tracks) {
-        if (!state.isLoved(track)) {
-          await notifier.toggleLoved(track);
-          addedCount++;
-        }
-      }
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Added $addedCount tracks to Loved')),
-        );
-      }
-    }
-  }
-
-  Widget _buildErrorWidget(String error, ColorScheme colorScheme) {
-    final isRateLimit =
-        error.contains('429') ||
-        error.toLowerCase().contains('rate limit') ||
-        error.toLowerCase().contains('too many requests');
-
-    if (isRateLimit) {
-      return Card(
-        elevation: 0,
-        color: colorScheme.errorContainer,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Icon(Icons.timer_off, color: colorScheme.onErrorContainer),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      context.l10n.errorRateLimited,
-                      style: TextStyle(
-                        color: colorScheme.onErrorContainer,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      context.l10n.errorRateLimitedMessage,
-                      style: TextStyle(
-                        color: colorScheme.onErrorContainer,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
+  Widget _buildErrorWidget(String error) {
     return Card(
-      elevation: 0,
-      color: colorScheme.errorContainer.withValues(alpha: 0.5),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      color: Colors.red.withValues(alpha: 0.2),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            Icon(Icons.error_outline, color: colorScheme.error),
+            const Icon(Icons.error_outline, color: Colors.redAccent),
             const SizedBox(width: 12),
-            Expanded(
-              child: Text(error, style: TextStyle(color: colorScheme.error)),
-            ),
+            Expanded(child: Text(error, style: const TextStyle(color: Colors.redAccent))),
           ],
         ),
       ),
     );
   }
+
 }
 
 class _AlbumTrackItem extends ConsumerWidget {
@@ -752,126 +563,98 @@ class _AlbumTrackItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    final queueItem = ref.watch(
-      downloadQueueLookupProvider.select(
-        (lookup) => lookup.byTrackId[track.id],
-      ),
-    );
-
-    final isInHistory = ref.watch(
-      downloadHistoryProvider.select((state) {
-        if (state.isDownloaded(track.id)) return true;
-        final isrc = track.isrc?.trim();
-        if (isrc != null && isrc.isNotEmpty && state.getByIsrc(isrc) != null) {
-          return true;
-        }
-        return state.findByTrackAndArtist(track.name, track.artistName) != null;
-      }),
-    );
-
-    final showLocalLibraryIndicator = ref.watch(
-      settingsProvider.select(
-        (s) => s.localLibraryEnabled && s.localLibraryShowDuplicates,
-      ),
-    );
-    final isInLocalLibrary = showLocalLibraryIndicator
-        ? ref.watch(
-            localLibraryProvider.select(
-              (state) => state.existsInLibrary(
-                isrc: track.isrc,
-                trackName: track.name,
-                artistName: track.artistName,
-              ),
-            ),
-          )
-        : false;
-
+    final isLoved = ref.watch(libraryCollectionsProvider).isLoved(track);
+    final queueItem = ref.watch(downloadQueueLookupProvider.select((lookup) => lookup.byTrackId[track.id]));
     final isQueued = queueItem != null;
 
+    final mins = track.duration ~/ 60;
+    final secs = (track.duration % 60).toString().padLeft(2, '0');
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Card(
-        elevation: 0,
-        color: Colors.transparent,
-        margin: const EdgeInsets.symmetric(vertical: 2),
-        child: ListTile(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          leading: SizedBox(
-            width: 32,
-            child: Center(
-              child: Text(
-                '${track.trackNumber ?? 0}',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ),
-          title: Text(
-            track.name,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
-          ),
-          subtitle: Row(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: InkWell(
+        onTap: () => _handleTap(context, ref, isQueued: isQueued),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: Row(
             children: [
-              Flexible(
-                child: ClickableArtistName(
-                  artistName: track.artistName,
-                  artistId: track.artistId,
-                  coverUrl: track.coverUrl,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: colorScheme.onSurfaceVariant),
+              SizedBox(
+                width: 32,
+                child: Text(
+                  '${track.trackNumber ?? 0}',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey[500], fontSize: 13, fontWeight: FontWeight.bold),
                 ),
               ),
-              if (isInLocalLibrary || isInHistory) ...[
-                const SizedBox(width: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colorScheme.tertiaryContainer,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.folder_outlined,
-                        size: 10,
-                        color: colorScheme.onTertiaryContainer,
-                      ),
-                      const SizedBox(width: 3),
-                      Text(
-                        context.l10n.libraryInLibrary,
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w500,
-                          color: colorScheme.onTertiaryContainer,
-                        ),
-                      ),
-                    ],
-                  ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      track.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      track.artistName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: Colors.grey[400], fontSize: 13),
+                    ),
+                  ],
                 ),
-              ],
+              ),
+              Text(
+                '$mins:$secs',
+                style: TextStyle(color: Colors.grey[500], fontSize: 12),
+              ),
+              const SizedBox(width: 12),
+              // Dedicated Like Button
+              GestureDetector(
+                onTap: () async {
+                  final notifier = ref.read(libraryCollectionsProvider.notifier);
+                  if (isLoved) {
+                    await notifier.removeFromLoved(trackCollectionKey(track));
+                  } else {
+                    await notifier.toggleLoved(track);
+                  }
+                },
+                child: Icon(
+                  isLoved ? Icons.favorite : Icons.favorite_border_rounded,
+                  color: isLoved ? Colors.white : Colors.grey[500],
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              // 3-Dot Menu (Add to Queue, Save Song)
+              PopupMenuButton<String>(
+                icon: Icon(Icons.more_vert_rounded, color: Colors.grey[500], size: 20),
+                color: Colors.grey[900],
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                onSelected: (value) {
+                  if (value == 'queue') {
+                    ref.read(streamingAudioProvider.notifier).addToQueue(track, ref.read(settingsProvider).defaultService);
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to Queue')));
+                  } else if (value == 'save') {
+                    onDownload();
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'queue',
+                    child: Text('Add to Queue', style: TextStyle(color: Colors.white)),
+                  ),
+                  const PopupMenuItem(
+                    value: 'save',
+                    child: Text('Save Song (Download)', style: TextStyle(color: Colors.white)),
+                  ),
+                ],
+              ),
             ],
-          ),
-          trailing: TrackCollectionQuickActions(track: track),
-          onTap: () => _handleTap(context, ref, isQueued: isQueued),
-          onLongPress: () => TrackCollectionQuickActions.showTrackOptionsSheet(
-            context,
-            ref,
-            track,
           ),
         ),
       ),
@@ -884,6 +667,15 @@ class _AlbumTrackItem extends ConsumerWidget {
     required bool isQueued,
   }) async {
     if (isQueued) return;
+
+    final settings = ref.read(settingsProvider);
+    if (settings.appmode == 'stream') {
+      await ref.read(playbackProvider.notifier).playTrack(
+            track: track,
+            service: settings.defaultService,
+          );
+      return;
+    }
 
     final playedLocal = await _playLocalIfAvailable(context, ref);
     if (playedLocal) {

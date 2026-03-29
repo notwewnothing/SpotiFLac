@@ -18,7 +18,6 @@ import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/screens/track_metadata_screen.dart';
 import 'package:spotiflac_android/services/downloaded_embedded_cover_resolver.dart';
 
-/// Screen to display downloaded tracks from a specific album
 class DownloadedAlbumScreen extends ConsumerStatefulWidget {
   final String albumName;
   final String artistName;
@@ -126,7 +125,6 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
               (item.albumArtist != null && item.albumArtist!.isNotEmpty)
               ? item.albumArtist!
               : item.artistName;
-          // Use lowercase for case-insensitive matching
           final itemKey =
               '${item.albumName.toLowerCase()}|${itemArtist.toLowerCase()}';
           return itemKey == _albumLookupKey;
@@ -361,11 +359,10 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
     );
     final tracks = _getAlbumTracks(allHistoryItems);
 
-    // Show empty state if no tracks found
     if (tracks.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: Text(widget.albumName)),
-        body: Center(child: Text('No tracks found for this album')),
+        body: Center(child: Text(context.l10n.noTracksFoundForAlbum)),
       );
     }
 
@@ -480,7 +477,6 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
             background: Stack(
               fit: StackFit.expand,
               children: [
-                // Full-screen cover background
                 if (embeddedCoverPath != null)
                   Image.file(
                     File(embeddedCoverPath),
@@ -508,7 +504,6 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
                       color: colorScheme.onSurfaceVariant,
                     ),
                   ),
-                // Bottom gradient for readability
                 Positioned(
                   left: 0,
                   right: 0,
@@ -527,7 +522,6 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
                     ),
                   ),
                 ),
-                // Album info overlay at bottom
                 Positioned(
                   left: 20,
                   right: 20,
@@ -635,6 +629,7 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
         },
       ),
       leading: IconButton(
+        tooltip: MaterialLocalizations.of(context).backButtonTooltip,
         icon: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
@@ -711,10 +706,8 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
       final discTracks = discMap[discNumber];
       if (discTracks == null || discTracks.isEmpty) continue;
 
-      // Add disc separator
       children.add(_buildDiscSeparator(context, colorScheme, discNumber));
 
-      // Add tracks for this disc
       for (final track in discTracks) {
         children.add(
           KeyedSubtree(
@@ -858,6 +851,7 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
           trailing: _isSelectionMode
               ? null
               : IconButton(
+                  tooltip: 'Play track',
                   onPressed: () => _openFile(track),
                   icon: Icon(Icons.play_arrow, color: colorScheme.primary),
                   style: IconButton.styleFrom(
@@ -897,7 +891,6 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
       return;
     }
 
-    // Share SAF content URIs via native intent
     if (safUris.isNotEmpty) {
       try {
         if (safUris.length == 1) {
@@ -908,19 +901,53 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
       } catch (_) {}
     }
 
-    // Share regular files via SharePlus
     if (filesToShare.isNotEmpty) {
       await SharePlus.instance.share(ShareParams(files: filesToShare));
     }
   }
 
-  /// Show batch convert bottom sheet
   void _showBatchConvertSheet(
     BuildContext context,
     List<DownloadHistoryItem> allTracks,
   ) {
-    String selectedFormat = 'MP3';
-    String selectedBitrate = '320k';
+    final tracksById = {for (final t in allTracks) t.id: t};
+    final sourceFormats = <String>{};
+    for (final id in _selectedIds) {
+      final item = tracksById[id];
+      if (item == null) continue;
+      final nameToCheck =
+          (item.safFileName != null && item.safFileName!.isNotEmpty)
+          ? item.safFileName!.toLowerCase()
+          : item.filePath.toLowerCase();
+      final ext = nameToCheck.endsWith('.flac')
+          ? 'FLAC'
+          : nameToCheck.endsWith('.m4a')
+          ? 'M4A'
+          : nameToCheck.endsWith('.mp3')
+          ? 'MP3'
+          : (nameToCheck.endsWith('.opus') || nameToCheck.endsWith('.ogg'))
+          ? 'Opus'
+          : null;
+      if (ext != null) sourceFormats.add(ext);
+    }
+
+    final formats = ['ALAC', 'FLAC', 'MP3', 'Opus'].where((target) {
+      return sourceFormats.any((src) {
+        if (src == target) return false;
+        final isLosslessTarget = target == 'ALAC' || target == 'FLAC';
+        final isLosslessSource = src == 'FLAC' || src == 'M4A';
+        if (isLosslessTarget && !isLosslessSource) return false;
+        return true;
+      });
+    }).toList();
+
+    if (formats.isEmpty) return;
+
+    String selectedFormat = formats.first;
+    bool isLosslessTarget =
+        selectedFormat == 'ALAC' || selectedFormat == 'FLAC';
+    String selectedBitrate =
+        isLosslessTarget ? '320k' : (selectedFormat == 'Opus' ? '128k' : '320k');
 
     showModalBottomSheet(
       context: context,
@@ -932,7 +959,6 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
         return StatefulBuilder(
           builder: (context, setSheetState) {
             final colorScheme = Theme.of(context).colorScheme;
-            final formats = ['MP3', 'Opus'];
             final bitrates = ['128k', '192k', '256k', '320k'];
 
             return SafeArea(
@@ -969,51 +995,75 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Row(
-                      children: formats.map((format) {
-                        final isSelected = format == selectedFormat;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: ChoiceChip(
-                            label: Text(format),
-                            selected: isSelected,
-                            onSelected: (selected) {
-                              if (selected) {
-                                setSheetState(() {
-                                  selectedFormat = format;
-                                  selectedBitrate = format == 'Opus'
-                                      ? '128k'
-                                      : '320k';
-                                });
-                              }
-                            },
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      context.l10n.trackConvertBitrate,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
-                      children: bitrates.map((br) {
-                        final isSelected = br == selectedBitrate;
+                      children: formats.map((format) {
+                        final isSelected = format == selectedFormat;
                         return ChoiceChip(
-                          label: Text(br),
+                          label: Text(format),
                           selected: isSelected,
                           onSelected: (selected) {
                             if (selected) {
-                              setSheetState(() => selectedBitrate = br);
+                              setSheetState(() {
+                                selectedFormat = format;
+                                isLosslessTarget =
+                                    format == 'ALAC' || format == 'FLAC';
+                                if (!isLosslessTarget) {
+                                  selectedBitrate =
+                                      format == 'Opus' ? '128k' : '320k';
+                                }
+                              });
                             }
                           },
                         );
                       }).toList(),
                     ),
+                    if (!isLosslessTarget) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        context.l10n.trackConvertBitrate,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        children: bitrates.map((br) {
+                          final isSelected = br == selectedBitrate;
+                          return ChoiceChip(
+                            label: Text(br),
+                            selected: isSelected,
+                            onSelected: (selected) {
+                              if (selected) {
+                                setSheetState(() => selectedBitrate = br);
+                              }
+                            },
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                    if (isLosslessTarget) ...[
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.verified,
+                            size: 16,
+                            color: colorScheme.primary,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            context.l10n.trackConvertLosslessHint,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.copyWith(
+                              color: colorScheme.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                     const SizedBox(height: 24),
                     SizedBox(
                       width: double.infinity,
@@ -1066,12 +1116,19 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
           : item.filePath.toLowerCase();
       final ext = nameToCheck.endsWith('.flac')
           ? 'FLAC'
+          : nameToCheck.endsWith('.m4a')
+          ? 'M4A'
           : nameToCheck.endsWith('.mp3')
           ? 'MP3'
           : (nameToCheck.endsWith('.opus') || nameToCheck.endsWith('.ogg'))
           ? 'Opus'
           : null;
-      if (ext != null && ext != targetFormat) selected.add(item);
+      if (ext == null || ext == targetFormat) continue;
+      // Skip lossy sources when target is lossless (pointless re-encoding)
+      final isLosslessTarget = targetFormat == 'ALAC' || targetFormat == 'FLAC';
+      final isLosslessSource = ext == 'FLAC' || ext == 'M4A';
+      if (isLosslessTarget && !isLosslessSource) continue;
+      selected.add(item);
     }
 
     if (selected.isEmpty) {
@@ -1083,16 +1140,22 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
       return;
     }
 
+    final isLossless = targetFormat == 'ALAC' || targetFormat == 'FLAC';
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(context.l10n.selectionBatchConvertConfirmTitle),
         content: Text(
-          context.l10n.selectionBatchConvertConfirmMessage(
-            selected.length,
-            targetFormat,
-            bitrate,
-          ),
+          isLossless
+              ? context.l10n.selectionBatchConvertConfirmMessageLossless(
+                  selected.length,
+                  targetFormat,
+                )
+              : context.l10n.selectionBatchConvertConfirmMessage(
+                  selected.length,
+                  targetFormat,
+                  bitrate,
+                ),
         ),
         actions: [
           TextButton(
@@ -1112,8 +1175,10 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
     int successCount = 0;
     final total = selected.length;
     final historyDb = HistoryDatabase.instance;
-    final newQuality =
-        '${targetFormat.toUpperCase()} ${bitrate.trim().toLowerCase()}';
+    final newQuality = (targetFormat.toUpperCase() == 'ALAC' ||
+            targetFormat.toUpperCase() == 'FLAC')
+        ? '${targetFormat.toUpperCase()} Lossless'
+        : '${targetFormat.toUpperCase()} ${bitrate.trim().toLowerCase()}';
     final settings = ref.read(settingsProvider);
     final shouldEmbedLyrics =
         settings.embedLyrics && settings.lyricsMode != 'external';
@@ -1216,13 +1281,27 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
             final baseName = dotIdx > 0
                 ? oldFileName.substring(0, dotIdx)
                 : oldFileName;
-            final newExt = targetFormat.toLowerCase() == 'opus'
-                ? '.opus'
-                : '.mp3';
+            String newExt;
+            String mimeType;
+            switch (targetFormat.toLowerCase()) {
+              case 'opus':
+                newExt = '.opus';
+                mimeType = 'audio/opus';
+                break;
+              case 'alac':
+                newExt = '.m4a';
+                mimeType = 'audio/mp4';
+                break;
+              case 'flac':
+                newExt = '.flac';
+                mimeType = 'audio/flac';
+                break;
+              default:
+                newExt = '.mp3';
+                mimeType = 'audio/mpeg';
+                break;
+            }
             final newFileName = '$baseName$newExt';
-            final mimeType = targetFormat.toLowerCase() == 'opus'
-                ? 'audio/opus'
-                : 'audio/mpeg';
 
             final safUri = await PlatformBridge.createSafFileFromPath(
               treeUri: treeUri,
@@ -1336,6 +1415,9 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
                 children: [
                   IconButton.filledTonal(
                     onPressed: _exitSelectionMode,
+                    tooltip: MaterialLocalizations.of(
+                      context,
+                    ).closeButtonTooltip,
                     icon: const Icon(Icons.close),
                     style: IconButton.styleFrom(
                       backgroundColor: colorScheme.surfaceContainerHighest,
@@ -1388,7 +1470,6 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
               ),
               const SizedBox(height: 12),
 
-              // Action buttons row: Share, Convert
               Row(
                 children: [
                   Expanded(

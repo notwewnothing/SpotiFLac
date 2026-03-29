@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 )
@@ -129,9 +130,8 @@ var (
 )
 
 const (
-	defaultRegistryURL = "https://raw.githubusercontent.com/zarzet/SpotiFLAC-Extension/main/registry.json"
-	cacheTTL           = 30 * time.Minute
-	cacheFileName      = "store_cache.json"
+	cacheTTL      = 30 * time.Minute
+	cacheFileName = "store_cache.json"
 )
 
 func InitExtensionStore(cacheDir string) *ExtensionStore {
@@ -140,13 +140,43 @@ func InitExtensionStore(cacheDir string) *ExtensionStore {
 
 	if extensionStore == nil {
 		extensionStore = &ExtensionStore{
-			registryURL: defaultRegistryURL,
+			registryURL: "", // No default - user must provide a registry URL
 			cacheDir:    cacheDir,
 			cacheTTL:    cacheTTL,
 		}
 		extensionStore.loadDiskCache()
 	}
 	return extensionStore
+}
+
+// SetRegistryURL updates the registry URL and clears the in-memory cache
+// so the next fetch will use the new URL. Disk cache is also cleared.
+func (s *ExtensionStore) SetRegistryURL(registryURL string) {
+	s.cacheMu.Lock()
+	defer s.cacheMu.Unlock()
+
+	if s.registryURL == registryURL {
+		return
+	}
+
+	s.registryURL = registryURL
+	s.cache = nil
+	s.cacheTime = time.Time{}
+
+	// Clear disk cache since it's from a different registry
+	if s.cacheDir != "" {
+		cachePath := filepath.Join(s.cacheDir, cacheFileName)
+		os.Remove(cachePath)
+	}
+
+	LogInfo("ExtensionStore", "Registry URL updated to: %s", registryURL)
+}
+
+// GetRegistryURL returns the currently configured registry URL.
+func (s *ExtensionStore) GetRegistryURL() string {
+	s.cacheMu.RLock()
+	defer s.cacheMu.RUnlock()
+	return s.registryURL
 }
 
 func GetExtensionStore() *ExtensionStore {
@@ -205,6 +235,11 @@ func (s *ExtensionStore) saveDiskCache() {
 func (s *ExtensionStore) FetchRegistry(forceRefresh bool) (*StoreRegistry, error) {
 	s.cacheMu.Lock()
 	defer s.cacheMu.Unlock()
+
+	// Check if a registry URL has been configured
+	if s.registryURL == "" {
+		return nil, fmt.Errorf("no registry URL configured. Please add a repository URL first")
+	}
 
 	if !forceRefresh && s.cache != nil && time.Since(s.cacheTime) < s.cacheTTL {
 		LogDebug("ExtensionStore", "Using cached registry (%d extensions)", len(s.cache.Extensions))
@@ -336,6 +371,81 @@ func (s *ExtensionStore) DownloadExtension(extensionID string, destPath string) 
 	return nil
 }
 
+// ResolveRegistryURL normalises a user-supplied URL into a direct registry.json URL.
+//
+// Accepted formats:
+//   - https://raw.githubusercontent.com/owner/repo/<branch>/registry.json  → returned as-is
+//   - https://github.com/owner/repo  (with optional trailing path / .git)  → resolved via
+//     the GitHub API to discover the default branch, then converted to the raw URL
+//   - Any other HTTPS URL  → returned as-is (assumed to be a direct link)
+func ResolveRegistryURL(input string) (string, error) {
+	input = strings.TrimSpace(input)
+	if input == "" {
+		return "", fmt.Errorf("registry URL is empty")
+	}
+
+	// Already a fully-qualified raw URL – keep it.
+	if strings.Contains(input, "raw.githubusercontent.com") {
+		return input, nil
+	}
+
+	// Try to match https://github.com/<owner>/<repo>[/...]
+	const ghPrefix = "https://github.com/"
+	if !strings.HasPrefix(input, ghPrefix) {
+		// Also accept http:// and upgrade silently.
+		const ghPrefixHTTP = "http://github.com/"
+		if strings.HasPrefix(input, ghPrefixHTTP) {
+			input = "https://github.com/" + input[len(ghPrefixHTTP):]
+		} else {
+			// Not a GitHub URL – return as-is.
+			return input, nil
+		}
+	}
+
+	path := input[len(ghPrefix):]
+	parts := strings.SplitN(path, "/", 3) // owner, repo, [rest]
+	if len(parts) < 2 || parts[0] == "" || parts[1] == "" {
+		return "", fmt.Errorf("invalid GitHub URL: expected github.com/<owner>/<repo>")
+	}
+	owner := parts[0]
+	repo := strings.TrimSuffix(parts[1], ".git")
+
+	branch := resolveGitHubDefaultBranch(owner, repo)
+
+	resolved := fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s/registry.json", owner, repo, branch)
+	LogInfo("ExtensionStore", "Resolved %s → %s (branch: %s)", input, resolved, branch)
+	return resolved, nil
+}
+
+// resolveGitHubDefaultBranch calls the GitHub API to discover the repository's
+// default branch.  Falls back to "main" on any error.
+func resolveGitHubDefaultBranch(owner, repo string) string {
+	apiURL := fmt.Sprintf("https://api.github.com/repos/%s/%s", owner, repo)
+	client := NewHTTPClientWithTimeout(10 * time.Second)
+
+	resp, err := client.Get(apiURL)
+	if err != nil {
+		LogWarn("ExtensionStore", "GitHub API request failed for %s/%s: %v – falling back to main", owner, repo, err)
+		return "main"
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		LogWarn("ExtensionStore", "GitHub API returned %d for %s/%s – falling back to main", resp.StatusCode, owner, repo)
+		return "main"
+	}
+
+	var info struct {
+		DefaultBranch string `json:"default_branch"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&info); err != nil || info.DefaultBranch == "" {
+		LogWarn("ExtensionStore", "Could not parse default_branch for %s/%s – falling back to main", owner, repo)
+		return "main"
+	}
+
+	return info.DefaultBranch
+}
+
 func requireHTTPSURL(rawURL string, context string) error {
 	if rawURL == "" {
 		return fmt.Errorf("%s URL is empty", context)
@@ -374,12 +484,10 @@ func (s *ExtensionStore) SearchExtensions(query string, category string) ([]Stor
 	queryLower := toLower(query)
 
 	for _, ext := range extensions {
-		// Filter by category
 		if category != "" && ext.Category != category {
 			continue
 		}
 
-		// Filter by query
 		if query != "" {
 			if !containsIgnoreCase(ext.Name, queryLower) &&
 				!containsIgnoreCase(ext.DisplayName, queryLower) &&

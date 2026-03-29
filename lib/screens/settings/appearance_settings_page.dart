@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/l10n/supported_locales.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
+import 'package:spotiflac_android/utils/platform.dart' as platform;
 import 'package:spotiflac_android/providers/theme_provider.dart';
 import 'package:spotiflac_android/utils/app_bar_layout.dart';
 import 'package:spotiflac_android/widgets/settings_group.dart';
@@ -30,6 +31,7 @@ class AppearanceSettingsPage extends ConsumerWidget {
               backgroundColor: colorScheme.surface,
               surfaceTintColor: Colors.transparent,
               leading: IconButton(
+                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () => Navigator.pop(context),
               ),
@@ -148,7 +150,6 @@ class AppearanceSettingsPage extends ConsumerWidget {
   }
 }
 
-/// A simplified preview of how the app looks with current settings
 class _ThemePreviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -348,11 +349,21 @@ class _ColorPalettePicker extends StatelessWidget {
       child: Row(
         children: _colors.map((color) {
           final isSelected = color.toARGB32() == currentColor;
+          final colorHex = color
+              .toARGB32()
+              .toRadixString(16)
+              .padLeft(8, '0')
+              .toUpperCase();
           return Padding(
             padding: const EdgeInsets.only(right: 12),
-            child: GestureDetector(
-              onTap: () => onColorSelected(color),
-              child: _ColorPaletteItem(color: color, isSelected: isSelected),
+            child: Semantics(
+              button: true,
+              selected: isSelected,
+              label: 'Select accent color $colorHex',
+              child: GestureDetector(
+                onTap: () => onColorSelected(color),
+                child: _ColorPaletteItem(color: color, isSelected: isSelected),
+              ),
             ),
           );
         }).toList(),
@@ -423,7 +434,6 @@ class _ColorPaletteItem extends StatelessWidget {
   }
 }
 
-/// Optimized app bar title with animation
 class _AppBarTitle extends StatelessWidget {
   final String title;
   final double topPadding;
@@ -440,14 +450,14 @@ class _AppBarTitle extends StatelessWidget {
         final expandRatio =
             ((constraints.maxHeight - minHeight) / (maxHeight - minHeight))
                 .clamp(0.0, 1.0);
-        final leftPadding = 56 - (32 * expandRatio); // 56 -> 24
+        final leftPadding = 56 - (32 * expandRatio);
         return FlexibleSpaceBar(
           expandedTitleScale: 1.0,
           titlePadding: EdgeInsets.only(left: leftPadding, bottom: 16),
           title: Text(
             title,
             style: TextStyle(
-              fontSize: 20 + (8 * expandRatio), // 20 -> 28
+              fontSize: 20 + (8 * expandRatio),
               fontWeight: FontWeight.bold,
               color: colorScheme.onSurface,
             ),

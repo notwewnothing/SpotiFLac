@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/utils/logger.dart';
+import 'package:spotiflac_android/utils/platform_spoof.dart' as platform;
 import 'package:spotiflac_android/providers/extension_provider.dart';
 
 final _log = AppLogger('ExploreProvider');
@@ -202,9 +203,7 @@ class ExploreNotifier extends Notifier<ExploreState> {
   Future<void> _saveToCache(List<ExploreSection> sections) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final data = {
-        'sections': sections.map((s) => s.toJson()).toList(),
-      };
+      final data = {'sections': sections.map((s) => s.toJson()).toList()};
       await prefs.setString(_cacheKey, jsonEncode(data));
       await prefs.setInt(_cacheTsKey, DateTime.now().millisecondsSinceEpoch);
       _log.d('Saved ${sections.length} explore sections to cache');
@@ -216,16 +215,16 @@ class ExploreNotifier extends Notifier<ExploreState> {
   /// Fetch home feed from spotify-web extension
   Future<void> fetchHomeFeed({bool forceRefresh = false}) async {
     _log.i('fetchHomeFeed called, forceRefresh=$forceRefresh');
-    
+
     // If we have cached content and it's fresh enough, skip network fetch
-    if (!forceRefresh && 
-        state.hasContent && 
+    if (!forceRefresh &&
+        state.hasContent &&
         state.lastFetched != null &&
         DateTime.now().difference(state.lastFetched!).inMinutes < 5) {
       _log.d('Using cached home feed (fresh enough)');
       return;
     }
-    
+
     if (state.isLoading) {
       _log.d('Home feed fetch already in progress');
       return;
@@ -238,7 +237,7 @@ class ExploreNotifier extends Notifier<ExploreState> {
     try {
       final extState = ref.read(extensionProvider);
       _log.d('Extensions count: ${extState.extensions.length}');
-      
+
       Extension? targetExt;
       for (final extension in extState.extensions) {
         if (!extension.enabled || !extension.hasHomeFeed) {
@@ -251,7 +250,7 @@ class ExploreNotifier extends Notifier<ExploreState> {
           }
         }
       }
-      
+
       if (targetExt == null) {
         _log.w('No extension with homeFeed capability found');
         state = state.copyWith(
@@ -260,7 +259,7 @@ class ExploreNotifier extends Notifier<ExploreState> {
         );
         return;
       }
-      
+
       _log.i('Fetching home feed from ${targetExt.id}...');
       final result = await PlatformBridge.getExtensionHomeFeed(targetExt.id);
 
@@ -276,10 +275,7 @@ class ExploreNotifier extends Notifier<ExploreState> {
       _log.d('getExtensionHomeFeed success=$success');
       if (!success) {
         final error = result['error'] as String? ?? 'Unknown error';
-        state = state.copyWith(
-          isLoading: false,
-          error: error,
-        );
+        state = state.copyWith(isLoading: false, error: error);
         return;
       }
 
@@ -291,10 +287,12 @@ class ExploreNotifier extends Notifier<ExploreState> {
           .toList();
 
       _log.i('Fetched ${sections.length} sections');
-      
+
       if (sections.isNotEmpty && sections.first.items.isNotEmpty) {
         final firstItem = sections.first.items.first;
-        _log.d('First item: name=${firstItem.name}, artists=${firstItem.artists}, type=${firstItem.type}');
+        _log.d(
+          'First item: name=${firstItem.name}, artists=${firstItem.artists}, type=${firstItem.type}',
+        );
       }
 
       final localGreeting = _getLocalGreeting();
@@ -311,10 +309,7 @@ class ExploreNotifier extends Notifier<ExploreState> {
       _saveToCache(sections);
     } catch (e, stack) {
       _log.e('Error fetching home feed: $e', e, stack);
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
@@ -324,7 +319,6 @@ class ExploreNotifier extends Notifier<ExploreState> {
 
   Future<void> refresh() => fetchHomeFeed(forceRefresh: true);
 }
-
 
 final exploreProvider = NotifierProvider<ExploreNotifier, ExploreState>(() {
   return ExploreNotifier();

@@ -15,7 +15,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get navHome => 'Startseite';
 
   @override
-  String get navLibrary => 'Archiv';
+  String get navLibrary => 'Bibliothek';
 
   @override
   String get navSettings => 'Einstellungen';
@@ -500,7 +500,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get setupNotificationBackgroundDescription =>
-      'Werde benachrichtigt über Download-Fortschritt und -Fertigstellung. Dies hilft Ihnen, Downloads zu verfolgen, wenn die App im Hintergrund ist.';
+      'Erhalte Benachrichtigungen über den Fortschritt und die Fertigstellung deiner Downloads, selbst wenn die App im Hintergrund läuft.';
 
   @override
   String get setupSkipForNow => 'Vorerst überspringen';
@@ -535,6 +535,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get dialogImport => 'Importieren';
+
+  @override
+  String get dialogDownload => 'Download';
 
   @override
   String get dialogDiscard => 'Verwerfen';
@@ -592,11 +595,11 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get dialogImportPlaylistTitle => 'Wiedergabeliste importieren';
+  String get dialogImportPlaylistTitle => 'Playlist importieren';
 
   @override
   String dialogImportPlaylistMessage(int count) {
-    return '$count Titel in CSV gefunden. Zur Warteschlange hinzufügen?';
+    return '$count Titel gefunden hinzufügen?';
   }
 
   @override
@@ -606,12 +609,12 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String snackbarAddedToQueue(String trackName) {
-    return '\"$trackName\" zur Warteschlange hinzugefügt';
+    return '\"$trackName\" hinzugefügt';
   }
 
   @override
   String snackbarAddedTracksToQueue(int count) {
-    return '$count Titel zur Warteschlange hinzugefügt';
+    return '$count Titel hinzugefügt';
   }
 
   @override
@@ -702,6 +705,17 @@ class AppLocalizationsDe extends AppLocalizations {
   String get errorNoTracksFound => 'Keine Titel gefunden';
 
   @override
+  String get errorUrlNotRecognized => 'Link not recognized';
+
+  @override
+  String get errorUrlNotRecognizedMessage =>
+      'This link is not supported. Make sure the URL is correct and a compatible extension is installed.';
+
+  @override
+  String get errorUrlFetchFailed =>
+      'Failed to load content from this link. Please try again.';
+
+  @override
   String errorMissingExtensionSource(String item) {
     return 'Kann $item nicht lade wegen fehlender Erweiterungsquelle';
   }
@@ -765,14 +779,21 @@ class AppLocalizationsDe extends AppLocalizations {
   String get filenameFormat => 'Dateinamenformat';
 
   @override
-  String get filenameShowAdvancedTags => 'Show advanced tags';
+  String get filenameShowAdvancedTags => 'Erweiterte Tags anzeigen';
 
   @override
   String get filenameShowAdvancedTagsDescription =>
-      'Enable formatted tags for track padding and date patterns';
+      'Formatierte Tags für Track-Padding und Datumsmuster aktivieren';
 
   @override
   String get folderOrganizationNone => 'Keine Organisation';
+
+  @override
+  String get folderOrganizationByPlaylist => 'By Playlist';
+
+  @override
+  String get folderOrganizationByPlaylistSubtitle =>
+      'Separate folder for each playlist';
 
   @override
   String get folderOrganizationByArtist => 'Nach Künstler';
@@ -918,11 +939,11 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String logEntries(int count) {
-    return 'Entries ($count)';
+    return '$count Einträge';
   }
 
   @override
-  String get credentialsTitle => 'Spotify Credentials';
+  String get credentialsTitle => 'Spotify-Anmeldedaten';
 
   @override
   String get credentialsDescription =>
@@ -984,7 +1005,7 @@ class AppLocalizationsDe extends AppLocalizations {
       'Wähle wie Songtexte mit deinen Downloads gespeichert werden';
 
   @override
-  String get lyricsModeEmbed => 'In Datei einbinden';
+  String get lyricsModeEmbed => 'In Datei einbetten';
 
   @override
   String get lyricsModeEmbedSubtitle => 'Lyrics in FLAC Metadaten gespeichert';
@@ -1001,7 +1022,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get lyricsModeBothSubtitle =>
-      'Lyrics einbinden und als .lrc speichern';
+      'Lyrics einbetten und als .lrc speichern';
 
   @override
   String get sectionColor => 'Farbe';
@@ -1019,29 +1040,30 @@ class AppLocalizationsDe extends AppLocalizations {
   String get appearanceLanguage => 'App Sprache';
 
   @override
-  String get settingsAppearanceSubtitle => 'Theme, colors, display';
+  String get settingsAppearanceSubtitle => 'Design, Farben, Anzeige';
 
   @override
-  String get settingsDownloadSubtitle => 'Service, quality, filename format';
+  String get settingsDownloadSubtitle => 'Dienst, Qualität, Dateinamen-Format';
 
   @override
-  String get settingsOptionsSubtitle => 'Fallback, lyrics, cover art, updates';
+  String get settingsOptionsSubtitle => 'Fallback, Lyrics, Covers, Updates';
 
   @override
-  String get settingsExtensionsSubtitle => 'Manage download providers';
+  String get settingsExtensionsSubtitle => 'Download-Anbieter verwalten';
 
   @override
-  String get settingsLogsSubtitle => 'View app logs for debugging';
+  String get settingsLogsSubtitle => 'App-Logs zum Debuggen anzeigen';
 
   @override
-  String get loadingSharedLink => 'Loading shared link...';
+  String get loadingSharedLink => 'Link wird geladen...';
 
   @override
-  String get pressBackAgainToExit => 'Press back again to exit';
+  String get pressBackAgainToExit =>
+      'Drücke wieder \"zurück\" um die App zu beenden';
 
   @override
   String downloadAllCount(int count) {
-    return 'Download All ($count)';
+    return 'Alle $count Titel herunterladen';
   }
 
   @override
@@ -1049,65 +1071,65 @@ class AppLocalizationsDe extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count tracks',
-      one: '1 track',
+      other: '$count Titel',
+      one: '1 Titel',
     );
     return '$_temp0';
   }
 
   @override
-  String get trackCopyFilePath => 'Copy file path';
+  String get trackCopyFilePath => 'Dateipfad kopieren';
 
   @override
-  String get trackRemoveFromDevice => 'Remove from device';
+  String get trackRemoveFromDevice => 'Vom Gerät entfernen';
 
   @override
-  String get trackLoadLyrics => 'Load Lyrics';
+  String get trackLoadLyrics => 'Lade Lyrics';
 
   @override
-  String get trackMetadata => 'Metadata';
+  String get trackMetadata => 'Metadaten';
 
   @override
-  String get trackFileInfo => 'File Info';
+  String get trackFileInfo => 'Datei-Info';
 
   @override
   String get trackLyrics => 'Lyrics';
 
   @override
-  String get trackFileNotFound => 'File not found';
+  String get trackFileNotFound => 'Datei nicht gefunden';
 
   @override
-  String get trackOpenInDeezer => 'Open in Deezer';
+  String get trackOpenInDeezer => 'In Deezer öffnen';
 
   @override
-  String get trackOpenInSpotify => 'Open in Spotify';
+  String get trackOpenInSpotify => 'In Spotify öffnen';
 
   @override
-  String get trackTrackName => 'Track name';
+  String get trackTrackName => 'Name des Titels';
 
   @override
-  String get trackArtist => 'Artist';
+  String get trackArtist => 'Künstler';
 
   @override
-  String get trackAlbumArtist => 'Album artist';
+  String get trackAlbumArtist => 'Album Künstler';
 
   @override
   String get trackAlbum => 'Album';
 
   @override
-  String get trackTrackNumber => 'Track number';
+  String get trackTrackNumber => 'Titelnummer';
 
   @override
-  String get trackDiscNumber => 'Disc number';
+  String get trackDiscNumber => 'CD-Nummer';
 
   @override
-  String get trackDuration => 'Duration';
+  String get trackDuration => 'Länge';
 
   @override
-  String get trackAudioQuality => 'Audio quality';
+  String get trackAudioQuality => 'Audioqualität';
 
   @override
-  String get trackReleaseDate => 'Release date';
+  String get trackReleaseDate => 'Erscheinungsdatum';
 
   @override
   String get trackGenre => 'Genre';
@@ -1116,71 +1138,73 @@ class AppLocalizationsDe extends AppLocalizations {
   String get trackLabel => 'Label';
 
   @override
-  String get trackCopyright => 'Copyright';
+  String get trackCopyright => 'Urheberrecht';
 
   @override
-  String get trackDownloaded => 'Downloaded';
+  String get trackDownloaded => 'Heruntergeladen';
 
   @override
-  String get trackCopyLyrics => 'Copy lyrics';
+  String get trackCopyLyrics => 'Lyrics kopieren';
 
   @override
-  String get trackLyricsNotAvailable => 'Lyrics not available for this track';
+  String get trackLyricsNotAvailable =>
+      'Lyrics sind für diesen Titel nicht verfügbar';
 
   @override
-  String get trackLyricsTimeout => 'Request timed out. Try again later.';
+  String get trackLyricsTimeout =>
+      'Anfrage Timeout. Versuche es später erneut.';
 
   @override
-  String get trackLyricsLoadFailed => 'Failed to load lyrics';
+  String get trackLyricsLoadFailed => 'Fehler beim Laden der Lyrics';
 
   @override
-  String get trackEmbedLyrics => 'Embed Lyrics';
+  String get trackEmbedLyrics => 'Lyrics einbetten';
 
   @override
-  String get trackLyricsEmbedded => 'Lyrics embedded successfully';
+  String get trackLyricsEmbedded => 'Lyrics erfolgreich eingebettet';
 
   @override
-  String get trackInstrumental => 'Instrumental track';
+  String get trackInstrumental => 'Instrumentalspur';
 
   @override
-  String get trackCopiedToClipboard => 'Copied to clipboard';
+  String get trackCopiedToClipboard => 'In Zwischenablage kopiert';
 
   @override
-  String get trackDeleteConfirmTitle => 'Remove from device?';
+  String get trackDeleteConfirmTitle => 'Vom Gerät entfernen?';
 
   @override
   String get trackDeleteConfirmMessage =>
-      'This will permanently delete the downloaded file and remove it from your history.';
+      'Dies wird die heruntergeladene Datei dauerhaft löschen und sie aus deinem Verlauf entfernen.';
 
   @override
-  String get dateToday => 'Today';
+  String get dateToday => 'Heute';
 
   @override
-  String get dateYesterday => 'Yesterday';
+  String get dateYesterday => 'Gestern';
 
   @override
   String dateDaysAgo(int count) {
-    return '$count days ago';
+    return 'Vor $count Tagen';
   }
 
   @override
   String dateWeeksAgo(int count) {
-    return '$count weeks ago';
+    return 'Vor $count Wochen';
   }
 
   @override
   String dateMonthsAgo(int count) {
-    return '$count months ago';
+    return 'Vor $count Monaten';
   }
 
   @override
-  String get storeFilterAll => 'All';
+  String get storeFilterAll => 'Alle';
 
   @override
-  String get storeFilterMetadata => 'Metadata';
+  String get storeFilterMetadata => 'Metadaten';
 
   @override
-  String get storeFilterDownload => 'Download';
+  String get storeFilterDownload => 'Herunterladen';
 
   @override
   String get storeFilterUtility => 'Utility';
@@ -1192,142 +1216,187 @@ class AppLocalizationsDe extends AppLocalizations {
   String get storeFilterIntegration => 'Integration';
 
   @override
-  String get storeClearFilters => 'Clear filters';
+  String get storeClearFilters => 'Filter entfernen';
 
   @override
-  String get extensionDefaultProvider => 'Default (Deezer/Spotify)';
+  String get storeAddRepoTitle => 'Add Extension Repository';
 
   @override
-  String get extensionDefaultProviderSubtitle => 'Use built-in search';
+  String get storeAddRepoDescription =>
+      'Enter a GitHub repository URL that contains a registry.json file to browse and install extensions.';
 
   @override
-  String get extensionAuthor => 'Author';
+  String get storeRepoUrlLabel => 'Repository URL';
+
+  @override
+  String get storeRepoUrlHint => 'https://github.com/user/repo';
+
+  @override
+  String get storeRepoUrlHelper =>
+      'e.g. https://github.com/user/extensions-repo';
+
+  @override
+  String get storeAddRepoButton => 'Add Repository';
+
+  @override
+  String get storeChangeRepoTooltip => 'Change repository';
+
+  @override
+  String get storeRepoDialogTitle => 'Extension Repository';
+
+  @override
+  String get storeRepoDialogCurrent => 'Current repository:';
+
+  @override
+  String get storeNewRepoUrlLabel => 'New Repository URL';
+
+  @override
+  String get storeLoadError => 'Failed to load store';
+
+  @override
+  String get storeEmptyNoExtensions => 'No extensions available';
+
+  @override
+  String get storeEmptyNoResults => 'No extensions found';
+
+  @override
+  String get extensionDefaultProvider => 'Standard (Deezer/Spotify)';
+
+  @override
+  String get extensionDefaultProviderSubtitle => 'Eingebaute Suche verwenden';
+
+  @override
+  String get extensionAuthor => 'Entwickler';
 
   @override
   String get extensionId => 'ID';
 
   @override
-  String get extensionError => 'Error';
+  String get extensionError => 'Fehler';
 
   @override
-  String get extensionCapabilities => 'Capabilities';
+  String get extensionCapabilities => 'Eigenschaften';
 
   @override
-  String get extensionMetadataProvider => 'Metadata Provider';
+  String get extensionMetadataProvider => 'Metadaten-Anbieter';
 
   @override
-  String get extensionDownloadProvider => 'Download Provider';
+  String get extensionDownloadProvider => 'Download-Anbieter';
 
   @override
-  String get extensionLyricsProvider => 'Lyrics Provider';
+  String get extensionLyricsProvider => 'Lyrics-Anbieter';
 
   @override
   String get extensionUrlHandler => 'URL Handler';
 
   @override
-  String get extensionQualityOptions => 'Quality Options';
+  String get extensionQualityOptions => 'Qualitätsoptionen';
 
   @override
   String get extensionPostProcessingHooks => 'Post-Processing Hooks';
 
   @override
-  String get extensionPermissions => 'Permissions';
+  String get extensionPermissions => 'Berechtigungen';
 
   @override
-  String get extensionSettings => 'Settings';
+  String get extensionSettings => 'Einstellungen';
 
   @override
-  String get extensionRemoveButton => 'Remove Extension';
+  String get extensionRemoveButton => 'Erweiterung entfernen';
 
   @override
-  String get extensionUpdated => 'Updated';
+  String get extensionUpdated => 'Aktualisiert';
 
   @override
-  String get extensionMinAppVersion => 'Min App Version';
+  String get extensionMinAppVersion => 'Min App-Version';
 
   @override
-  String get extensionCustomTrackMatching => 'Custom Track Matching';
+  String get extensionCustomTrackMatching =>
+      'Benutzerdefiniertes Track-Matching';
 
   @override
-  String get extensionPostProcessing => 'Post-Processing';
+  String get extensionPostProcessing => 'Post-processing';
 
   @override
   String extensionHooksAvailable(int count) {
-    return '$count hook(s) available';
+    return '$count Hook(s) verfügbar';
   }
 
   @override
   String extensionPatternsCount(int count) {
-    return '$count pattern(s)';
+    return '$count Muster';
   }
 
   @override
   String extensionStrategy(String strategy) {
-    return 'Strategy: $strategy';
+    return 'Strategie: $strategy';
   }
 
   @override
-  String get extensionsProviderPrioritySection => 'Provider Priority';
+  String get extensionsProviderPrioritySection => 'Provider-Priorität';
 
   @override
-  String get extensionsInstalledSection => 'Installed Extensions';
+  String get extensionsInstalledSection => 'Installierte Erweiterungen';
 
   @override
-  String get extensionsNoExtensions => 'No extensions installed';
+  String get extensionsNoExtensions => 'Keine Erweiterungen installiert';
 
   @override
   String get extensionsNoExtensionsSubtitle =>
-      'Install .spotiflac-ext files to add new providers';
+      'Installiere .spotiflac-ext Dateien um neue Anbieter hinzuzufügen';
 
   @override
-  String get extensionsInstallButton => 'Install Extension';
+  String get extensionsInstallButton => 'Erweiterung installieren';
 
   @override
   String get extensionsInfoTip =>
-      'Extensions can add new metadata and download providers. Only install extensions from trusted sources.';
+      'Erweiterungen können neue Metadaten und Download-Anbieter hinzufügen. Installiere nur Erweiterungen von vertrauenswürdigen Quellen.';
 
   @override
-  String get extensionsInstalledSuccess => 'Extension installed successfully';
+  String get extensionsInstalledSuccess =>
+      'Erweiterung erfolgreich installiert';
 
   @override
-  String get extensionsDownloadPriority => 'Download Priority';
+  String get extensionsDownloadPriority => 'Download-Priorität';
 
   @override
-  String get extensionsDownloadPrioritySubtitle => 'Set download service order';
+  String get extensionsDownloadPrioritySubtitle =>
+      'Download-Service-Reihenfolge festlegen';
 
   @override
   String get extensionsNoDownloadProvider =>
-      'No extensions with download provider';
+      'Keine Erweiterungen mit Download-Provider';
 
   @override
-  String get extensionsMetadataPriority => 'Metadata Priority';
+  String get extensionsMetadataPriority => 'Metadaten Priorität';
 
   @override
   String get extensionsMetadataPrioritySubtitle =>
-      'Set search & metadata source order';
+      'Reihenfolge der Such- und Metadaten quellen festlegen';
 
   @override
   String get extensionsNoMetadataProvider =>
-      'No extensions with metadata provider';
+      'Keine Erweiterungen mit Metadaten-Anbieter';
 
   @override
-  String get extensionsSearchProvider => 'Search Provider';
+  String get extensionsSearchProvider => 'Such-Provider';
 
   @override
-  String get extensionsNoCustomSearch => 'No extensions with custom search';
+  String get extensionsNoCustomSearch =>
+      'Keine Erweiterungen mit benutzerdefinierter Suche';
 
   @override
   String get extensionsSearchProviderDescription =>
-      'Choose which service to use for searching tracks';
+      'Wähle den Dienst für die Suche von Titel';
 
   @override
-  String get extensionsCustomSearch => 'Custom search';
+  String get extensionsCustomSearch => 'Benutzerdefinierte Suche';
 
   @override
-  String get extensionsErrorLoading => 'Error loading extension';
+  String get extensionsErrorLoading => 'Fehler beim Laden der Erweiterung';
 
   @override
-  String get qualityFlacLossless => 'FLAC Lossless';
+  String get qualityFlacLossless => 'FLAC Verlustfrei';
 
   @override
   String get qualityFlacLosslessSubtitle => '16-bit / 44.1kHz';
@@ -1336,21 +1405,21 @@ class AppLocalizationsDe extends AppLocalizations {
   String get qualityHiResFlac => 'Hi-Res FLAC';
 
   @override
-  String get qualityHiResFlacSubtitle => '24-bit / up to 96kHz';
+  String get qualityHiResFlacSubtitle => '24-Bit / bis 96kHz';
 
   @override
   String get qualityHiResFlacMax => 'Hi-Res FLAC Max';
 
   @override
-  String get qualityHiResFlacMaxSubtitle => '24-bit / up to 192kHz';
+  String get qualityHiResFlacMaxSubtitle => '24-Bit / bis 192kHz';
 
   @override
   String get qualityNote =>
-      'Actual quality depends on track availability from the service';
+      'Die eigentliche Qualität hängt von der Verfügbarkeit des Dienstes ab';
 
   @override
   String get youtubeQualityNote =>
-      'YouTube provides lossy audio only. Not part of lossless fallback.';
+      'YouTube bietet nur verlustbehaftete Audioqualität. Deswegen ist es kein Teil des verlustfreien Fallbacks.';
 
   @override
   String get youtubeOpusBitrateTitle => 'YouTube Opus Bitrate';
@@ -1359,13 +1428,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get youtubeMp3BitrateTitle => 'YouTube MP3 Bitrate';
 
   @override
-  String get downloadAskBeforeDownload => 'Ask Before Download';
+  String get downloadAskBeforeDownload => 'Qualität vor Download fragen';
 
   @override
-  String get downloadDirectory => 'Download Directory';
+  String get downloadDirectory => 'Downloadverzeichnis';
 
   @override
-  String get downloadSeparateSinglesFolder => 'Separate Singles Folder';
+  String get downloadSeparateSinglesFolder => 'Singles Ordner trennen';
 
   @override
   String get downloadAlbumFolderStructure => 'Album Folder Structure';
@@ -1378,53 +1447,53 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get downloadUsePrimaryArtistOnlyEnabled =>
-      'Featured artists removed from folder name (e.g. Justin Bieber, Quavo → Justin Bieber)';
+      'Vorgestellte Künstler aus dem Ordnernamen entfernt (z.B. Justin Bieber, Quavo → Justin Bieber)';
 
   @override
   String get downloadUsePrimaryArtistOnlyDisabled =>
       'Full artist string used for folder name';
 
   @override
-  String get downloadSelectQuality => 'Select Quality';
+  String get downloadSelectQuality => 'Qualität wählen';
 
   @override
-  String get downloadFrom => 'Download From';
+  String get downloadFrom => 'Herunterladen von';
 
   @override
-  String get appearanceAmoledDark => 'AMOLED Dark';
+  String get appearanceAmoledDark => 'AMOLED Schwarz';
 
   @override
-  String get appearanceAmoledDarkSubtitle => 'Pure black background';
+  String get appearanceAmoledDarkSubtitle => 'AMOLED Hintergrund';
 
   @override
-  String get queueClearAll => 'Clear All';
+  String get queueClearAll => 'Alles löschen';
 
   @override
   String get queueClearAllMessage =>
-      'Are you sure you want to clear all downloads?';
+      'Bist du dir sicher, dass du alle Downloads löschen möchten?';
 
   @override
   String get settingsAutoExportFailed => 'Auto-export failed downloads';
 
   @override
   String get settingsAutoExportFailedSubtitle =>
-      'Save failed downloads to TXT file automatically';
+      'Fehlgeschlagene Downloads automatisch in eine TXT-Datei speichern';
 
   @override
-  String get settingsDownloadNetwork => 'Download Network';
+  String get settingsDownloadNetwork => 'Download Netzwerk';
 
   @override
-  String get settingsDownloadNetworkAny => 'WiFi + Mobile Data';
+  String get settingsDownloadNetworkAny => 'WLAN + Mobile Daten';
 
   @override
-  String get settingsDownloadNetworkWifiOnly => 'WiFi Only';
+  String get settingsDownloadNetworkWifiOnly => 'Nur WLAN';
 
   @override
   String get settingsDownloadNetworkSubtitle =>
-      'Choose which network to use for downloads. When set to WiFi Only, downloads will pause on mobile data.';
+      'Wähle aus, welches Netzwerk für Downloads verwendet werden soll. Wenn nur WLAN aktiviert wird, werden Downloads auf mobilen Daten angehalten.';
 
   @override
-  String get albumFolderArtistAlbum => 'Artist / Album';
+  String get albumFolderArtistAlbum => 'Künstler/Album';
 
   @override
   String get albumFolderArtistAlbumSubtitle => 'Albums/Artist Name/Album Name/';
@@ -1434,13 +1503,13 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get albumFolderArtistYearAlbumSubtitle =>
-      'Albums/Artist Name/[2005] Album Name/';
+      'Albums/Künster Name/[2005] Album Name/';
 
   @override
-  String get albumFolderAlbumOnly => 'Album Only';
+  String get albumFolderAlbumOnly => 'Nur Alben';
 
   @override
-  String get albumFolderAlbumOnlySubtitle => 'Albums/Album Name/';
+  String get albumFolderAlbumOnlySubtitle => 'Alben/Album Name/';
 
   @override
   String get albumFolderYearAlbum => '[Year] Album';
@@ -1456,39 +1525,39 @@ class AppLocalizationsDe extends AppLocalizations {
       'Artist/Album/ and Artist/Singles/';
 
   @override
-  String get downloadedAlbumDeleteSelected => 'Delete Selected';
+  String get downloadedAlbumDeleteSelected => 'Ausgewählte löschen';
 
   @override
   String downloadedAlbumDeleteMessage(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'tracks',
-      one: 'track',
+      other: 'Titel',
+      one: 'Titel',
     );
-    return 'Delete $count $_temp0 from this album?\n\nThis will also delete the files from storage.';
+    return '$count $_temp0 aus diesem Album löschen?\n\nDadurch werden auch die Dateien aus dem Speicher gelöscht.';
   }
 
   @override
   String downloadedAlbumSelectedCount(int count) {
-    return '$count selected';
+    return '$count ausgewählt';
   }
 
   @override
-  String get downloadedAlbumAllSelected => 'All tracks selected';
+  String get downloadedAlbumAllSelected => 'Alle Titel sind ausgewählt';
 
   @override
-  String get downloadedAlbumTapToSelect => 'Tap tracks to select';
+  String get downloadedAlbumTapToSelect => 'Tippe auf Titel zum Auswählen';
 
   @override
   String downloadedAlbumDeleteCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'tracks',
-      one: 'track',
+      other: 'Titel',
+      one: 'Titel',
     );
-    return 'Delete $count $_temp0';
+    return 'Lösche $count $_temp0';
   }
 
   @override
@@ -1500,22 +1569,22 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get recentTypeArtist => 'Artist';
+  String get recentTypeArtist => 'Künstler';
 
   @override
   String get recentTypeAlbum => 'Album';
 
   @override
-  String get recentTypeSong => 'Song';
+  String get recentTypeSong => 'Titel';
 
   @override
   String get recentTypePlaylist => 'Playlist';
 
   @override
-  String get recentEmpty => 'No recent items yet';
+  String get recentEmpty => 'Noch keine aktuellen Einträge';
 
   @override
-  String get recentShowAllDownloads => 'Show All Downloads';
+  String get recentShowAllDownloads => 'Alle Downloads anzeigen';
 
   @override
   String recentPlaylistInfo(String name) {
@@ -1523,41 +1592,41 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get discographyDownload => 'Download Discography';
+  String get discographyDownload => 'Diskographie herunterladen';
 
   @override
-  String get discographyDownloadAll => 'Download All';
+  String get discographyDownloadAll => 'Alle Herunterladen';
 
   @override
   String discographyDownloadAllSubtitle(int count, int albumCount) {
-    return '$count tracks from $albumCount releases';
+    return '$count Titel von $albumCount Releases';
   }
 
   @override
-  String get discographyAlbumsOnly => 'Albums Only';
+  String get discographyAlbumsOnly => 'Nur Alben';
 
   @override
   String discographyAlbumsOnlySubtitle(int count, int albumCount) {
-    return '$count tracks from $albumCount albums';
+    return '$count Titel von $albumCount Albums';
   }
 
   @override
-  String get discographySinglesOnly => 'Singles & EPs Only';
+  String get discographySinglesOnly => 'Nur Singles & EPs';
 
   @override
   String discographySinglesOnlySubtitle(int count, int albumCount) {
-    return '$count tracks from $albumCount singles';
+    return '$count Titel von $albumCount Singles';
   }
 
   @override
-  String get discographySelectAlbums => 'Select Albums...';
+  String get discographySelectAlbums => 'Alben auswählen...';
 
   @override
   String get discographySelectAlbumsSubtitle =>
       'Choose specific albums or singles';
 
   @override
-  String get discographyFetchingTracks => 'Fetching tracks...';
+  String get discographyFetchingTracks => 'Lade Titel...';
 
   @override
   String discographyFetchingAlbum(int current, int total) {
@@ -1566,11 +1635,11 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String discographySelectedCount(int count) {
-    return '$count selected';
+    return '$count ausgewählt';
   }
 
   @override
-  String get discographyDownloadSelected => 'Download Selected';
+  String get discographyDownloadSelected => 'Auswahl herunterladen';
 
   @override
   String discographyAddedToQueue(int count) {
@@ -1579,20 +1648,20 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String discographySkippedDownloaded(int added, int skipped) {
-    return '$added added, $skipped already downloaded';
+    return '$added hinzugefügt, $skipped bereits heruntergeladen';
   }
 
   @override
-  String get discographyNoAlbums => 'No albums available';
+  String get discographyNoAlbums => 'Es sind keine Alben verfügbar';
 
   @override
   String get discographyFailedToFetch => 'Failed to fetch some albums';
 
   @override
-  String get sectionStorageAccess => 'Storage Access';
+  String get sectionStorageAccess => 'Speicherzugriff';
 
   @override
-  String get allFilesAccess => 'All Files Access';
+  String get allFilesAccess => 'Zugriff auf alle Dateien';
 
   @override
   String get allFilesAccessEnabledSubtitle => 'Can write to any folder';
@@ -1602,170 +1671,189 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get allFilesAccessDescription =>
-      'Enable this if you encounter write errors when saving to custom folders. Android 13+ restricts access to certain directories by default.';
+      'Aktiviere die Option, wenn beim Speichern in benutzerdefinierten Ordnern Schreibfehler auftreten. Weil Android 13+ standardmäßig den Zugriff auf bestimmte Verzeichnisse einschränkt.';
 
   @override
   String get allFilesAccessDeniedMessage =>
-      'Permission was denied. Please enable \'All files access\' manually in system settings.';
+      'Zugriff verweigert. Bitte aktiviere \"Zugriff auf alle Dateien\" manuell in den Systemeinstellungen.';
 
   @override
   String get allFilesAccessDisabledMessage =>
-      'All Files Access disabled. The app will use limited storage access.';
+      'Zugriff auf alle Dateien ist deaktiviert. Die App verwendet nur begrenzten Zugriff auf den Speicher.';
 
   @override
-  String get settingsLocalLibrary => 'Local Library';
+  String get settingsLocalLibrary => 'Lokale Bibliothek';
 
   @override
   String get settingsLocalLibrarySubtitle => 'Scan music & detect duplicates';
 
   @override
-  String get settingsCache => 'Storage & Cache';
+  String get settingsCache => 'Speicher & Cache';
 
   @override
   String get settingsCacheSubtitle => 'View size and clear cached data';
 
   @override
-  String get libraryTitle => 'Local Library';
+  String get libraryTitle => 'Lokale Bibliothek';
 
   @override
-  String get libraryScanSettings => 'Scan Settings';
+  String get libraryScanSettings => 'Scan Einstellungen';
 
   @override
-  String get libraryEnableLocalLibrary => 'Enable Local Library';
+  String get libraryEnableLocalLibrary => 'Lokale Bibliothek aktivieren';
 
   @override
   String get libraryEnableLocalLibrarySubtitle =>
       'Scan and track your existing music';
 
   @override
-  String get libraryFolder => 'Library Folder';
+  String get libraryFolder => 'Bibliotheksordner';
 
   @override
-  String get libraryFolderHint => 'Tap to select folder';
+  String get libraryFolderHint => 'Tippe um Ordner auszuwählen';
 
   @override
   String get libraryShowDuplicateIndicator => 'Show Duplicate Indicator';
 
   @override
   String get libraryShowDuplicateIndicatorSubtitle =>
-      'Show when searching for existing tracks';
+      'Bei der Suche nach vorhandenen Titeln anzeigen';
 
   @override
-  String get libraryActions => 'Actions';
+  String get libraryAutoScan => 'Auto Scan';
 
   @override
-  String get libraryScan => 'Scan Library';
+  String get libraryAutoScanSubtitle =>
+      'Automatically scan your library for new files';
 
   @override
-  String get libraryScanSubtitle => 'Scan for audio files';
+  String get libraryAutoScanOff => 'Off';
 
   @override
-  String get libraryScanSelectFolderFirst => 'Select a folder first';
+  String get libraryAutoScanOnOpen => 'Every app open';
 
   @override
-  String get libraryCleanupMissingFiles => 'Cleanup Missing Files';
+  String get libraryAutoScanDaily => 'Daily';
+
+  @override
+  String get libraryAutoScanWeekly => 'Weekly';
+
+  @override
+  String get libraryActions => 'Aktionen';
+
+  @override
+  String get libraryScan => 'Bibliothek scannen';
+
+  @override
+  String get libraryScanSubtitle => 'Suche nach Audiodateien';
+
+  @override
+  String get libraryScanSelectFolderFirst => 'Wähle zuerst einen Ordner';
+
+  @override
+  String get libraryCleanupMissingFiles => 'Fehlende Dateien bereinigen';
 
   @override
   String get libraryCleanupMissingFilesSubtitle =>
-      'Remove entries for files that no longer exist';
+      'Verlaufseinträge für Dateien löschen, die nicht mehr existieren';
 
   @override
-  String get libraryClear => 'Clear Library';
+  String get libraryClear => 'Bibliothek löschen';
 
   @override
-  String get libraryClearSubtitle => 'Remove all scanned tracks';
+  String get libraryClearSubtitle => 'Alle gescannten Titel entfernen';
 
   @override
-  String get libraryClearConfirmTitle => 'Clear Library';
+  String get libraryClearConfirmTitle => 'Bibliothek löschen';
 
   @override
   String get libraryClearConfirmMessage =>
-      'This will remove all scanned tracks from your library. Your actual music files will not be deleted.';
+      'Dadurch werden alle gescannten Titel aus Ihrer Bibliothek entfernt. Ihre eigentlichen Musikdateien werden nicht gelöscht.';
 
   @override
-  String get libraryAbout => 'About Local Library';
+  String get libraryAbout => 'Über die lokale Bibliothek';
 
   @override
   String get libraryAboutDescription =>
-      'Scans your existing music collection to detect duplicates when downloading. Supports FLAC, M4A, MP3, Opus, and OGG formats. Metadata is read from file tags when available.';
+      'Durchsucht deine bestehende Musiksammlung, um Duplikate beim Herunterladen zu erkennen. Unterstützt die Formate FLAC, M4A, MP3, Opus und OGG. Metadaten werden, sofern verfügbar, aus den Dateitags gelesen.';
 
   @override
   String libraryTracksUnit(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'tracks',
-      one: 'track',
+      other: '$count Titel',
+      one: '1 Titel',
     );
     return '$_temp0';
   }
 
   @override
   String libraryLastScanned(String time) {
-    return 'Last scanned: $time';
+    return 'Zuletzt gescannt: $time';
   }
 
   @override
-  String get libraryLastScannedNever => 'Never';
+  String get libraryLastScannedNever => 'Nie';
 
   @override
-  String get libraryScanning => 'Scanning...';
+  String get libraryScanning => 'Scannen...';
 
   @override
   String libraryScanProgress(String progress, int total) {
-    return '$progress% of $total files';
+    return '$progress% von $total Dateien';
   }
 
   @override
-  String get libraryInLibrary => 'In Library';
+  String get libraryInLibrary => 'In Bibliothek';
 
   @override
   String libraryRemovedMissingFiles(int count) {
-    return 'Removed $count missing files from library';
+    return 'Entfernte $count fehlende Dateien aus der Bibliothek';
   }
 
   @override
-  String get libraryCleared => 'Library cleared';
+  String get libraryCleared => 'Bibliothek geleert';
 
   @override
-  String get libraryStorageAccessRequired => 'Storage Access Required';
+  String get libraryStorageAccessRequired => 'Speicherzugriff erforderlich';
 
   @override
   String get libraryStorageAccessMessage =>
-      'SpotiFLAC needs storage access to scan your music library. Please grant permission in settings.';
+      'SpotiFLAC benötigt Speicherzugriff, um deine Musikbibliothek zu scannen. Bitte erteile die Berechtigung in den Einstellungen.';
 
   @override
-  String get libraryFolderNotExist => 'Selected folder does not exist';
+  String get libraryFolderNotExist => 'Der ausgewählte Ordner existiert nicht';
 
   @override
-  String get librarySourceDownloaded => 'Downloaded';
+  String get librarySourceDownloaded => 'Heruntergeladen';
 
   @override
-  String get librarySourceLocal => 'Local';
+  String get librarySourceLocal => 'Lokal';
 
   @override
-  String get libraryFilterAll => 'All';
+  String get libraryFilterAll => 'Alle';
 
   @override
-  String get libraryFilterDownloaded => 'Downloaded';
+  String get libraryFilterDownloaded => 'Heruntergeladen';
 
   @override
-  String get libraryFilterLocal => 'Local';
+  String get libraryFilterLocal => 'Lokal';
 
   @override
-  String get libraryFilterTitle => 'Filters';
+  String get libraryFilterTitle => 'Filter';
 
   @override
-  String get libraryFilterReset => 'Reset';
+  String get libraryFilterReset => 'Zurücksetzen';
 
   @override
-  String get libraryFilterApply => 'Apply';
+  String get libraryFilterApply => 'Anwenden';
 
   @override
-  String get libraryFilterSource => 'Source';
+  String get libraryFilterSource => 'Quelle';
 
   @override
-  String get libraryFilterQuality => 'Quality';
+  String get libraryFilterQuality => 'Qualität';
 
   @override
   String get libraryFilterQualityHiRes => 'Hi-Res (24bit)';
@@ -1774,30 +1862,30 @@ class AppLocalizationsDe extends AppLocalizations {
   String get libraryFilterQualityCD => 'CD (16bit)';
 
   @override
-  String get libraryFilterQualityLossy => 'Lossy';
+  String get libraryFilterQualityLossy => 'Verlustbehaftet';
 
   @override
   String get libraryFilterFormat => 'Format';
 
   @override
-  String get libraryFilterSort => 'Sort';
+  String get libraryFilterSort => 'Sortieren';
 
   @override
-  String get libraryFilterSortLatest => 'Latest';
+  String get libraryFilterSortLatest => 'Neuste';
 
   @override
-  String get libraryFilterSortOldest => 'Oldest';
+  String get libraryFilterSortOldest => 'Älteste';
 
   @override
-  String get timeJustNow => 'Just now';
+  String get timeJustNow => 'Gerade eben';
 
   @override
   String timeMinutesAgo(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count minutes ago',
-      one: '1 minute ago',
+      other: 'vor $count Minuten',
+      one: 'vor $count Minute',
     );
     return '$_temp0';
   }
@@ -1807,199 +1895,201 @@ class AppLocalizationsDe extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count hours ago',
-      one: '1 hour ago',
+      other: 'vor $count Stunden',
+      one: 'vor $count Stunde',
     );
     return '$_temp0';
   }
 
   @override
-  String get tutorialWelcomeTitle => 'Welcome to SpotiFLAC!';
+  String get tutorialWelcomeTitle => 'Willkommen bei SpotiFLAC!';
 
   @override
   String get tutorialWelcomeDesc =>
-      'Let\'s learn how to download your favorite music in lossless quality. This quick tutorial will show you the basics.';
+      'Lass uns lernen, wie du deine Lieblingsmusik in verlustfreier Qualität herunterlädst. Dieses schnelle Tutorial zeigt dir die Grundlagen.';
 
   @override
   String get tutorialWelcomeTip1 =>
-      'Download music from Spotify, Deezer, or paste any supported URL';
+      'Lade Musik von Spotify, Deezer herunter oder jeden unterstützten Link einfügen';
 
   @override
   String get tutorialWelcomeTip2 =>
-      'Get FLAC quality audio from Tidal, Qobuz, or Amazon Music';
+      'Hole dir FLAC Audio von Tidal, Qobuz oder Amazon Musik';
 
   @override
   String get tutorialWelcomeTip3 =>
-      'Automatic metadata, cover art, and lyrics embedding';
+      'Automatische Metadaten, Cover und Lyrics einbetten';
 
   @override
-  String get tutorialSearchTitle => 'Finding Music';
+  String get tutorialSearchTitle => 'Suche Musik';
 
   @override
   String get tutorialSearchDesc =>
-      'There are two easy ways to find music you want to download.';
+      'Es gibt zwei einfache Möglichkeiten, Musik zu finden, die du herunterladen möchtest.';
 
   @override
-  String get tutorialDownloadTitle => 'Downloading Music';
+  String get tutorialDownloadTitle => 'Musik wird heruntergeladen';
 
   @override
   String get tutorialDownloadDesc =>
-      'Downloading music is simple and fast. Here\'s how it works.';
+      'Das Herunterladen von Musik ist einfach und schnell. So funktioniert es.';
 
   @override
-  String get tutorialLibraryTitle => 'Your Library';
+  String get tutorialLibraryTitle => 'Deine Bibliothek';
 
   @override
   String get tutorialLibraryDesc =>
-      'All your downloaded music is organized in the Library tab.';
+      'Die gesamte heruntergeladene Musik ist in der Bibliothek organisiert.';
 
   @override
   String get tutorialLibraryTip1 =>
-      'View download progress and queue in the Library tab';
+      'Fortschritt und Warteschlange im Bibliothek‑Tab anzeigen';
 
   @override
   String get tutorialLibraryTip2 =>
-      'Tap any track to play it with your music player';
+      'Tippe auf einen Titel, um ihn mit deinem Musikplayer abzuspielen';
 
   @override
   String get tutorialLibraryTip3 =>
-      'Switch between list and grid view for better browsing';
+      'Wechsle zwischen Listen- und Gitteransicht für ein besseres Surfen';
 
   @override
-  String get tutorialExtensionsTitle => 'Extensions';
+  String get tutorialExtensionsTitle => 'Erweiterungen';
 
   @override
   String get tutorialExtensionsDesc =>
-      'Extend the app\'s capabilities with community extensions.';
+      'Erweitere die Fähigkeiten der App mit Community-Erweiterungen.';
 
   @override
   String get tutorialExtensionsTip1 =>
-      'Browse the Store tab to discover useful extensions';
+      'Im Store Tab findest du nützliche Erweiterungen';
 
   @override
   String get tutorialExtensionsTip2 =>
-      'Add new download providers or search sources';
+      'Neue Download- oder Suchanbieter hinzufügen';
 
   @override
   String get tutorialExtensionsTip3 =>
-      'Get lyrics, enhanced metadata, and more features';
+      'Lyrics, erweiterte Metadaten und mehr Funktionen erhalten';
 
   @override
-  String get tutorialSettingsTitle => 'Customize Your Experience';
+  String get tutorialSettingsTitle => 'Passe deine Benutzererfahrung an';
 
   @override
   String get tutorialSettingsDesc =>
-      'Personalize the app in Settings to match your preferences.';
+      'Personalisiere die App in den Einstellungen nach deiner Präferenz.';
 
   @override
   String get tutorialSettingsTip1 =>
-      'Change download location and folder organization';
+      'Downloadverzeichnis und Ordnerorganisation ändern';
 
   @override
   String get tutorialSettingsTip2 =>
-      'Set default audio quality and format preferences';
+      'Standard Audioqualität und Formateinstellungen festlegen';
 
   @override
-  String get tutorialSettingsTip3 => 'Customize app theme and appearance';
+  String get tutorialSettingsTip3 => 'App-Design und Aussehen anpassen';
 
   @override
   String get tutorialReadyMessage =>
-      'You\'re all set! Start downloading your favorite music now.';
+      'Das ist alles! Lade jetzt deine Lieblingsmusik herunter.';
 
   @override
-  String get libraryForceFullScan => 'Force Full Scan';
+  String get libraryForceFullScan => 'Vollen Neu-Scan erzwingen';
 
   @override
-  String get libraryForceFullScanSubtitle => 'Rescan all files, ignoring cache';
+  String get libraryForceFullScanSubtitle =>
+      'Alle Dateien erneut scannen und Cache ignorieren';
 
   @override
-  String get cleanupOrphanedDownloads => 'Cleanup Orphaned Downloads';
+  String get cleanupOrphanedDownloads => 'Verwaiste Downloads bereinigen';
 
   @override
   String get cleanupOrphanedDownloadsSubtitle =>
-      'Remove history entries for files that no longer exist';
+      'Verlaufseinträge für Dateien löschen, die nicht mehr existieren';
 
   @override
   String cleanupOrphanedDownloadsResult(int count) {
-    return 'Removed $count orphaned entries from history';
+    return 'Entfernte $count verwaiste Einträge aus dem Verlauf';
   }
 
   @override
-  String get cleanupOrphanedDownloadsNone => 'No orphaned entries found';
+  String get cleanupOrphanedDownloadsNone =>
+      'Keine verwaisten Einträge gefunden';
 
   @override
-  String get cacheTitle => 'Storage & Cache';
+  String get cacheTitle => 'Speicher & Cache';
 
   @override
-  String get cacheSummaryTitle => 'Cache overview';
+  String get cacheSummaryTitle => 'Cache-Übersicht';
 
   @override
   String get cacheSummarySubtitle =>
-      'Clearing cache will not remove downloaded music files.';
+      'Das Leeren des Caches entfernt nicht heruntergeladene Musikdateien.';
 
   @override
   String cacheEstimatedTotal(String size) {
-    return 'Estimated cache usage: $size';
+    return 'Geschätzte Cache-Größe: $size';
   }
 
   @override
-  String get cacheSectionStorage => 'Cached Data';
+  String get cacheSectionStorage => 'Zwischengespeicherte Daten';
 
   @override
-  String get cacheSectionMaintenance => 'Maintenance';
+  String get cacheSectionMaintenance => 'Wartung';
 
   @override
-  String get cacheAppDirectory => 'App cache directory';
+  String get cacheAppDirectory => 'App-Cache Verzeichnis';
 
   @override
   String get cacheAppDirectoryDesc =>
-      'HTTP responses, WebView data, and other temporary app data.';
+      'HTTP-Antworten, WebView Daten und andere temporäre App-Daten.';
 
   @override
-  String get cacheTempDirectory => 'Temporary directory';
+  String get cacheTempDirectory => 'Temporäres Verzeichnis';
 
   @override
   String get cacheTempDirectoryDesc =>
-      'Temporary files from downloads and audio conversion.';
+      'Temporäre Dateien von Downloads und Audio-Konvertierung.';
 
   @override
-  String get cacheCoverImage => 'Cover image cache';
+  String get cacheCoverImage => 'Cover-Cache';
 
   @override
   String get cacheCoverImageDesc =>
-      'Downloaded album and track cover art. Will re-download when viewed.';
+      'Album- und Titelcover heruntergeladen. Werden erneut heruntergeladen.';
 
   @override
-  String get cacheLibraryCover => 'Library cover cache';
+  String get cacheLibraryCover => 'Bibliotheks-Cover-Cache';
 
   @override
   String get cacheLibraryCoverDesc =>
-      'Cover art extracted from local music files. Will re-extract on next scan.';
+      'Cover aus lokalen Musikdateien extrahiert. Wird beim nächsten Scannen neu extrahiert.';
 
   @override
-  String get cacheExploreFeed => 'Explore feed cache';
+  String get cacheExploreFeed => 'Feed-Cache entdecken';
 
   @override
   String get cacheExploreFeedDesc =>
-      'Explore tab content (new releases, trending). Will refresh on next visit.';
+      'Startseiten-Inhalt (neue Releases, Trends). Wird bei einem Neustart aktualisiert.';
 
   @override
-  String get cacheTrackLookup => 'Track lookup cache';
+  String get cacheTrackLookup => 'Titel Such-Cache';
 
   @override
   String get cacheTrackLookupDesc =>
-      'Spotify/Deezer track ID lookups. Clearing may slow next few searches.';
+      'Spotify/Deezer Track-ID-Lookups. Das Löschen kann die nächsten Suchergebnisse verlangsamen.';
 
   @override
   String get cacheCleanupUnusedDesc =>
-      'Remove orphaned download history and library entries for missing files.';
+      'Verwaisten Downloadverlauf und Bibliothekseinträge für fehlende Dateien entfernen.';
 
   @override
-  String get cacheNoData => 'No cached data';
+  String get cacheNoData => 'Keine gecachten Daten';
 
   @override
   String cacheSizeWithFiles(String size, int count) {
-    return '$size in $count files';
+    return '$size in $count Dateien';
   }
 
   @override
@@ -2009,71 +2099,71 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String cacheEntries(int count) {
-    return '$count entries';
+    return '$count Einträge';
   }
 
   @override
   String cacheClearSuccess(String target) {
-    return 'Cleared: $target';
+    return 'Entfernt: $target';
   }
 
   @override
-  String get cacheClearConfirmTitle => 'Clear cache?';
+  String get cacheClearConfirmTitle => 'Cache leeren?';
 
   @override
   String cacheClearConfirmMessage(String target) {
-    return 'This will clear cached data for $target. Downloaded music files will not be deleted.';
+    return 'Dies löscht zwischengespeicherte Daten in $target. Die Musikdateien werden nicht gelöscht.';
   }
 
   @override
-  String get cacheClearAllConfirmTitle => 'Clear all cache?';
+  String get cacheClearAllConfirmTitle => 'Gesamten Cache leeren?';
 
   @override
   String get cacheClearAllConfirmMessage =>
-      'This will clear all cache categories on this page. Downloaded music files will not be deleted.';
+      'Dadurch werden alle Cache-Kategorien auf dieser Seite gelöscht. Heruntergeladene Musikdateien werden nicht gelöscht.';
 
   @override
-  String get cacheClearAll => 'Clear all cache';
+  String get cacheClearAll => 'Gesamten Cache leeren';
 
   @override
-  String get cacheCleanupUnused => 'Cleanup unused data';
+  String get cacheCleanupUnused => 'Unbenutzte Daten bereinigen';
 
   @override
   String get cacheCleanupUnusedSubtitle =>
-      'Remove orphaned download history and missing library entries';
+      'Verwaisten Downloadverlauf und fehlende Bibliothekseinträge löschen';
 
   @override
   String cacheCleanupResult(int downloadCount, int libraryCount) {
-    return 'Cleanup completed: $downloadCount orphaned downloads, $libraryCount missing library entries';
+    return 'Bereinigung: $downloadCount verwaiste Downloads, $libraryCount fehlende Bibliothekseinträge';
   }
 
   @override
-  String get cacheRefreshStats => 'Refresh stats';
+  String get cacheRefreshStats => 'Statistik aktualisieren';
 
   @override
-  String get trackSaveCoverArt => 'Save Cover Art';
+  String get trackSaveCoverArt => 'Cover speichern';
 
   @override
-  String get trackSaveCoverArtSubtitle => 'Save album art as .jpg file';
+  String get trackSaveCoverArtSubtitle => 'Albumcover als .jpg Datei speichern';
 
   @override
-  String get trackSaveLyrics => 'Save Lyrics (.lrc)';
+  String get trackSaveLyrics => 'Lyrics als .lrc speichern';
 
   @override
-  String get trackSaveLyricsSubtitle => 'Fetch and save lyrics as .lrc file';
+  String get trackSaveLyricsSubtitle => 'Lade Lyrics als .lrc Datei';
 
   @override
-  String get trackSaveLyricsProgress => 'Saving lyrics...';
+  String get trackSaveLyricsProgress => 'Speichere Lyrics...';
 
   @override
-  String get trackReEnrich => 'Re-enrich';
+  String get trackReEnrich => 'Neu-anreichern';
 
   @override
   String get trackReEnrichOnlineSubtitle =>
-      'Search metadata online and embed into file';
+      'Metadaten online suchen und in Datei einbinden';
 
   @override
-  String get trackEditMetadata => 'Edit Metadata';
+  String get trackEditMetadata => 'Metadaten bearbeiten';
 
   @override
   String trackCoverSaved(String fileName) {
@@ -2085,43 +2175,66 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String trackLyricsSaved(String fileName) {
-    return 'Lyrics saved to $fileName';
+    return 'Lyrics in $fileName gespeichert';
   }
 
   @override
-  String get trackReEnrichProgress => 'Re-enriching metadata...';
+  String get trackReEnrichProgress => 'Metadaten neu anreichern...';
 
   @override
-  String get trackReEnrichSearching => 'Searching metadata online...';
+  String get trackReEnrichSearching => 'Suche Metadaten online...';
 
   @override
-  String get trackReEnrichSuccess => 'Metadata re-enriched successfully';
+  String get trackReEnrichSuccess => 'Metadaten erfolgreich neu angereichert';
 
   @override
-  String get trackReEnrichFfmpegFailed => 'FFmpeg metadata embed failed';
+  String get trackReEnrichFfmpegFailed =>
+      'FFmpeg Metadaten-Einbettung fehlgeschlagen';
+
+  @override
+  String get queueFlacAction => 'Queue FLAC';
+
+  @override
+  String queueFlacConfirmMessage(int count) {
+    return 'Search online matches for the selected tracks and queue FLAC downloads.\n\nExisting files will not be modified or deleted.\n\nOnly high-confidence matches are queued automatically.\n\n$count selected';
+  }
+
+  @override
+  String queueFlacFindingProgress(int current, int total) {
+    return 'Finding FLAC matches... ($current/$total)';
+  }
+
+  @override
+  String get queueFlacNoReliableMatches =>
+      'No reliable online matches found for the selection';
+
+  @override
+  String queueFlacQueuedWithSkipped(int addedCount, int skippedCount) {
+    return 'Added $addedCount tracks to queue, skipped $skippedCount';
+  }
 
   @override
   String trackSaveFailed(String error) {
-    return 'Failed: $error';
+    return 'Fehler: $error';
   }
 
   @override
-  String get trackConvertFormat => 'Convert Format';
+  String get trackConvertFormat => 'Format konvertieren';
 
   @override
-  String get trackConvertFormatSubtitle => 'Convert to MP3 or Opus';
+  String get trackConvertFormatSubtitle => 'In MP3 oder Opus konvertieren';
 
   @override
-  String get trackConvertTitle => 'Convert Audio';
+  String get trackConvertTitle => 'Audio konvertieren';
 
   @override
-  String get trackConvertTargetFormat => 'Target Format';
+  String get trackConvertTargetFormat => 'Zielformat';
 
   @override
   String get trackConvertBitrate => 'Bitrate';
 
   @override
-  String get trackConvertConfirmTitle => 'Confirm Conversion';
+  String get trackConvertConfirmTitle => 'Konvertierung bestätigen';
 
   @override
   String trackConvertConfirmMessage(
@@ -2129,198 +2242,259 @@ class AppLocalizationsDe extends AppLocalizations {
     String targetFormat,
     String bitrate,
   ) {
-    return 'Convert from $sourceFormat to $targetFormat at $bitrate?\n\nThe original file will be deleted after conversion.';
+    return 'Konvertieren von $sourceFormat in $targetFormat bei $bitrate?\n\nDie Originaldatei wird nach der Konvertierung gelöscht.';
   }
 
   @override
-  String get trackConvertConverting => 'Converting audio...';
+  String trackConvertConfirmMessageLossless(
+    String sourceFormat,
+    String targetFormat,
+  ) {
+    return 'Convert from $sourceFormat to $targetFormat? (Lossless — no quality loss)\n\nThe original file will be deleted after conversion.';
+  }
+
+  @override
+  String get trackConvertLosslessHint =>
+      'Lossless conversion — no quality loss';
+
+  @override
+  String get trackConvertConverting => 'Konvertiere Audio...';
 
   @override
   String trackConvertSuccess(String format) {
-    return 'Converted to $format successfully';
+    return 'Konvertiert in $format erfolgreich';
   }
 
   @override
-  String get trackConvertFailed => 'Conversion failed';
+  String get trackConvertFailed => 'Konvertierung fehlgeschlagen';
 
   @override
-  String get actionCreate => 'Create';
+  String get cueSplitTitle => 'Split CUE Sheet';
 
   @override
-  String get collectionFoldersTitle => 'My folders';
+  String get cueSplitSubtitle => 'Split CUE+FLAC into individual tracks';
 
   @override
-  String get collectionWishlist => 'Wishlist';
+  String cueSplitAlbum(String album) {
+    return 'Album: $album';
+  }
 
   @override
-  String get collectionLoved => 'Loved';
+  String cueSplitArtist(String artist) {
+    return 'Artist: $artist';
+  }
 
   @override
-  String get collectionPlaylists => 'Playlists';
+  String cueSplitTrackCount(int count) {
+    return '$count tracks';
+  }
+
+  @override
+  String get cueSplitConfirmTitle => 'Split CUE Album';
+
+  @override
+  String cueSplitConfirmMessage(String album, int count) {
+    return 'Split \"$album\" into $count individual FLAC files?\n\nFiles will be saved to the same directory.';
+  }
+
+  @override
+  String cueSplitSplitting(int current, int total) {
+    return 'Splitting CUE sheet... ($current/$total)';
+  }
+
+  @override
+  String cueSplitSuccess(int count) {
+    return 'Split into $count tracks successfully';
+  }
+
+  @override
+  String get cueSplitFailed => 'CUE split failed';
+
+  @override
+  String get cueSplitNoAudioFile => 'Audio file not found for this CUE sheet';
+
+  @override
+  String get cueSplitButton => 'Split into Tracks';
+
+  @override
+  String get actionCreate => 'Erstellen';
+
+  @override
+  String get collectionFoldersTitle => 'Meine Ordner';
+
+  @override
+  String get collectionWishlist => 'Wunschliste';
+
+  @override
+  String get collectionLoved => 'Lieblingssongs';
+
+  @override
+  String get collectionPlaylists => 'Playlisten';
 
   @override
   String get collectionPlaylist => 'Playlist';
 
   @override
-  String get collectionAddToPlaylist => 'Add to playlist';
+  String get collectionAddToPlaylist => 'Zur Playlist hinzufügen';
 
   @override
-  String get collectionCreatePlaylist => 'Create playlist';
+  String get collectionCreatePlaylist => 'Playlist erstellen';
 
   @override
-  String get collectionNoPlaylistsYet => 'No playlists yet';
+  String get collectionNoPlaylistsYet => 'Noch keine Playlists';
 
   @override
   String get collectionNoPlaylistsSubtitle =>
-      'Create a playlist to start categorizing tracks';
+      'Playlist erstellen, um Titel zu kategorisieren';
 
   @override
   String collectionPlaylistTracks(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count tracks',
-      one: '1 track',
+      other: '$count Titel',
+      one: '1 Titel',
     );
     return '$_temp0';
   }
 
   @override
   String collectionAddedToPlaylist(String playlistName) {
-    return 'Added to \"$playlistName\"';
+    return 'Zu \"$playlistName \" hinzugefügt';
   }
 
   @override
   String collectionAlreadyInPlaylist(String playlistName) {
-    return 'Already in \"$playlistName\"';
+    return 'Bereits in \"$playlistName\"';
   }
 
   @override
-  String get collectionPlaylistCreated => 'Playlist created';
+  String get collectionPlaylistCreated => 'Playlist erstellt';
 
   @override
-  String get collectionPlaylistNameHint => 'Playlist name';
+  String get collectionPlaylistNameHint => 'Playlist-Name';
 
   @override
-  String get collectionPlaylistNameRequired => 'Playlist name is required';
+  String get collectionPlaylistNameRequired => 'Playlist-Name ist erforderlich';
 
   @override
-  String get collectionRenamePlaylist => 'Rename playlist';
+  String get collectionRenamePlaylist => 'Playlist umbenennen';
 
   @override
-  String get collectionDeletePlaylist => 'Delete playlist';
+  String get collectionDeletePlaylist => 'Playlist löschen';
 
   @override
   String collectionDeletePlaylistMessage(String playlistName) {
-    return 'Delete \"$playlistName\" and all tracks inside it?';
+    return 'Willst du \"$playlistName\" und alle darin enthaltenen Titel löschen?';
   }
 
   @override
-  String get collectionPlaylistDeleted => 'Playlist deleted';
+  String get collectionPlaylistDeleted => 'Playlist gelöscht';
 
   @override
-  String get collectionPlaylistRenamed => 'Playlist renamed';
+  String get collectionPlaylistRenamed => 'Playlist umbenannt';
 
   @override
-  String get collectionWishlistEmptyTitle => 'Wishlist is empty';
+  String get collectionWishlistEmptyTitle => 'Wunschliste ist leer';
 
   @override
   String get collectionWishlistEmptySubtitle =>
-      'Tap + on tracks to save what you want to download later';
+      'Tippe auf das + bei den Titeln, um sie zum späteren Herunterladen zu speichern';
 
   @override
-  String get collectionLovedEmptyTitle => 'Loved folder is empty';
+  String get collectionLovedEmptyTitle => 'Lieblingssongs sind leer';
 
   @override
   String get collectionLovedEmptySubtitle =>
-      'Tap love on tracks to keep your favorites';
+      'Tippe auf das Herz, um deine Favoriten zu behalten';
 
   @override
-  String get collectionPlaylistEmptyTitle => 'Playlist is empty';
+  String get collectionPlaylistEmptyTitle => 'Die Playlist ist leer';
 
   @override
   String get collectionPlaylistEmptySubtitle =>
-      'Long-press + on any track to add it here';
+      'Drücke lange + auf einem beliebigen Titel, um ihn hier hinzuzufügen';
 
   @override
-  String get collectionRemoveFromPlaylist => 'Remove from playlist';
+  String get collectionRemoveFromPlaylist => 'Von Playlist entfernen';
 
   @override
-  String get collectionRemoveFromFolder => 'Remove from folder';
+  String get collectionRemoveFromFolder => 'Aus Ordner entfernen';
 
   @override
   String collectionRemoved(String trackName) {
-    return '\"$trackName\" removed';
+    return '\"$trackName\" entfernt';
   }
 
   @override
   String collectionAddedToLoved(String trackName) {
-    return '\"$trackName\" added to Loved';
+    return '\"$trackName\" zu Lieblingssongs hinzugefügt';
   }
 
   @override
   String collectionRemovedFromLoved(String trackName) {
-    return '\"$trackName\" removed from Loved';
+    return '\"$trackName\" aus Lieblingssongs entfernt';
   }
 
   @override
   String collectionAddedToWishlist(String trackName) {
-    return '\"$trackName\" added to Wishlist';
+    return '\"$trackName\" zur Wunschliste hinzugefügt';
   }
 
   @override
   String collectionRemovedFromWishlist(String trackName) {
-    return '\"$trackName\" removed from Wishlist';
+    return '\"$trackName\" aus der Wunschliste entfernt';
   }
 
   @override
-  String get trackOptionAddToLoved => 'Add to Loved';
+  String get trackOptionAddToLoved => 'Zu Lieblingssongs hinzufügen';
 
   @override
-  String get trackOptionRemoveFromLoved => 'Remove from Loved';
+  String get trackOptionRemoveFromLoved => 'Aus Lieblingssongs entfernt';
 
   @override
-  String get trackOptionAddToWishlist => 'Add to Wishlist';
+  String get trackOptionAddToWishlist => 'Zur Wunschliste hinzufügen';
 
   @override
-  String get trackOptionRemoveFromWishlist => 'Remove from Wishlist';
+  String get trackOptionRemoveFromWishlist => 'Von der Wunschliste entfernen';
 
   @override
-  String get collectionPlaylistChangeCover => 'Change cover image';
+  String get collectionPlaylistChangeCover => 'Coverbild ändern';
 
   @override
-  String get collectionPlaylistRemoveCover => 'Remove cover image';
+  String get collectionPlaylistRemoveCover => 'Cover entfernen';
 
   @override
   String selectionShareCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'tracks',
-      one: 'track',
+      other: 'Titel',
+      one: 'Titel',
     );
-    return 'Share $count $_temp0';
+    return 'Teile $count $_temp0';
   }
 
   @override
-  String get selectionShareNoFiles => 'No shareable files found';
+  String get selectionShareNoFiles => 'Keine teilbare Dateien gefunden';
 
   @override
   String selectionConvertCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'tracks',
-      one: 'track',
+      other: 'Titel',
+      one: 'Titel',
     );
-    return 'Convert $count $_temp0';
+    return 'Konvertiere $count $_temp0';
   }
 
   @override
-  String get selectionConvertNoConvertible => 'No convertible tracks selected';
+  String get selectionConvertNoConvertible =>
+      'Keine konvertierbare Titel ausgewählt';
 
   @override
-  String get selectionBatchConvertConfirmTitle => 'Batch Convert';
+  String get selectionBatchConvertConfirmTitle => 'Batch-Konvertierung';
 
   @override
   String selectionBatchConvertConfirmMessage(
@@ -2331,32 +2505,441 @@ class AppLocalizationsDe extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
+      other: 'Titel',
+      one: 'Titel',
+    );
+    return 'Konvertiere $count $format $_temp0 zu $bitrate?\n\nOriginaldateien werden nach der Konvertierung gelöscht.';
+  }
+
+  @override
+  String selectionBatchConvertConfirmMessageLossless(int count, String format) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
       other: 'tracks',
       one: 'track',
     );
-    return 'Convert $count $_temp0 to $format at $bitrate?\n\nOriginal files will be deleted after conversion.';
+    return 'Convert $count $_temp0 to $format? (Lossless — no quality loss)\n\nOriginal files will be deleted after conversion.';
   }
 
   @override
   String selectionBatchConvertProgress(int current, int total) {
-    return 'Converting $current of $total...';
+    return 'Konvertiere $current von $total...';
   }
 
   @override
   String selectionBatchConvertSuccess(int success, int total, String format) {
-    return 'Converted $success of $total tracks to $format';
+    return '$success von $total Titeln in $format konvertiert';
   }
 
   @override
   String downloadedAlbumDownloadedCount(int count) {
-    return '$count downloaded';
+    return '$count heruntergeladen';
   }
 
   @override
   String get downloadUseAlbumArtistForFoldersAlbumSubtitle =>
-      'Artist folders use Album Artist when available';
+      'Künstlerordner verwenden den Album-Interpreten, wenn verfügbar';
 
   @override
   String get downloadUseAlbumArtistForFoldersTrackSubtitle =>
       'Artist folders use Track Artist only';
+
+  @override
+  String get lyricsProvidersTitle => 'Lyrics Providers';
+
+  @override
+  String get lyricsProvidersDescription =>
+      'Enable, disable and reorder lyrics sources. Providers are tried top-to-bottom until lyrics are found.';
+
+  @override
+  String get lyricsProvidersInfoText =>
+      'Extension lyrics providers always run before built-in providers. At least one provider must remain enabled.';
+
+  @override
+  String lyricsProvidersEnabledSection(int count) {
+    return 'Enabled ($count)';
+  }
+
+  @override
+  String lyricsProvidersDisabledSection(int count) {
+    return 'Disabled ($count)';
+  }
+
+  @override
+  String get lyricsProvidersAtLeastOne =>
+      'At least one provider must remain enabled';
+
+  @override
+  String get lyricsProvidersSaved => 'Lyrics provider priority saved';
+
+  @override
+  String get lyricsProvidersDiscardContent =>
+      'You have unsaved changes that will be lost.';
+
+  @override
+  String get lyricsProviderSpotifyApiDesc =>
+      'Spotify-sourced synced lyrics via community API';
+
+  @override
+  String get lyricsProviderLrclibDesc => 'Open-source synced lyrics database';
+
+  @override
+  String get lyricsProviderNeteaseDesc =>
+      'NetEase Cloud Music (good for Asian songs)';
+
+  @override
+  String get lyricsProviderMusixmatchDesc =>
+      'Largest lyrics database (multi-language)';
+
+  @override
+  String get lyricsProviderAppleMusicDesc =>
+      'Word-by-word synced lyrics (via proxy)';
+
+  @override
+  String get lyricsProviderQqMusicDesc =>
+      'QQ Music (good for Chinese songs, via proxy)';
+
+  @override
+  String get lyricsProviderExtensionDesc => 'Extension provider';
+
+  @override
+  String get safMigrationTitle => 'Storage Update Required';
+
+  @override
+  String get safMigrationMessage1 =>
+      'SpotiFLAC now uses Android Storage Access Framework (SAF) for downloads. This fixes \"permission denied\" errors on Android 10+.';
+
+  @override
+  String get safMigrationMessage2 =>
+      'Please select your download folder again to switch to the new storage system.';
+
+  @override
+  String get safMigrationSuccess => 'Download folder updated to SAF mode';
+
+  @override
+  String get settingsDonate => 'Donate';
+
+  @override
+  String get settingsDonateSubtitle => 'Support SpotiFLAC-Mobile development';
+
+  @override
+  String get tooltipLoveAll => 'Love All';
+
+  @override
+  String get tooltipAddToPlaylist => 'Add to Playlist';
+
+  @override
+  String snackbarRemovedTracksFromLoved(int count) {
+    return 'Removed $count tracks from Loved';
+  }
+
+  @override
+  String snackbarAddedTracksToLoved(int count) {
+    return 'Added $count tracks to Loved';
+  }
+
+  @override
+  String get dialogDownloadAllTitle => 'Download All';
+
+  @override
+  String dialogDownloadAllMessage(int count) {
+    return 'Download $count tracks?';
+  }
+
+  @override
+  String get homeSkipAlreadyDownloaded => 'Skip already downloaded songs';
+
+  @override
+  String get homeGoToAlbum => 'Go to Album';
+
+  @override
+  String get homeAlbumInfoUnavailable => 'Album info not available';
+
+  @override
+  String get snackbarLoadingCueSheet => 'Loading CUE sheet...';
+
+  @override
+  String get snackbarMetadataSaved => 'Metadata saved successfully';
+
+  @override
+  String get snackbarFailedToEmbedLyrics => 'Failed to embed lyrics';
+
+  @override
+  String get snackbarFailedToWriteStorage => 'Failed to write back to storage';
+
+  @override
+  String snackbarError(String error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String get snackbarNoActionDefined => 'No action defined for this button';
+
+  @override
+  String get noTracksFoundForAlbum => 'No tracks found for this album';
+
+  @override
+  String get downloadLocationSubtitle =>
+      'Choose storage mode for downloaded files.';
+
+  @override
+  String get storageModeAppFolder => 'App folder (non-SAF)';
+
+  @override
+  String get storageModeAppFolderSubtitle => 'Use default Music/SpotiFLAC path';
+
+  @override
+  String get storageModeSaf => 'SAF folder';
+
+  @override
+  String get storageModeSafSubtitle =>
+      'Pick folder via Android Storage Access Framework';
+
+  @override
+  String get downloadFilenameDescription =>
+      'Customize how your files are named.';
+
+  @override
+  String get downloadFilenameInsertTag => 'Tap to insert tag:';
+
+  @override
+  String get downloadSeparateSinglesEnabled => 'Albums/ and Singles/ folders';
+
+  @override
+  String get downloadSeparateSinglesDisabled => 'All files in same structure';
+
+  @override
+  String get downloadArtistNameFilters => 'Artist Name Filters';
+
+  @override
+  String get downloadSongLinkRegion => 'SongLink Region';
+
+  @override
+  String get downloadNetworkCompatibilityMode => 'Network compatibility mode';
+
+  @override
+  String get downloadNetworkCompatibilityModeEnabled =>
+      'Enabled: try HTTP + accept invalid TLS certificates (unsafe)';
+
+  @override
+  String get downloadNetworkCompatibilityModeDisabled =>
+      'Off: strict HTTPS certificate validation (recommended)';
+
+  @override
+  String get downloadSelectServiceToEnable =>
+      'Select a built-in service to enable';
+
+  @override
+  String get downloadSelectTidalQobuz =>
+      'Select Tidal or Qobuz above to configure quality';
+
+  @override
+  String get downloadEmbedLyricsDisabled =>
+      'Disabled while Embed Metadata is turned off';
+
+  @override
+  String get downloadNeteaseIncludeTranslation =>
+      'Netease: Include Translation';
+
+  @override
+  String get downloadNeteaseIncludeTranslationEnabled =>
+      'Append translated lyrics when available';
+
+  @override
+  String get downloadNeteaseIncludeTranslationDisabled =>
+      'Use original lyrics only';
+
+  @override
+  String get downloadNeteaseIncludeRomanization =>
+      'Netease: Include Romanization';
+
+  @override
+  String get downloadNeteaseIncludeRomanizationEnabled =>
+      'Append romanized lyrics when available';
+
+  @override
+  String get downloadNeteaseIncludeRomanizationDisabled => 'Disabled';
+
+  @override
+  String get downloadAppleQqMultiPerson => 'Apple/QQ Multi-Person Word-by-Word';
+
+  @override
+  String get downloadAppleQqMultiPersonEnabled =>
+      'Enable v1/v2 speaker and [bg:] tags';
+
+  @override
+  String get downloadAppleQqMultiPersonDisabled =>
+      'Simplified word-by-word formatting';
+
+  @override
+  String get downloadMusixmatchLanguage => 'Musixmatch Language';
+
+  @override
+  String get downloadMusixmatchLanguageAuto => 'Auto (original)';
+
+  @override
+  String get downloadFilterContributing =>
+      'Filter contributing artists in Album Artist';
+
+  @override
+  String get downloadFilterContributingEnabled =>
+      'Album Artist metadata uses primary artist only';
+
+  @override
+  String get downloadFilterContributingDisabled =>
+      'Keep full Album Artist metadata value';
+
+  @override
+  String get downloadProvidersNoneEnabled => 'None enabled';
+
+  @override
+  String get downloadMusixmatchLanguageCode => 'Language code';
+
+  @override
+  String get downloadMusixmatchLanguageHint => 'auto / en / es / ja';
+
+  @override
+  String get downloadMusixmatchLanguageDesc =>
+      'Set preferred language code (example: en, es, ja). Leave empty for auto.';
+
+  @override
+  String get downloadMusixmatchAuto => 'Auto';
+
+  @override
+  String get downloadNetworkAnySubtitle => 'WiFi + Mobile Data';
+
+  @override
+  String get downloadNetworkWifiOnlySubtitle =>
+      'Pause downloads on mobile data';
+
+  @override
+  String get downloadSongLinkRegionDesc =>
+      'Used as userCountry for SongLink API lookup.';
+
+  @override
+  String get snackbarUnsupportedAudioFormat => 'Unsupported audio format';
+
+  @override
+  String get cacheRefresh => 'Refresh';
+
+  @override
+  String dialogDownloadPlaylistsMessage(int trackCount, int playlistCount) {
+    String _temp0 = intl.Intl.pluralLogic(
+      trackCount,
+      locale: localeName,
+      other: 'tracks',
+      one: 'track',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      playlistCount,
+      locale: localeName,
+      other: 'playlists',
+      one: 'playlist',
+    );
+    return 'Download $trackCount $_temp0 from $playlistCount $_temp1?';
+  }
+
+  @override
+  String bulkDownloadPlaylistsButton(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'playlists',
+      one: 'playlist',
+    );
+    return 'Download $count $_temp0';
+  }
+
+  @override
+  String get bulkDownloadSelectPlaylists => 'Select playlists to download';
+
+  @override
+  String get snackbarSelectedPlaylistsEmpty =>
+      'Selected playlists have no tracks';
+
+  @override
+  String playlistsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count playlists',
+      one: '1 playlist',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get editMetadataAutoFill => 'Auto-fill from online';
+
+  @override
+  String get editMetadataAutoFillDesc =>
+      'Select fields to fill automatically from online metadata';
+
+  @override
+  String get editMetadataAutoFillFetch => 'Fetch & Fill';
+
+  @override
+  String get editMetadataAutoFillSearching => 'Searching online...';
+
+  @override
+  String get editMetadataAutoFillNoResults =>
+      'No matching metadata found online';
+
+  @override
+  String editMetadataAutoFillDone(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'fields',
+      one: 'field',
+    );
+    return 'Filled $count $_temp0 from online metadata';
+  }
+
+  @override
+  String get editMetadataAutoFillNoneSelected =>
+      'Select at least one field to auto-fill';
+
+  @override
+  String get editMetadataFieldTitle => 'Title';
+
+  @override
+  String get editMetadataFieldArtist => 'Artist';
+
+  @override
+  String get editMetadataFieldAlbum => 'Album';
+
+  @override
+  String get editMetadataFieldAlbumArtist => 'Album Artist';
+
+  @override
+  String get editMetadataFieldDate => 'Date';
+
+  @override
+  String get editMetadataFieldTrackNum => 'Track #';
+
+  @override
+  String get editMetadataFieldDiscNum => 'Disc #';
+
+  @override
+  String get editMetadataFieldGenre => 'Genre';
+
+  @override
+  String get editMetadataFieldIsrc => 'ISRC';
+
+  @override
+  String get editMetadataFieldLabel => 'Label';
+
+  @override
+  String get editMetadataFieldCopyright => 'Copyright';
+
+  @override
+  String get editMetadataFieldCover => 'Cover Art';
+
+  @override
+  String get editMetadataSelectAll => 'All';
+
+  @override
+  String get editMetadataSelectEmpty => 'Empty only';
 }

@@ -11,6 +11,7 @@ import 'package:spotiflac_android/utils/file_access.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/providers/local_library_provider.dart';
 import 'package:spotiflac_android/providers/playback_provider.dart';
+import 'package:spotiflac_android/providers/streaming_audio_provider.dart';
 import 'package:spotiflac_android/widgets/download_service_picker.dart';
 import 'package:spotiflac_android/widgets/playlist_picker_sheet.dart';
 import 'package:spotiflac_android/widgets/track_collection_quick_actions.dart';
@@ -39,8 +40,12 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
   List<Track>? _fetchedTracks;
   bool _isLoading = false;
   String? _error;
+  String? _resolvedPlaylistName;
+  String? _resolvedCoverUrl;
 
   List<Track> get _tracks => _fetchedTracks ?? widget.tracks;
+  String get _playlistName => _resolvedPlaylistName ?? widget.playlistName;
+  String? get _coverUrl => _resolvedCoverUrl ?? widget.coverUrl;
 
   @override
   void initState() {
@@ -65,17 +70,24 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
     });
 
     try {
-      // Extract numeric ID from "deezer:123" format
       String playlistId = widget.playlistId!;
+      late final Map<String, dynamic> result;
       if (playlistId.startsWith('deezer:')) {
         playlistId = playlistId.substring(7);
+        result = await PlatformBridge.getDeezerMetadata('playlist', playlistId);
+      } else if (playlistId.startsWith('qobuz:')) {
+        playlistId = playlistId.substring(6);
+        result = await PlatformBridge.getQobuzMetadata('playlist', playlistId);
+      } else if (playlistId.startsWith('tidal:')) {
+        playlistId = playlistId.substring(6);
+        result = await PlatformBridge.getTidalMetadata('playlist', playlistId);
+      } else {
+        result = await PlatformBridge.getDeezerMetadata('playlist', playlistId);
       }
-
-      final result = await PlatformBridge.getDeezerMetadata(
-        'playlist',
-        playlistId,
-      );
       if (!mounted) return;
+
+      final playlistInfo = result['playlist_info'] as Map<String, dynamic>?;
+      final owner = playlistInfo?['owner'] as Map<String, dynamic>?;
 
       // Go backend returns 'track_list' not 'tracks'
       final trackList = result['track_list'] as List<dynamic>? ?? [];
@@ -85,6 +97,10 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
 
       setState(() {
         _fetchedTracks = tracks;
+        _resolvedPlaylistName = (playlistInfo?['name'] ?? owner?['name'])
+            ?.toString();
+        _resolvedCoverUrl = (playlistInfo?['images'] ?? owner?['images'])
+            ?.toString();
         _isLoading = false;
       });
     } catch (e) {
@@ -184,7 +200,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
         duration: const Duration(milliseconds: 200),
         opacity: _showTitleInAppBar ? 1.0 : 0.0,
         child: Text(
-          widget.playlistName,
+          _playlistName,
           style: TextStyle(
             color: colorScheme.onSurface,
             fontWeight: FontWeight.w600,
@@ -206,11 +222,9 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
             background: Stack(
               fit: StackFit.expand,
               children: [
-                // Full-screen cover background
-                if (widget.coverUrl != null)
+                if (_coverUrl != null)
                   CachedNetworkImage(
-                    imageUrl:
-                        _highResCoverUrl(widget.coverUrl) ?? widget.coverUrl!,
+                    imageUrl: _highResCoverUrl(_coverUrl) ?? _coverUrl!,
                     fit: BoxFit.cover,
                     cacheManager: CoverCacheManager.instance,
                     placeholder: (_, _) =>
@@ -227,7 +241,6 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
                       color: colorScheme.onSurfaceVariant,
                     ),
                   ),
-                // Bottom gradient for readability
                 Positioned(
                   left: 0,
                   right: 0,
@@ -246,7 +259,6 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
                     ),
                   ),
                 ),
-                // Playlist info overlay at bottom
                 Positioned(
                   left: 20,
                   right: 20,
@@ -259,7 +271,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          widget.playlistName,
+                          _playlistName,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 24,
@@ -324,6 +336,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
         },
       ),
       leading: IconButton(
+        tooltip: MaterialLocalizations.of(context).backButtonTooltip,
         icon: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
@@ -338,7 +351,6 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
   }
 
   Widget _buildInfoCard(BuildContext context, ColorScheme colorScheme) {
-    // Info is now displayed in the full-screen cover overlay
     return const SliverToBoxAdapter(child: SizedBox.shrink());
   }
 
@@ -418,7 +430,12 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
         onSelect: (quality, service) {
           ref
               .read(downloadQueueProvider.notifier)
-              .addToQueue(track, service, qualityOverride: quality);
+              .addToQueue(
+                track,
+                service,
+                qualityOverride: quality,
+                playlistName: _playlistName,
+              );
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(context.l10n.snackbarAddedToQueue(track.name)),
@@ -429,14 +446,16 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
     } else {
       ref
           .read(downloadQueueProvider.notifier)
-          .addToQueue(track, settings.defaultService);
+          .addToQueue(
+            track,
+            settings.defaultService,
+            playlistName: _playlistName,
+          );
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.snackbarAddedToQueue(track.name))),
       );
     }
   }
-
-  // ── Shuffle / Love / Download buttons ──
 
   Widget _buildCircleButton({
     required IconData icon,
@@ -486,17 +505,32 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
           size: 22,
           color: allLoved ? Colors.redAccent : Colors.white,
         ),
-        tooltip: allLoved ? 'Remove from Loved' : 'Love All',
+        tooltip: allLoved
+            ? context.l10n.trackOptionRemoveFromLoved
+            : context.l10n.tooltipLoveAll,
         padding: EdgeInsets.zero,
       ),
     );
   }
 
   Widget _buildDownloadAllCenterButton(BuildContext context) {
+    final settings = ref.watch(settingsProvider);
+    final isStreamMode = settings.appmode == 'stream';
+
     return FilledButton.icon(
-      onPressed: _tracks.isEmpty ? null : () => _confirmDownloadAll(context),
-      icon: const Icon(Icons.download_rounded, size: 18),
-      label: Text(context.l10n.downloadAllCount(_tracks.length)),
+      onPressed: _tracks.isEmpty ? null : () {
+        if (isStreamMode) {
+          ref.read(streamingAudioProvider.notifier).playTrack(
+            _tracks.first,
+            settings.defaultService,
+            playlist: _tracks,
+          );
+        } else {
+          _confirmDownloadAll(context);
+        }
+      },
+      icon: Icon(isStreamMode ? Icons.play_arrow_rounded : Icons.download_rounded, size: 18),
+      label: Text(isStreamMode ? "Play All" : context.l10n.downloadAllCount(_tracks.length)),
       style: FilledButton.styleFrom(
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
@@ -509,10 +543,10 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
   Widget _buildAddToPlaylistButton(BuildContext context) {
     return _buildCircleButton(
       icon: Icons.playlist_add,
-      tooltip: 'Add to Playlist',
+      tooltip: context.l10n.tooltipAddToPlaylist,
       onPressed: _tracks.isEmpty
           ? null
-          : () => showAddTracksToPlaylistSheet(context, ref, _tracks),
+          : () => showAddTracksToPlaylistSheet(context, ref, _tracks, playlistNamePrefill: widget.playlistName),
     );
   }
 
@@ -524,8 +558,8 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
         final colorScheme = Theme.of(dialogContext).colorScheme;
         return AlertDialog(
           backgroundColor: colorScheme.surfaceContainerHigh,
-          title: const Text('Download All'),
-          content: Text('Download ${_tracks.length} tracks?'),
+          title: Text(context.l10n.dialogDownloadAllTitle),
+          content: Text(context.l10n.dialogDownloadAllMessage(_tracks.length)),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
@@ -536,7 +570,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
                 Navigator.pop(dialogContext);
                 _downloadAll(context);
               },
-              child: const Text('Download'),
+              child: Text(context.l10n.dialogDownload),
             ),
           ],
         );
@@ -556,7 +590,11 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Removed ${tracks.length} tracks from Loved')),
+          SnackBar(
+            content: Text(
+              context.l10n.snackbarRemovedTracksFromLoved(tracks.length),
+            ),
+          ),
         );
       }
     } else {
@@ -569,7 +607,9 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Added $addedCount tracks to Loved')),
+          SnackBar(
+            content: Text(context.l10n.snackbarAddedTracksToLoved(addedCount)),
+          ),
         );
       }
     }
@@ -581,35 +621,81 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
 
   void _downloadTracks(BuildContext context, List<Track> tracks) {
     if (tracks.isEmpty) return;
+
+    // Skip already-downloaded tracks
+    final historyState = ref.read(downloadHistoryProvider);
     final settings = ref.read(settingsProvider);
+    final localLibState = (settings.localLibraryEnabled && settings.localLibraryShowDuplicates)
+        ? ref.read(localLibraryProvider)
+        : null;
+    final tracksToQueue = <Track>[];
+    int skippedCount = 0;
+
+    for (final track in tracks) {
+      final isInHistory = historyState.isDownloaded(track.id) ||
+          (track.isrc != null && historyState.getByIsrc(track.isrc!) != null) ||
+          historyState.findByTrackAndArtist(track.name, track.artistName) != null;
+      final isInLocal = localLibState?.existsInLibrary(
+            isrc: track.isrc,
+            trackName: track.name,
+            artistName: track.artistName,
+          ) ??
+          false;
+
+      if (isInHistory || isInLocal) {
+        skippedCount++;
+      } else {
+        tracksToQueue.add(track);
+      }
+    }
+
+    if (tracksToQueue.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            context.l10n.discographySkippedDownloaded(0, skippedCount),
+          ),
+        ),
+      );
+      return;
+    }
+
     if (settings.askQualityBeforeDownload) {
       DownloadServicePicker.show(
         context,
-        trackName: '${tracks.length} tracks',
-        artistName: widget.playlistName,
+        trackName: '${tracksToQueue.length} tracks',
+        artistName: _playlistName,
         onSelect: (quality, service) {
           ref
               .read(downloadQueueProvider.notifier)
-              .addMultipleToQueue(tracks, service, qualityOverride: quality);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                context.l10n.snackbarAddedTracksToQueue(tracks.length),
-              ),
-            ),
-          );
+              .addMultipleToQueue(
+                tracksToQueue,
+                service,
+                qualityOverride: quality,
+                playlistName: _playlistName,
+              );
+          _showQueuedSnackbar(context, tracksToQueue.length, skippedCount);
         },
       );
     } else {
       ref
           .read(downloadQueueProvider.notifier)
-          .addMultipleToQueue(tracks, settings.defaultService);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(context.l10n.snackbarAddedTracksToQueue(tracks.length)),
-        ),
-      );
+          .addMultipleToQueue(
+            tracksToQueue,
+            settings.defaultService,
+            playlistName: _playlistName,
+          );
+      _showQueuedSnackbar(context, tracksToQueue.length, skippedCount);
     }
+  }
+
+  void _showQueuedSnackbar(BuildContext context, int added, int skipped) {
+    final message = skipped > 0
+        ? context.l10n.discographySkippedDownloaded(added, skipped)
+        : context.l10n.snackbarAddedTracksToQueue(added);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 }
 
@@ -765,6 +851,15 @@ class _PlaylistTrackItem extends ConsumerWidget {
     required bool isQueued,
   }) async {
     if (isQueued) return;
+
+    final settings = ref.read(settingsProvider);
+    if (settings.appmode == 'stream') {
+      await ref.read(playbackProvider.notifier).playTrack(
+            track: track,
+            service: settings.defaultService,
+          );
+      return;
+    }
 
     final playedLocal = await _playLocalIfAvailable(context, ref);
     if (playedLocal) {

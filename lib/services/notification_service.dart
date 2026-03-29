@@ -28,6 +28,12 @@ class NotificationService {
   Future<void> initialize() async {
     if (_isInitialized) return;
 
+    // Skip notifications on Linux, macOS, Windows for now
+    if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+      _isInitialized = true;
+      return;
+    }
+
     const androidSettings = AndroidInitializationSettings(
       '@mipmap/ic_launcher',
     );

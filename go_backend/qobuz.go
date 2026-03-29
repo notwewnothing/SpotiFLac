@@ -28,21 +28,40 @@ type QobuzDownloader struct {
 var (
 	globalQobuzDownloader *QobuzDownloader
 	qobuzDownloaderOnce   sync.Once
+	qobuzGetTrackByIDFunc = func(q *QobuzDownloader, trackID int64) (*QobuzTrack, error) {
+		return q.GetTrackByID(trackID)
+	}
+	qobuzSearchTrackByISRCWithDurationFunc = func(q *QobuzDownloader, isrc string, expectedDurationSec int) (*QobuzTrack, error) {
+		return q.SearchTrackByISRCWithDuration(isrc, expectedDurationSec)
+	}
+	qobuzSearchTrackByMetadataWithDurationFunc = func(q *QobuzDownloader, trackName, artistName string, expectedDurationSec int) (*QobuzTrack, error) {
+		return q.SearchTrackByMetadataWithDuration(trackName, artistName, expectedDurationSec)
+	}
+	songLinkCheckTrackAvailabilityFunc = func(client *SongLinkClient, spotifyTrackID string, isrc string) (*TrackAvailability, error) {
+		return client.CheckTrackAvailability(spotifyTrackID, isrc)
+	}
 )
 
 const (
 	qobuzTrackGetBaseURL    = "https://www.qobuz.com/api.json/0.2/track/get?track_id="
 	qobuzTrackSearchBaseURL = "https://www.qobuz.com/api.json/0.2/track/search?query="
+	qobuzAlbumGetBaseURL    = "https://www.qobuz.com/api.json/0.2/album/get?album_id="
+	qobuzArtistGetBaseURL   = "https://www.qobuz.com/api.json/0.2/artist/get?artist_id="
+	qobuzPlaylistGetBaseURL = "https://www.qobuz.com/api.json/0.2/playlist/get?playlist_id="
 	qobuzStoreSearchBaseURL = "https://www.qobuz.com/us-en/search/tracks/"
 	qobuzTrackPlayBaseURL   = "https://play.qobuz.com/track/"
+	qobuzStoreBaseURL       = "https://www.qobuz.com/us-en"
 	qobuzDownloadAPIURL     = "https://www.musicdl.me/api/qobuz/download"
 	qobuzDabMusicAPIURL     = "https://dabmusic.xyz/api/stream?trackId="
 	qobuzDeebAPIURL         = "https://dab.yeet.su/api/stream?trackId="
+	qobuzAfkarAPIURL        = "https://qbz.afkarxyz.qzz.io/api/track/"
 	qobuzSquidAPIURL        = "https://qobuz.squid.wtf/api/download-music?country=US&track_id="
 	qobuzDebugKeyXORMask    = byte(0x5A)
 )
 
 var qobuzStoreTrackIDRegex = regexp.MustCompile(`/v4/ajax/popin-add-cart/track/([0-9]+)`)
+var qobuzArtistAlbumIDRegex = regexp.MustCompile(`data-itemtype="album"\s+data-itemId="([A-Za-z0-9]+)"`)
+var qobuzLocaleSegmentRegex = regexp.MustCompile(`^[a-z]{2}-[a-z]{2}$`)
 
 var qobuzDebugKeyObfuscated = []byte{
 	0x69, 0x3b, 0x38, 0x3e, 0x36, 0x37, 0x35, 0x2f, 0x36, 0x3b,
@@ -58,18 +77,404 @@ type QobuzTrack struct {
 	ISRC                string  `json:"isrc"`
 	Duration            int     `json:"duration"`
 	TrackNumber         int     `json:"track_number"`
+	MediaNumber         int     `json:"media_number"`
 	MaximumBitDepth     int     `json:"maximum_bit_depth"`
 	MaximumSamplingRate float64 `json:"maximum_sampling_rate"`
+	Version             string  `json:"version"`
 	Album               struct {
+		ID          string `json:"id"`
+		QobuzID     int64  `json:"qobuz_id"`
+		TracksCount int    `json:"tracks_count"`
 		Title       string `json:"title"`
 		ReleaseDate string `json:"release_date_original"`
-		Image       struct {
-			Large string `json:"large"`
+		ProductType string `json:"product_type"`
+		ReleaseType string `json:"release_type"`
+		Artist      struct {
+			ID   int64  `json:"id"`
+			Name string `json:"name"`
+		} `json:"artist"`
+		Artists []qobuzArtistRef `json:"artists"`
+		Image   struct {
+			Thumbnail string `json:"thumbnail"`
+			Small     string `json:"small"`
+			Large     string `json:"large"`
 		} `json:"image"`
 	} `json:"album"`
 	Performer struct {
+		ID   int64  `json:"id"`
 		Name string `json:"name"`
 	} `json:"performer"`
+}
+
+type qobuzImageSet struct {
+	Thumbnail string `json:"thumbnail"`
+	Small     string `json:"small"`
+	Large     string `json:"large"`
+}
+
+type qobuzArtistRef struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+	Slug string `json:"slug"`
+}
+
+type qobuzLabelRef struct {
+	Name string `json:"name"`
+}
+
+type qobuzGenreRef struct {
+	Name string `json:"name"`
+}
+
+type qobuzAlbumDetails struct {
+	ID                  string           `json:"id"`
+	QobuzID             int64            `json:"qobuz_id"`
+	Title               string           `json:"title"`
+	ReleaseDateOriginal string           `json:"release_date_original"`
+	TracksCount         int              `json:"tracks_count"`
+	ProductType         string           `json:"product_type"`
+	ReleaseType         string           `json:"release_type"`
+	Image               qobuzImageSet    `json:"image"`
+	Artist              qobuzArtistRef   `json:"artist"`
+	Artists             []qobuzArtistRef `json:"artists"`
+	Genre               qobuzGenreRef    `json:"genre"`
+	Label               qobuzLabelRef    `json:"label"`
+	Copyright           string           `json:"copyright"`
+	Tracks              struct {
+		Items []QobuzTrack `json:"items"`
+	} `json:"tracks"`
+}
+
+type qobuzArtistDetails struct {
+	ID    int64         `json:"id"`
+	Name  string        `json:"name"`
+	Slug  string        `json:"slug"`
+	Image qobuzImageSet `json:"image"`
+}
+
+type qobuzPlaylistDetails struct {
+	ID                 int64    `json:"id"`
+	Name               string   `json:"name"`
+	Description        string   `json:"description"`
+	ImageRectangle     []string `json:"image_rectangle"`
+	ImageRectangleMini []string `json:"image_rectangle_mini"`
+	TracksCount        int      `json:"tracks_count"`
+	Owner              struct {
+		ID   int64  `json:"id"`
+		Name string `json:"name"`
+	} `json:"owner"`
+	Tracks struct {
+		Total  int          `json:"total"`
+		Offset int          `json:"offset"`
+		Limit  int          `json:"limit"`
+		Items  []QobuzTrack `json:"items"`
+	} `json:"tracks"`
+}
+
+func qobuzFirstNonEmpty(values ...string) string {
+	for _, value := range values {
+		trimmed := strings.TrimSpace(value)
+		if trimmed != "" {
+			return trimmed
+		}
+	}
+	return ""
+}
+
+func qobuzPrefixedID(id string) string {
+	trimmed := strings.TrimSpace(id)
+	if trimmed == "" {
+		return ""
+	}
+	if strings.HasPrefix(trimmed, "qobuz:") {
+		return trimmed
+	}
+	return "qobuz:" + trimmed
+}
+
+func qobuzPrefixedNumericID(id int64) string {
+	if id <= 0 {
+		return ""
+	}
+	return fmt.Sprintf("qobuz:%d", id)
+}
+
+func qobuzNormalizeReleaseDate(value string) string {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return ""
+	}
+	if _, err := time.Parse("2006-01-02", trimmed); err == nil {
+		return trimmed
+	}
+	if parsed, err := time.Parse("Jan 2, 2006", trimmed); err == nil {
+		return parsed.Format("2006-01-02")
+	}
+	return trimmed
+}
+
+func qobuzNormalizeAlbumType(releaseType, productType string, totalTracks int) string {
+	kind := strings.ToLower(strings.TrimSpace(releaseType))
+	if kind == "" {
+		kind = strings.ToLower(strings.TrimSpace(productType))
+	}
+	switch kind {
+	case "album", "single", "ep", "compilation":
+		return kind
+	}
+	if totalTracks > 0 && totalTracks <= 3 {
+		return "single"
+	}
+	return "album"
+}
+
+func qobuzArtistsDisplayName(artists []qobuzArtistRef, fallback string) string {
+	names := make([]string, 0, len(artists))
+	seen := make(map[string]struct{}, len(artists))
+	for _, artist := range artists {
+		name := strings.TrimSpace(artist.Name)
+		if name == "" {
+			continue
+		}
+		key := strings.ToLower(name)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		names = append(names, name)
+	}
+	if len(names) == 0 {
+		return strings.TrimSpace(fallback)
+	}
+	return strings.Join(names, ", ")
+}
+
+func qobuzTrackDisplayTitle(track *QobuzTrack) string {
+	if track == nil {
+		return ""
+	}
+	title := strings.TrimSpace(track.Title)
+	version := strings.TrimSpace(track.Version)
+	if title == "" || version == "" {
+		return title
+	}
+	return fmt.Sprintf("%s (%s)", title, version)
+}
+
+func qobuzTrackAlbumImage(track *QobuzTrack) string {
+	if track == nil {
+		return ""
+	}
+	return qobuzFirstNonEmpty(
+		track.Album.Image.Large,
+		track.Album.Image.Small,
+		track.Album.Image.Thumbnail,
+	)
+}
+
+func qobuzAlbumImage(album *qobuzAlbumDetails) string {
+	if album == nil {
+		return ""
+	}
+	return qobuzFirstNonEmpty(
+		album.Image.Large,
+		album.Image.Small,
+		album.Image.Thumbnail,
+	)
+}
+
+func qobuzTrackArtistID(track *QobuzTrack) string {
+	if track == nil {
+		return ""
+	}
+	if track.Performer.ID > 0 {
+		return qobuzPrefixedNumericID(track.Performer.ID)
+	}
+	return qobuzPrefixedNumericID(track.Album.Artist.ID)
+}
+
+func qobuzTrackArtistName(track *QobuzTrack) string {
+	if track == nil {
+		return ""
+	}
+	return strings.TrimSpace(track.Performer.Name)
+}
+
+func qobuzTrackAlbumArtist(track *QobuzTrack) string {
+	if track == nil {
+		return ""
+	}
+	return qobuzArtistsDisplayName(track.Album.Artists, track.Album.Artist.Name)
+}
+
+func qobuzTrackAlbumType(track *QobuzTrack) string {
+	if track == nil {
+		return "album"
+	}
+	return qobuzNormalizeAlbumType(
+		track.Album.ReleaseType,
+		track.Album.ProductType,
+		track.Album.TracksCount,
+	)
+}
+
+func qobuzTrackToTrackMetadata(track *QobuzTrack) TrackMetadata {
+	if track == nil {
+		return TrackMetadata{}
+	}
+	return TrackMetadata{
+		SpotifyID:   qobuzPrefixedNumericID(track.ID),
+		Artists:     qobuzTrackArtistName(track),
+		Name:        qobuzTrackDisplayTitle(track),
+		AlbumName:   strings.TrimSpace(track.Album.Title),
+		AlbumArtist: qobuzTrackAlbumArtist(track),
+		DurationMS:  track.Duration * 1000,
+		Images:      qobuzTrackAlbumImage(track),
+		ReleaseDate: qobuzNormalizeReleaseDate(track.Album.ReleaseDate),
+		TrackNumber: track.TrackNumber,
+		TotalTracks: track.Album.TracksCount,
+		DiscNumber:  track.MediaNumber,
+		ExternalURL: fmt.Sprintf("%s%d", qobuzTrackPlayBaseURL, track.ID),
+		ISRC:        strings.TrimSpace(track.ISRC),
+		AlbumID:     qobuzPrefixedID(track.Album.ID),
+		ArtistID:    qobuzTrackArtistID(track),
+		AlbumType:   qobuzTrackAlbumType(track),
+	}
+}
+
+func qobuzTrackToAlbumTrackMetadata(track *QobuzTrack) AlbumTrackMetadata {
+	if track == nil {
+		return AlbumTrackMetadata{}
+	}
+	return AlbumTrackMetadata{
+		SpotifyID:   qobuzPrefixedNumericID(track.ID),
+		Artists:     qobuzTrackArtistName(track),
+		Name:        qobuzTrackDisplayTitle(track),
+		AlbumName:   strings.TrimSpace(track.Album.Title),
+		AlbumArtist: qobuzTrackAlbumArtist(track),
+		DurationMS:  track.Duration * 1000,
+		Images:      qobuzTrackAlbumImage(track),
+		ReleaseDate: qobuzNormalizeReleaseDate(track.Album.ReleaseDate),
+		TrackNumber: track.TrackNumber,
+		TotalTracks: track.Album.TracksCount,
+		DiscNumber:  track.MediaNumber,
+		ExternalURL: fmt.Sprintf("%s%d", qobuzTrackPlayBaseURL, track.ID),
+		ISRC:        strings.TrimSpace(track.ISRC),
+		AlbumID:     qobuzPrefixedID(track.Album.ID),
+		AlbumURL:    fmt.Sprintf("https://play.qobuz.com/album/%s", strings.TrimSpace(track.Album.ID)),
+		AlbumType:   qobuzTrackAlbumType(track),
+	}
+}
+
+func qobuzAlbumToAlbumInfo(album *qobuzAlbumDetails) AlbumInfoMetadata {
+	if album == nil {
+		return AlbumInfoMetadata{}
+	}
+	return AlbumInfoMetadata{
+		TotalTracks: album.TracksCount,
+		Name:        strings.TrimSpace(album.Title),
+		ReleaseDate: qobuzNormalizeReleaseDate(album.ReleaseDateOriginal),
+		Artists:     qobuzArtistsDisplayName(album.Artists, album.Artist.Name),
+		ArtistId:    qobuzPrefixedNumericID(album.Artist.ID),
+		Images:      qobuzAlbumImage(album),
+		Genre:       strings.TrimSpace(album.Genre.Name),
+		Label:       strings.TrimSpace(album.Label.Name),
+		Copyright:   strings.TrimSpace(album.Copyright),
+	}
+}
+
+func qobuzAlbumToArtistAlbum(album *qobuzAlbumDetails) ArtistAlbumMetadata {
+	if album == nil {
+		return ArtistAlbumMetadata{}
+	}
+	return ArtistAlbumMetadata{
+		ID:          qobuzPrefixedID(album.ID),
+		Name:        strings.TrimSpace(album.Title),
+		ReleaseDate: qobuzNormalizeReleaseDate(album.ReleaseDateOriginal),
+		TotalTracks: album.TracksCount,
+		Images:      qobuzAlbumImage(album),
+		AlbumType:   qobuzNormalizeAlbumType(album.ReleaseType, album.ProductType, album.TracksCount),
+		Artists:     qobuzArtistsDisplayName(album.Artists, album.Artist.Name),
+	}
+}
+
+func qobuzSplitPathSegments(path string) []string {
+	rawSegments := strings.Split(strings.TrimSpace(path), "/")
+	segments := make([]string, 0, len(rawSegments))
+	for _, segment := range rawSegments {
+		trimmed := strings.TrimSpace(segment)
+		if trimmed == "" {
+			continue
+		}
+		segments = append(segments, trimmed)
+	}
+	if len(segments) > 0 && qobuzLocaleSegmentRegex.MatchString(strings.ToLower(segments[0])) {
+		return segments[1:]
+	}
+	return segments
+}
+
+func qobuzResourceTypeFromSegment(segment string) string {
+	switch strings.ToLower(strings.TrimSpace(segment)) {
+	case "album":
+		return "album"
+	case "interpreter", "artist":
+		return "artist"
+	case "playlist", "playlists":
+		return "playlist"
+	case "track":
+		return "track"
+	default:
+		return ""
+	}
+}
+
+func parseQobuzURL(input string) (string, string, error) {
+	raw := strings.TrimSpace(input)
+	if raw == "" {
+		return "", "", fmt.Errorf("empty Qobuz URL")
+	}
+
+	if strings.HasPrefix(strings.ToLower(raw), "qobuzapp://") {
+		parsed, err := url.Parse(raw)
+		if err != nil {
+			return "", "", err
+		}
+		resourceType := qobuzResourceTypeFromSegment(parsed.Host)
+		resourceID := strings.Trim(strings.TrimSpace(parsed.Path), "/")
+		if resourceType == "" || resourceID == "" {
+			return "", "", fmt.Errorf("invalid or unsupported Qobuz URL")
+		}
+		return resourceType, resourceID, nil
+	}
+
+	parsed, err := url.Parse(raw)
+	if err != nil || parsed.Host == "" {
+		if !strings.Contains(raw, "://") {
+			parsed, err = url.Parse("https://" + raw)
+		}
+	}
+	if err != nil || parsed == nil || parsed.Host == "" {
+		return "", "", fmt.Errorf("invalid or unsupported Qobuz URL")
+	}
+
+	host := strings.ToLower(parsed.Host)
+	if host != "qobuz.com" && host != "www.qobuz.com" && host != "play.qobuz.com" {
+		return "", "", fmt.Errorf("invalid or unsupported Qobuz URL")
+	}
+
+	segments := qobuzSplitPathSegments(parsed.Path)
+	if len(segments) < 2 {
+		return "", "", fmt.Errorf("invalid or unsupported Qobuz URL")
+	}
+
+	resourceType := qobuzResourceTypeFromSegment(segments[0])
+	resourceID := strings.TrimSpace(segments[len(segments)-1])
+	if resourceType == "" || resourceID == "" {
+		return "", "", fmt.Errorf("invalid or unsupported Qobuz URL")
+	}
+
+	return resourceType, resourceID, nil
 }
 
 func qobuzArtistsMatch(expectedArtist, foundArtist string) bool {
@@ -386,9 +791,239 @@ func (q *QobuzDownloader) GetTrackByID(trackID int64) (*QobuzTrack, error) {
 	return &track, nil
 }
 
+func (q *QobuzDownloader) getQobuzJSON(requestURL string, target interface{}) error {
+	req, err := http.NewRequest("GET", requestURL, nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := DoRequestWithUserAgent(q.client, req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+		return fmt.Errorf("qobuz request failed: HTTP %d (%s)", resp.StatusCode, strings.TrimSpace(string(body)))
+	}
+
+	return json.NewDecoder(resp.Body).Decode(target)
+}
+
+func (q *QobuzDownloader) getQobuzBody(requestURL string) ([]byte, error) {
+	req, err := http.NewRequest("GET", requestURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := DoRequestWithUserAgent(q.client, req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+		return nil, fmt.Errorf("qobuz request failed: HTTP %d (%s)", resp.StatusCode, strings.TrimSpace(string(body)))
+	}
+
+	return io.ReadAll(resp.Body)
+}
+
+func extractQobuzAlbumIDsFromArtistHTML(body []byte) []string {
+	matches := qobuzArtistAlbumIDRegex.FindAllSubmatch(body, -1)
+	if len(matches) == 0 {
+		return nil
+	}
+
+	albumIDs := make([]string, 0, len(matches))
+	seen := make(map[string]struct{}, len(matches))
+	for _, match := range matches {
+		if len(match) < 2 {
+			continue
+		}
+		albumID := strings.TrimSpace(string(match[1]))
+		if albumID == "" {
+			continue
+		}
+		if _, ok := seen[albumID]; ok {
+			continue
+		}
+		seen[albumID] = struct{}{}
+		albumIDs = append(albumIDs, albumID)
+	}
+	return albumIDs
+}
+
+func (q *QobuzDownloader) getAlbumDetails(albumID string) (*qobuzAlbumDetails, error) {
+	requestURL := fmt.Sprintf("%s%s&app_id=%s", qobuzAlbumGetBaseURL, url.QueryEscape(strings.TrimSpace(albumID)), q.appID)
+	var album qobuzAlbumDetails
+	if err := q.getQobuzJSON(requestURL, &album); err != nil {
+		return nil, err
+	}
+	return &album, nil
+}
+
+func (q *QobuzDownloader) getArtistDetails(artistID string) (*qobuzArtistDetails, error) {
+	requestURL := fmt.Sprintf("%s%s&app_id=%s", qobuzArtistGetBaseURL, url.QueryEscape(strings.TrimSpace(artistID)), q.appID)
+	var artist qobuzArtistDetails
+	if err := q.getQobuzJSON(requestURL, &artist); err != nil {
+		return nil, err
+	}
+	return &artist, nil
+}
+
+func (q *QobuzDownloader) getPlaylistDetailsPage(playlistID string, limit, offset int) (*qobuzPlaylistDetails, error) {
+	requestURL := fmt.Sprintf(
+		"%s%s&extra=tracks&limit=%d&offset=%d&app_id=%s",
+		qobuzPlaylistGetBaseURL,
+		url.QueryEscape(strings.TrimSpace(playlistID)),
+		limit,
+		offset,
+		q.appID,
+	)
+	var playlist qobuzPlaylistDetails
+	if err := q.getQobuzJSON(requestURL, &playlist); err != nil {
+		return nil, err
+	}
+	return &playlist, nil
+}
+
+func (q *QobuzDownloader) getArtistAlbumIDs(artistID string) ([]string, error) {
+	artist, err := q.getArtistDetails(artistID)
+	if err != nil {
+		return nil, err
+	}
+
+	slug := strings.TrimSpace(artist.Slug)
+	if slug == "" {
+		slug = "artist"
+	}
+	requestURL := fmt.Sprintf("%s/interpreter/%s/%d", qobuzStoreBaseURL, url.PathEscape(slug), artist.ID)
+	body, err := q.getQobuzBody(requestURL)
+	if err != nil {
+		return nil, err
+	}
+
+	albumIDs := extractQobuzAlbumIDsFromArtistHTML(body)
+	if len(albumIDs) == 0 {
+		return nil, fmt.Errorf("artist page did not contain album IDs")
+	}
+	return albumIDs, nil
+}
+
+func (q *QobuzDownloader) GetTrackMetadata(resourceID string) (*TrackResponse, error) {
+	trackID, err := strconv.ParseInt(strings.TrimSpace(resourceID), 10, 64)
+	if err != nil || trackID <= 0 {
+		return nil, fmt.Errorf("invalid Qobuz track ID: %s", resourceID)
+	}
+
+	track, err := q.GetTrackByID(trackID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &TrackResponse{Track: qobuzTrackToTrackMetadata(track)}, nil
+}
+
+func (q *QobuzDownloader) GetAlbumMetadata(resourceID string) (*AlbumResponsePayload, error) {
+	album, err := q.getAlbumDetails(resourceID)
+	if err != nil {
+		return nil, err
+	}
+
+	tracks := make([]AlbumTrackMetadata, 0, len(album.Tracks.Items))
+	for i := range album.Tracks.Items {
+		tracks = append(tracks, qobuzTrackToAlbumTrackMetadata(&album.Tracks.Items[i]))
+	}
+
+	return &AlbumResponsePayload{
+		AlbumInfo: qobuzAlbumToAlbumInfo(album),
+		TrackList: tracks,
+	}, nil
+}
+
+func (q *QobuzDownloader) GetPlaylistMetadata(resourceID string) (*PlaylistResponsePayload, error) {
+	const pageSize = 50
+
+	offset := 0
+	var playlistInfo PlaylistInfoMetadata
+	tracks := make([]AlbumTrackMetadata, 0, pageSize)
+
+	for {
+		page, err := q.getPlaylistDetailsPage(resourceID, pageSize, offset)
+		if err != nil {
+			return nil, err
+		}
+
+		if offset == 0 {
+			total := page.Tracks.Total
+			if total == 0 {
+				total = page.TracksCount
+			}
+			playlistInfo.Tracks.Total = total
+			playlistInfo.Owner.DisplayName = strings.TrimSpace(page.Owner.Name)
+			playlistInfo.Owner.Name = strings.TrimSpace(page.Name)
+			playlistInfo.Owner.Images = qobuzFirstNonEmpty(page.ImageRectangle...)
+		}
+
+		for i := range page.Tracks.Items {
+			tracks = append(tracks, qobuzTrackToAlbumTrackMetadata(&page.Tracks.Items[i]))
+		}
+
+		if len(page.Tracks.Items) == 0 ||
+			offset+len(page.Tracks.Items) >= playlistInfo.Tracks.Total ||
+			len(page.Tracks.Items) < pageSize {
+			break
+		}
+		offset += len(page.Tracks.Items)
+	}
+
+	return &PlaylistResponsePayload{
+		PlaylistInfo: playlistInfo,
+		TrackList:    tracks,
+	}, nil
+}
+
+func (q *QobuzDownloader) GetArtistMetadata(resourceID string) (*ArtistResponsePayload, error) {
+	artist, err := q.getArtistDetails(resourceID)
+	if err != nil {
+		return nil, err
+	}
+
+	albumIDs, err := q.getArtistAlbumIDs(resourceID)
+	if err != nil {
+		return nil, err
+	}
+
+	albums := make([]ArtistAlbumMetadata, 0, len(albumIDs))
+	for _, albumID := range albumIDs {
+		album, albumErr := q.getAlbumDetails(albumID)
+		if albumErr != nil {
+			GoLog("[Qobuz] Skipping artist album %s: %v\n", albumID, albumErr)
+			continue
+		}
+		albums = append(albums, qobuzAlbumToArtistAlbum(album))
+	}
+
+	return &ArtistResponsePayload{
+		ArtistInfo: ArtistInfoMetadata{
+			ID:     qobuzPrefixedNumericID(artist.ID),
+			Name:   strings.TrimSpace(artist.Name),
+			Images: qobuzFirstNonEmpty(artist.Image.Large, artist.Image.Small, artist.Image.Thumbnail),
+		},
+		Albums: albums,
+	}, nil
+}
+
 func (q *QobuzDownloader) GetAvailableAPIs() []string {
 	return []string{
 		qobuzDownloadAPIURL,
+		qobuzDabMusicAPIURL,
+		qobuzDeebAPIURL,
+		qobuzAfkarAPIURL,
+		qobuzSquidAPIURL,
 	}
 }
 
@@ -409,6 +1044,8 @@ func (q *QobuzDownloader) GetAvailableProviders() []qobuzAPIProvider {
 		{Name: "dabmusic", URL: qobuzDabMusicAPIURL, Kind: qobuzAPIKindStandard},
 		// "deeb" is mapped from the legacy reference fallback endpoint.
 		{Name: "deeb", URL: qobuzDeebAPIURL, Kind: qobuzAPIKindStandard},
+		// "qbz" comes from the desktop reference app and uses /api/track/{id}?quality=...
+		{Name: "qbz", URL: qobuzAfkarAPIURL, Kind: qobuzAPIKindStandard},
 		{Name: "squid", URL: qobuzSquidAPIURL, Kind: qobuzAPIKindStandard},
 	}
 }
@@ -648,6 +1285,27 @@ func (q *QobuzDownloader) SearchTrackByMetadata(trackName, artistName string) (*
 	return q.SearchTrackByMetadataWithDuration(trackName, artistName, 0)
 }
 
+func (q *QobuzDownloader) SearchTracks(query string, limit int) ([]ExtTrackMetadata, error) {
+	cleanQuery := strings.TrimSpace(query)
+	if cleanQuery == "" {
+		return nil, fmt.Errorf("empty qobuz search query")
+	}
+	if limit <= 0 {
+		limit = 20
+	}
+
+	tracks, err := q.searchQobuzTracksWithFallback(cleanQuery, limit)
+	if err != nil {
+		return nil, err
+	}
+
+	results := make([]ExtTrackMetadata, 0, len(tracks))
+	for i := range tracks {
+		results = append(results, normalizeBuiltInMetadataTrack(qobuzTrackToTrackMetadata(&tracks[i]), "qobuz"))
+	}
+	return results, nil
+}
+
 func (q *QobuzDownloader) SearchTrackByMetadataWithDuration(trackName, artistName string, expectedDurationSec int) (*QobuzTrack, error) {
 	queries := []string{}
 
@@ -791,6 +1449,39 @@ func (q *QobuzDownloader) SearchTrackByMetadataWithDuration(trackName, artistNam
 	return nil, fmt.Errorf("no matching track found for: %s - %s", artistName, trackName)
 }
 
+func qobuzTrackMatchesRequest(req DownloadRequest, track *QobuzTrack, logPrefix, source string) bool {
+	if track == nil {
+		return false
+	}
+
+	if req.ArtistName != "" && !qobuzArtistsMatch(req.ArtistName, track.Performer.Name) {
+		GoLog("[%s] Artist mismatch from %s: expected '%s', got '%s'. Rejecting.\n",
+			logPrefix, source, req.ArtistName, track.Performer.Name)
+		return false
+	}
+
+	if req.TrackName != "" && !qobuzTitlesMatch(req.TrackName, track.Title) {
+		GoLog("[%s] Title mismatch from %s: expected '%s', got '%s'. Rejecting.\n",
+			logPrefix, source, req.TrackName, track.Title)
+		return false
+	}
+
+	expectedDurationSec := req.DurationMS / 1000
+	if expectedDurationSec > 0 && track.Duration > 0 {
+		durationDiff := track.Duration - expectedDurationSec
+		if durationDiff < 0 {
+			durationDiff = -durationDiff
+		}
+		if durationDiff > 10 {
+			GoLog("[%s] Duration mismatch from %s: expected %ds, got %ds. Rejecting.\n",
+				logPrefix, source, expectedDurationSec, track.Duration)
+			return false
+		}
+	}
+
+	return true
+}
+
 func (q *QobuzDownloader) searchQobuzTracksViaAPI(query string, limit int) ([]QobuzTrack, error) {
 	searchURL := fmt.Sprintf("%s%s&limit=%d&app_id=%s", qobuzTrackSearchBaseURL, url.QueryEscape(query), limit, q.appID)
 	req, err := http.NewRequest("GET", searchURL, nil)
@@ -923,18 +1614,14 @@ type qobuzAPIResult struct {
 	duration time.Duration
 }
 
-// Qobuz API timeout configuration
 // Mobile networks are more unstable, so we use longer timeouts
 const (
 	qobuzAPITimeoutMobile = 25 * time.Second
-	qobuzMaxRetries       = 2 // Number of retries per API
+	qobuzMaxRetries       = 2
 	qobuzRetryDelay       = 500 * time.Millisecond
 )
 
-// getQobuzAPITimeout returns appropriate timeout based on platform
-// For mobile (gomobile builds), we use longer timeouts
 func getQobuzAPITimeout() time.Duration {
-	// Since this runs in gomobile context, we always use mobile timeout
 	// The Go backend is only used on mobile (Android/iOS)
 	return qobuzAPITimeoutMobile
 }
@@ -944,7 +1631,6 @@ func fetchQobuzURLWithRetry(provider qobuzAPIProvider, trackID int64, quality st
 	return fetchQobuzURLSingleAttempt(provider, trackID, quality, timeout, "")
 }
 
-// fetchQobuzURLSingleAttempt fetches download URL with retry logic for a single API+country combination
 func fetchQobuzURLSingleAttempt(provider qobuzAPIProvider, trackID int64, quality string, timeout time.Duration, country string) (qobuzDownloadInfo, error) {
 	var lastErr error
 	retryDelay := qobuzRetryDelay
@@ -967,7 +1653,7 @@ func fetchQobuzURLSingleAttempt(provider qobuzAPIProvider, trackID int64, qualit
 		if attempt > 0 {
 			GoLog("[Qobuz] Retry %d/%d for %s after %v\n", attempt, qobuzMaxRetries, provider.Name, retryDelay)
 			time.Sleep(retryDelay)
-			retryDelay *= 2 // Exponential backoff
+			retryDelay *= 2
 		}
 
 		client := NewHTTPClientWithTimeout(timeout)
@@ -1014,11 +1700,10 @@ func fetchQobuzURLSingleAttempt(provider qobuzAPIProvider, trackID int64, qualit
 				strings.Contains(errStr, "reset") ||
 				strings.Contains(errStr, "connection refused") ||
 				strings.Contains(errStr, "eof") {
-				continue // Retry
+				continue
 			}
-			break // Non-retryable error
+			break
 		}
-		// Server errors are retryable
 		if resp.StatusCode >= 500 {
 			io.Copy(io.Discard, resp.Body)
 			resp.Body.Close()
@@ -1031,7 +1716,7 @@ func fetchQobuzURLSingleAttempt(provider qobuzAPIProvider, trackID int64, qualit
 			io.Copy(io.Discard, resp.Body)
 			resp.Body.Close()
 			lastErr = fmt.Errorf("rate limited")
-			retryDelay = 2 * time.Second // Wait longer for rate limit
+			retryDelay = 2 * time.Second
 			continue
 		}
 
@@ -1253,6 +1938,19 @@ type QobuzDownloadResult struct {
 	LyricsLRC   string
 }
 
+func parseQobuzRequestTrackID(raw string) int64 {
+	trimmed := strings.TrimSpace(raw)
+	trimmed = strings.TrimPrefix(trimmed, "qobuz:")
+	if trimmed == "" {
+		return 0
+	}
+	var trackID int64
+	if _, err := fmt.Sscanf(trimmed, "%d", &trackID); err != nil || trackID <= 0 {
+		return 0
+	}
+	return trackID
+}
+
 func resolveQobuzTrackForRequest(req DownloadRequest, downloader *QobuzDownloader, logPrefix string) (*QobuzTrack, error) {
 	if downloader == nil {
 		downloader = NewQobuzDownloader()
@@ -1266,17 +1964,20 @@ func resolveQobuzTrackForRequest(req DownloadRequest, downloader *QobuzDownloade
 	var track *QobuzTrack
 	var err error
 
-	// Strategy 1: Use Qobuz ID from Odesli enrichment (fastest, most accurate)
+	// Strategy 1: Use Qobuz ID from request payload (fastest, most accurate)
 	if req.QobuzID != "" {
-		GoLog("[%s] Using Qobuz ID from Odesli enrichment: %s\n", logPrefix, req.QobuzID)
-		var trackID int64
-		if _, parseErr := fmt.Sscanf(req.QobuzID, "%d", &trackID); parseErr == nil && trackID > 0 {
-			track, err = downloader.GetTrackByID(trackID)
+		GoLog("[%s] Using Qobuz ID from request payload: %s\n", logPrefix, req.QobuzID)
+		if trackID := parseQobuzRequestTrackID(req.QobuzID); trackID > 0 {
+			track, err = qobuzGetTrackByIDFunc(downloader, trackID)
 			if err != nil {
-				GoLog("[%s] Failed to get track by Odesli ID %d: %v\n", logPrefix, trackID, err)
+				GoLog("[%s] Failed to get track by request Qobuz ID %d: %v\n", logPrefix, trackID, err)
 				track = nil
 			} else if track != nil {
-				GoLog("[%s] Successfully found track via Odesli ID: '%s' by '%s'\n", logPrefix, track.Title, track.Performer.Name)
+				if qobuzTrackMatchesRequest(req, track, logPrefix, "request Qobuz ID") {
+					GoLog("[%s] Successfully found track via request Qobuz ID: '%s' by '%s'\n", logPrefix, track.Title, track.Performer.Name)
+				} else {
+					track = nil
+				}
 			}
 		}
 	}
@@ -1285,9 +1986,11 @@ func resolveQobuzTrackForRequest(req DownloadRequest, downloader *QobuzDownloade
 	if track == nil && req.ISRC != "" {
 		if cached := GetTrackIDCache().Get(req.ISRC); cached != nil && cached.QobuzTrackID > 0 {
 			GoLog("[%s] Cache hit! Using cached track ID: %d\n", logPrefix, cached.QobuzTrackID)
-			track, err = downloader.GetTrackByID(cached.QobuzTrackID)
+			track, err = qobuzGetTrackByIDFunc(downloader, cached.QobuzTrackID)
 			if err != nil {
 				GoLog("[%s] Cache hit but GetTrackByID failed: %v\n", logPrefix, err)
+				track = nil
+			} else if track != nil && !qobuzTrackMatchesRequest(req, track, logPrefix, "cached Qobuz ID") {
 				track = nil
 			}
 		}
@@ -1297,20 +2000,23 @@ func resolveQobuzTrackForRequest(req DownloadRequest, downloader *QobuzDownloade
 	if track == nil && req.SpotifyID != "" && req.QobuzID == "" {
 		GoLog("[%s] Trying to get Qobuz ID from SongLink for Spotify ID: %s\n", logPrefix, req.SpotifyID)
 		songLinkClient := NewSongLinkClient()
-		availability, slErr := songLinkClient.CheckTrackAvailability(req.SpotifyID, req.ISRC)
+		availability, slErr := songLinkCheckTrackAvailabilityFunc(songLinkClient, req.SpotifyID, req.ISRC)
 		if slErr == nil && availability != nil && availability.QobuzID != "" {
 			var trackID int64
 			if _, parseErr := fmt.Sscanf(availability.QobuzID, "%d", &trackID); parseErr == nil && trackID > 0 {
 				GoLog("[%s] Got Qobuz ID %d from SongLink\n", logPrefix, trackID)
-				track, err = downloader.GetTrackByID(trackID)
+				track, err = qobuzGetTrackByIDFunc(downloader, trackID)
 				if err != nil {
 					GoLog("[%s] Failed to get track by SongLink ID %d: %v\n", logPrefix, trackID, err)
 					track = nil
 				} else if track != nil {
-					GoLog("[%s] Successfully found track via SongLink ID: '%s' by '%s'\n", logPrefix, track.Title, track.Performer.Name)
-					// Cache for future use
-					if req.ISRC != "" {
-						GetTrackIDCache().SetQobuz(req.ISRC, track.ID)
+					if qobuzTrackMatchesRequest(req, track, logPrefix, "SongLink Qobuz ID") {
+						GoLog("[%s] Successfully found track via SongLink ID: '%s' by '%s'\n", logPrefix, track.Title, track.Performer.Name)
+						if req.ISRC != "" {
+							GetTrackIDCache().SetQobuz(req.ISRC, track.ID)
+						}
+					} else {
+						track = nil
 					}
 				}
 			}
@@ -1320,27 +2026,17 @@ func resolveQobuzTrackForRequest(req DownloadRequest, downloader *QobuzDownloade
 	// Strategy 4: ISRC search with duration verification
 	if track == nil && req.ISRC != "" {
 		GoLog("[%s] Trying ISRC search: %s\n", logPrefix, req.ISRC)
-		track, err = downloader.SearchTrackByISRCWithDuration(req.ISRC, expectedDurationSec)
-		if track != nil {
-			if !qobuzArtistsMatch(req.ArtistName, track.Performer.Name) {
-				GoLog("[%s] Artist mismatch from ISRC search: expected '%s', got '%s'. Rejecting.\n",
-					logPrefix, req.ArtistName, track.Performer.Name)
-				track = nil
-			} else if !qobuzTitlesMatch(req.TrackName, track.Title) {
-				GoLog("[%s] Title mismatch from ISRC search: expected '%s', got '%s'. Rejecting.\n",
-					logPrefix, req.TrackName, track.Title)
-				track = nil
-			}
+		track, err = qobuzSearchTrackByISRCWithDurationFunc(downloader, req.ISRC, expectedDurationSec)
+		if track != nil && !qobuzTrackMatchesRequest(req, track, logPrefix, "ISRC search") {
+			track = nil
 		}
 	}
 
 	// Strategy 5: Metadata search with strict matching (duration tolerance: 10 seconds)
 	if track == nil {
 		GoLog("[%s] Trying metadata search: '%s' by '%s'\n", logPrefix, req.TrackName, req.ArtistName)
-		track, err = downloader.SearchTrackByMetadataWithDuration(req.TrackName, req.ArtistName, expectedDurationSec)
-		if track != nil && !qobuzArtistsMatch(req.ArtistName, track.Performer.Name) {
-			GoLog("[%s] Artist mismatch from metadata search: expected '%s', got '%s'. Rejecting.\n",
-				logPrefix, req.ArtistName, track.Performer.Name)
+		track, err = qobuzSearchTrackByMetadataWithDurationFunc(downloader, req.TrackName, req.ArtistName, expectedDurationSec)
+		if track != nil && !qobuzTrackMatchesRequest(req, track, logPrefix, "metadata search") {
 			track = nil
 		}
 	}
@@ -1467,6 +2163,10 @@ func downloadFromQobuz(req DownloadRequest) (QobuzDownloadResult, error) {
 	if req.AlbumName != "" {
 		albumName = req.AlbumName
 	}
+	releaseDate := track.Album.ReleaseDate
+	if req.ReleaseDate != "" {
+		releaseDate = req.ReleaseDate
+	}
 
 	actualTrackNumber := req.TrackNumber
 	if actualTrackNumber == 0 {
@@ -1478,7 +2178,7 @@ func downloadFromQobuz(req DownloadRequest) (QobuzDownloadResult, error) {
 		Artist:      track.Performer.Name,
 		Album:       albumName,
 		AlbumArtist: req.AlbumArtist,
-		Date:        track.Album.ReleaseDate,
+		Date:        releaseDate,
 		TrackNumber: actualTrackNumber,
 		TotalTracks: req.TotalTracks,
 		DiscNumber:  req.DiscNumber,
@@ -1542,16 +2242,24 @@ func downloadFromQobuz(req DownloadRequest) (QobuzDownloadResult, error) {
 		lyricsLRC = parallelResult.LyricsLRC
 	}
 
+	resultAlbum, resultReleaseDate, resultTrackNumber, resultDiscNumber := preferredReleaseMetadata(
+		req,
+		track.Album.Title,
+		track.Album.ReleaseDate,
+		actualTrackNumber,
+		req.DiscNumber,
+	)
+
 	return QobuzDownloadResult{
 		FilePath:    outputPath,
 		BitDepth:    actualBitDepth,
 		SampleRate:  actualSampleRate,
 		Title:       track.Title,
 		Artist:      track.Performer.Name,
-		Album:       track.Album.Title,
-		ReleaseDate: track.Album.ReleaseDate,
-		TrackNumber: actualTrackNumber,
-		DiscNumber:  req.DiscNumber,
+		Album:       resultAlbum,
+		ReleaseDate: resultReleaseDate,
+		TrackNumber: resultTrackNumber,
+		DiscNumber:  resultDiscNumber,
 		ISRC:        track.ISRC,
 		LyricsLRC:   lyricsLRC,
 	}, nil

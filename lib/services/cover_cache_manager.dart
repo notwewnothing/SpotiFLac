@@ -1,3 +1,4 @@
+import 'package:spotiflac_android/utils/platform_spoof.dart' as platform;
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
@@ -6,7 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
 /// Persistent cache manager for album/track cover images.
-/// 
+///
 /// Unlike the default cache manager which stores in temp directory
 /// (can be cleared by system anytime), this stores in app support
 /// directory which persists across app restarts.
@@ -22,7 +23,9 @@ class CoverCacheManager {
   static CacheManager get instance {
     if (!_initialized || _instance == null) {
       // Fallback to default cache manager if not initialized
-      debugPrint('CoverCacheManager: Not initialized, using DefaultCacheManager');
+      debugPrint(
+        'CoverCacheManager: Not initialized, using DefaultCacheManager',
+      );
       return DefaultCacheManager();
     }
     return _instance!;
@@ -36,14 +39,14 @@ class CoverCacheManager {
     try {
       final appDir = await getApplicationSupportDirectory();
       _cachePath = p.join(appDir.path, 'cover_cache');
-      
+
       // Ensure cache directory exists
       await Directory(_cachePath!).create(recursive: true);
-      
+
       debugPrint('CoverCacheManager: Initializing at $_cachePath');
 
       _instance = _createManager(_cachePath!);
-      
+
       _initialized = true;
       debugPrint('CoverCacheManager: Initialized successfully');
     } catch (e) {
@@ -98,7 +101,7 @@ class CoverCacheManager {
     }
 
     final cacheDir = Directory(_cachePath!);
-    
+
     if (!await cacheDir.exists()) {
       return const CacheStats(fileCount: 0, totalSizeBytes: 0);
     }
@@ -164,10 +167,7 @@ class CacheStats {
   final int fileCount;
   final int totalSizeBytes;
 
-  const CacheStats({
-    required this.fileCount,
-    required this.totalSizeBytes,
-  });
+  const CacheStats({required this.fileCount, required this.totalSizeBytes});
 
   String get formattedSize {
     if (totalSizeBytes < 1024) {

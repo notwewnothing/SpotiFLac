@@ -20,6 +20,7 @@ Future<void> showAddTracksToPlaylistSheet(
   BuildContext context,
   WidgetRef ref,
   List<Track> tracks,
+  {String? playlistNamePrefill}
 ) async {
   if (tracks.isEmpty) return;
 
@@ -31,15 +32,16 @@ Future<void> showAddTracksToPlaylistSheet(
     showDragHandle: true,
     isScrollControlled: true,
     builder: (sheetContext) {
-      return _PlaylistPickerSheetContent(tracks: tracks);
+      return _PlaylistPickerSheetContent(tracks: tracks, playlistNamePrefill: playlistNamePrefill);
     },
   );
 }
 
 class _PlaylistPickerSheetContent extends ConsumerStatefulWidget {
   final List<Track> tracks;
+  final String? playlistNamePrefill;
 
-  const _PlaylistPickerSheetContent({required this.tracks});
+  const _PlaylistPickerSheetContent({required this.tracks, this.playlistNamePrefill});
 
   @override
   ConsumerState<_PlaylistPickerSheetContent> createState() =>
@@ -130,7 +132,7 @@ class _PlaylistPickerSheetContentState
             leading: const Icon(Icons.add_circle_outline),
             title: Text(context.l10n.collectionCreatePlaylist),
             onTap: () async {
-              final name = await _promptPlaylistName(context);
+              final name = await _promptPlaylistName(context, widget.playlistNamePrefill);
               if (name == null || name.trim().isEmpty || !context.mounted) {
                 return;
               }
@@ -221,8 +223,8 @@ class _PlaylistPickerSheetContentState
   }
 }
 
-Future<String?> _promptPlaylistName(BuildContext context) async {
-  final controller = TextEditingController();
+Future<String?> _promptPlaylistName(BuildContext context, String? playlistNamePrefill) async {
+  final controller = TextEditingController(text: playlistNamePrefill);
   final formKey = GlobalKey<FormState>();
 
   final result = await showDialog<String>(

@@ -356,7 +356,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get aboutAppDescription =>
-      'Download Spotify tracks in lossless quality from Tidal, Qobuz, and Amazon Music.';
+      'Download Spotify tracks in lossless quality from Tidal and Qobuz.';
 
   @override
   String get artistAlbums => 'Albums';
@@ -526,6 +526,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get dialogImport => 'Import';
 
   @override
+  String get dialogDownload => 'Download';
+
+  @override
   String get dialogDiscard => 'Discard';
 
   @override
@@ -689,6 +692,17 @@ class AppLocalizationsPt extends AppLocalizations {
   String get errorNoTracksFound => 'No tracks found';
 
   @override
+  String get errorUrlNotRecognized => 'Link not recognized';
+
+  @override
+  String get errorUrlNotRecognizedMessage =>
+      'This link is not supported. Make sure the URL is correct and a compatible extension is installed.';
+
+  @override
+  String get errorUrlFetchFailed =>
+      'Failed to load content from this link. Please try again.';
+
+  @override
   String errorMissingExtensionSource(String item) {
     return 'Cannot load $item: missing extension source';
   }
@@ -760,6 +774,13 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get folderOrganizationNone => 'No organization';
+
+  @override
+  String get folderOrganizationByPlaylist => 'By Playlist';
+
+  @override
+  String get folderOrganizationByPlaylistSubtitle =>
+      'Separate folder for each playlist';
 
   @override
   String get folderOrganizationByArtist => 'By Artist';
@@ -1176,6 +1197,47 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get storeClearFilters => 'Clear filters';
+
+  @override
+  String get storeAddRepoTitle => 'Add Extension Repository';
+
+  @override
+  String get storeAddRepoDescription =>
+      'Enter a GitHub repository URL that contains a registry.json file to browse and install extensions.';
+
+  @override
+  String get storeRepoUrlLabel => 'Repository URL';
+
+  @override
+  String get storeRepoUrlHint => 'https://github.com/user/repo';
+
+  @override
+  String get storeRepoUrlHelper =>
+      'e.g. https://github.com/user/extensions-repo';
+
+  @override
+  String get storeAddRepoButton => 'Add Repository';
+
+  @override
+  String get storeChangeRepoTooltip => 'Change repository';
+
+  @override
+  String get storeRepoDialogTitle => 'Extension Repository';
+
+  @override
+  String get storeRepoDialogCurrent => 'Current repository:';
+
+  @override
+  String get storeNewRepoUrlLabel => 'New Repository URL';
+
+  @override
+  String get storeLoadError => 'Failed to load store';
+
+  @override
+  String get storeEmptyNoExtensions => 'No extensions available';
+
+  @override
+  String get storeEmptyNoResults => 'No extensions found';
 
   @override
   String get extensionDefaultProvider => 'Default (Deezer/Spotify)';
@@ -1634,6 +1696,25 @@ class AppLocalizationsPt extends AppLocalizations {
       'Show when searching for existing tracks';
 
   @override
+  String get libraryAutoScan => 'Auto Scan';
+
+  @override
+  String get libraryAutoScanSubtitle =>
+      'Automatically scan your library for new files';
+
+  @override
+  String get libraryAutoScanOff => 'Off';
+
+  @override
+  String get libraryAutoScanOnOpen => 'Every app open';
+
+  @override
+  String get libraryAutoScanDaily => 'Daily';
+
+  @override
+  String get libraryAutoScanWeekly => 'Weekly';
+
+  @override
   String get libraryActions => 'Actions';
 
   @override
@@ -1809,7 +1890,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get tutorialWelcomeTip2 =>
-      'Get FLAC quality audio from Tidal, Qobuz, or Amazon Music';
+      'Get FLAC quality audio from Tidal, Qobuz, or Deezer';
 
   @override
   String get tutorialWelcomeTip3 =>
@@ -2084,6 +2165,28 @@ class AppLocalizationsPt extends AppLocalizations {
   String get trackReEnrichFfmpegFailed => 'FFmpeg metadata embed failed';
 
   @override
+  String get queueFlacAction => 'Queue FLAC';
+
+  @override
+  String queueFlacConfirmMessage(int count) {
+    return 'Search online matches for the selected tracks and queue FLAC downloads.\n\nExisting files will not be modified or deleted.\n\nOnly high-confidence matches are queued automatically.\n\n$count selected';
+  }
+
+  @override
+  String queueFlacFindingProgress(int current, int total) {
+    return 'Finding FLAC matches... ($current/$total)';
+  }
+
+  @override
+  String get queueFlacNoReliableMatches =>
+      'No reliable online matches found for the selection';
+
+  @override
+  String queueFlacQueuedWithSkipped(int addedCount, int skippedCount) {
+    return 'Added $addedCount tracks to queue, skipped $skippedCount';
+  }
+
+  @override
   String trackSaveFailed(String error) {
     return 'Failed: $error';
   }
@@ -2092,7 +2195,8 @@ class AppLocalizationsPt extends AppLocalizations {
   String get trackConvertFormat => 'Convert Format';
 
   @override
-  String get trackConvertFormatSubtitle => 'Convert to MP3 or Opus';
+  String get trackConvertFormatSubtitle =>
+      'Convert to MP3, Opus, ALAC, or FLAC';
 
   @override
   String get trackConvertTitle => 'Convert Audio';
@@ -2116,6 +2220,18 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
+  String trackConvertConfirmMessageLossless(
+    String sourceFormat,
+    String targetFormat,
+  ) {
+    return 'Convert from $sourceFormat to $targetFormat? (Lossless — no quality loss)\n\nThe original file will be deleted after conversion.';
+  }
+
+  @override
+  String get trackConvertLosslessHint =>
+      'Lossless conversion — no quality loss';
+
+  @override
   String get trackConvertConverting => 'Converting audio...';
 
   @override
@@ -2125,6 +2241,54 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get trackConvertFailed => 'Conversion failed';
+
+  @override
+  String get cueSplitTitle => 'Split CUE Sheet';
+
+  @override
+  String get cueSplitSubtitle => 'Split CUE+FLAC into individual tracks';
+
+  @override
+  String cueSplitAlbum(String album) {
+    return 'Album: $album';
+  }
+
+  @override
+  String cueSplitArtist(String artist) {
+    return 'Artist: $artist';
+  }
+
+  @override
+  String cueSplitTrackCount(int count) {
+    return '$count tracks';
+  }
+
+  @override
+  String get cueSplitConfirmTitle => 'Split CUE Album';
+
+  @override
+  String cueSplitConfirmMessage(String album, int count) {
+    return 'Split \"$album\" into $count individual FLAC files?\n\nFiles will be saved to the same directory.';
+  }
+
+  @override
+  String cueSplitSplitting(int current, int total) {
+    return 'Splitting CUE sheet... ($current/$total)';
+  }
+
+  @override
+  String cueSplitSuccess(int count) {
+    return 'Split into $count tracks successfully';
+  }
+
+  @override
+  String get cueSplitFailed => 'CUE split failed';
+
+  @override
+  String get cueSplitNoAudioFile => 'Audio file not found for this CUE sheet';
+
+  @override
+  String get cueSplitButton => 'Split into Tracks';
 
   @override
   String get actionCreate => 'Create';
@@ -2321,6 +2485,17 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
+  String selectionBatchConvertConfirmMessageLossless(int count, String format) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'tracks',
+      one: 'track',
+    );
+    return 'Convert $count $_temp0 to $format? (Lossless — no quality loss)\n\nOriginal files will be deleted after conversion.';
+  }
+
+  @override
   String selectionBatchConvertProgress(int current, int total) {
     return 'Converting $current of $total...';
   }
@@ -2342,6 +2517,404 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get downloadUseAlbumArtistForFoldersTrackSubtitle =>
       'Artist folders use Track Artist only';
+
+  @override
+  String get lyricsProvidersTitle => 'Lyrics Providers';
+
+  @override
+  String get lyricsProvidersDescription =>
+      'Enable, disable and reorder lyrics sources. Providers are tried top-to-bottom until lyrics are found.';
+
+  @override
+  String get lyricsProvidersInfoText =>
+      'Extension lyrics providers always run before built-in providers. At least one provider must remain enabled.';
+
+  @override
+  String lyricsProvidersEnabledSection(int count) {
+    return 'Enabled ($count)';
+  }
+
+  @override
+  String lyricsProvidersDisabledSection(int count) {
+    return 'Disabled ($count)';
+  }
+
+  @override
+  String get lyricsProvidersAtLeastOne =>
+      'At least one provider must remain enabled';
+
+  @override
+  String get lyricsProvidersSaved => 'Lyrics provider priority saved';
+
+  @override
+  String get lyricsProvidersDiscardContent =>
+      'You have unsaved changes that will be lost.';
+
+  @override
+  String get lyricsProviderSpotifyApiDesc =>
+      'Spotify-sourced synced lyrics via community API';
+
+  @override
+  String get lyricsProviderLrclibDesc => 'Open-source synced lyrics database';
+
+  @override
+  String get lyricsProviderNeteaseDesc =>
+      'NetEase Cloud Music (good for Asian songs)';
+
+  @override
+  String get lyricsProviderMusixmatchDesc =>
+      'Largest lyrics database (multi-language)';
+
+  @override
+  String get lyricsProviderAppleMusicDesc =>
+      'Word-by-word synced lyrics (via proxy)';
+
+  @override
+  String get lyricsProviderQqMusicDesc =>
+      'QQ Music (good for Chinese songs, via proxy)';
+
+  @override
+  String get lyricsProviderExtensionDesc => 'Extension provider';
+
+  @override
+  String get safMigrationTitle => 'Storage Update Required';
+
+  @override
+  String get safMigrationMessage1 =>
+      'SpotiFLAC now uses Android Storage Access Framework (SAF) for downloads. This fixes \"permission denied\" errors on Android 10+.';
+
+  @override
+  String get safMigrationMessage2 =>
+      'Please select your download folder again to switch to the new storage system.';
+
+  @override
+  String get safMigrationSuccess => 'Download folder updated to SAF mode';
+
+  @override
+  String get settingsDonate => 'Donate';
+
+  @override
+  String get settingsDonateSubtitle => 'Support SpotiFLAC-Mobile development';
+
+  @override
+  String get tooltipLoveAll => 'Love All';
+
+  @override
+  String get tooltipAddToPlaylist => 'Add to Playlist';
+
+  @override
+  String snackbarRemovedTracksFromLoved(int count) {
+    return 'Removed $count tracks from Loved';
+  }
+
+  @override
+  String snackbarAddedTracksToLoved(int count) {
+    return 'Added $count tracks to Loved';
+  }
+
+  @override
+  String get dialogDownloadAllTitle => 'Download All';
+
+  @override
+  String dialogDownloadAllMessage(int count) {
+    return 'Download $count tracks?';
+  }
+
+  @override
+  String get homeSkipAlreadyDownloaded => 'Skip already downloaded songs';
+
+  @override
+  String get homeGoToAlbum => 'Go to Album';
+
+  @override
+  String get homeAlbumInfoUnavailable => 'Album info not available';
+
+  @override
+  String get snackbarLoadingCueSheet => 'Loading CUE sheet...';
+
+  @override
+  String get snackbarMetadataSaved => 'Metadata saved successfully';
+
+  @override
+  String get snackbarFailedToEmbedLyrics => 'Failed to embed lyrics';
+
+  @override
+  String get snackbarFailedToWriteStorage => 'Failed to write back to storage';
+
+  @override
+  String snackbarError(String error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String get snackbarNoActionDefined => 'No action defined for this button';
+
+  @override
+  String get noTracksFoundForAlbum => 'No tracks found for this album';
+
+  @override
+  String get downloadLocationSubtitle =>
+      'Choose storage mode for downloaded files.';
+
+  @override
+  String get storageModeAppFolder => 'App folder (non-SAF)';
+
+  @override
+  String get storageModeAppFolderSubtitle => 'Use default Music/SpotiFLAC path';
+
+  @override
+  String get storageModeSaf => 'SAF folder';
+
+  @override
+  String get storageModeSafSubtitle =>
+      'Pick folder via Android Storage Access Framework';
+
+  @override
+  String get downloadFilenameDescription =>
+      'Customize how your files are named.';
+
+  @override
+  String get downloadFilenameInsertTag => 'Tap to insert tag:';
+
+  @override
+  String get downloadSeparateSinglesEnabled => 'Albums/ and Singles/ folders';
+
+  @override
+  String get downloadSeparateSinglesDisabled => 'All files in same structure';
+
+  @override
+  String get downloadArtistNameFilters => 'Artist Name Filters';
+
+  @override
+  String get downloadSongLinkRegion => 'SongLink Region';
+
+  @override
+  String get downloadNetworkCompatibilityMode => 'Network compatibility mode';
+
+  @override
+  String get downloadNetworkCompatibilityModeEnabled =>
+      'Enabled: try HTTP + accept invalid TLS certificates (unsafe)';
+
+  @override
+  String get downloadNetworkCompatibilityModeDisabled =>
+      'Off: strict HTTPS certificate validation (recommended)';
+
+  @override
+  String get downloadSelectServiceToEnable =>
+      'Select a built-in service to enable';
+
+  @override
+  String get downloadSelectTidalQobuz =>
+      'Select Tidal or Qobuz above to configure quality';
+
+  @override
+  String get downloadEmbedLyricsDisabled =>
+      'Disabled while Embed Metadata is turned off';
+
+  @override
+  String get downloadNeteaseIncludeTranslation =>
+      'Netease: Include Translation';
+
+  @override
+  String get downloadNeteaseIncludeTranslationEnabled =>
+      'Append translated lyrics when available';
+
+  @override
+  String get downloadNeteaseIncludeTranslationDisabled =>
+      'Use original lyrics only';
+
+  @override
+  String get downloadNeteaseIncludeRomanization =>
+      'Netease: Include Romanization';
+
+  @override
+  String get downloadNeteaseIncludeRomanizationEnabled =>
+      'Append romanized lyrics when available';
+
+  @override
+  String get downloadNeteaseIncludeRomanizationDisabled => 'Disabled';
+
+  @override
+  String get downloadAppleQqMultiPerson => 'Apple/QQ Multi-Person Word-by-Word';
+
+  @override
+  String get downloadAppleQqMultiPersonEnabled =>
+      'Enable v1/v2 speaker and [bg:] tags';
+
+  @override
+  String get downloadAppleQqMultiPersonDisabled =>
+      'Simplified word-by-word formatting';
+
+  @override
+  String get downloadMusixmatchLanguage => 'Musixmatch Language';
+
+  @override
+  String get downloadMusixmatchLanguageAuto => 'Auto (original)';
+
+  @override
+  String get downloadFilterContributing =>
+      'Filter contributing artists in Album Artist';
+
+  @override
+  String get downloadFilterContributingEnabled =>
+      'Album Artist metadata uses primary artist only';
+
+  @override
+  String get downloadFilterContributingDisabled =>
+      'Keep full Album Artist metadata value';
+
+  @override
+  String get downloadProvidersNoneEnabled => 'None enabled';
+
+  @override
+  String get downloadMusixmatchLanguageCode => 'Language code';
+
+  @override
+  String get downloadMusixmatchLanguageHint => 'auto / en / es / ja';
+
+  @override
+  String get downloadMusixmatchLanguageDesc =>
+      'Set preferred language code (example: en, es, ja). Leave empty for auto.';
+
+  @override
+  String get downloadMusixmatchAuto => 'Auto';
+
+  @override
+  String get downloadNetworkAnySubtitle => 'WiFi + Mobile Data';
+
+  @override
+  String get downloadNetworkWifiOnlySubtitle =>
+      'Pause downloads on mobile data';
+
+  @override
+  String get downloadSongLinkRegionDesc =>
+      'Used as userCountry for SongLink API lookup.';
+
+  @override
+  String get snackbarUnsupportedAudioFormat => 'Unsupported audio format';
+
+  @override
+  String get cacheRefresh => 'Refresh';
+
+  @override
+  String dialogDownloadPlaylistsMessage(int trackCount, int playlistCount) {
+    String _temp0 = intl.Intl.pluralLogic(
+      trackCount,
+      locale: localeName,
+      other: 'tracks',
+      one: 'track',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      playlistCount,
+      locale: localeName,
+      other: 'playlists',
+      one: 'playlist',
+    );
+    return 'Download $trackCount $_temp0 from $playlistCount $_temp1?';
+  }
+
+  @override
+  String bulkDownloadPlaylistsButton(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'playlists',
+      one: 'playlist',
+    );
+    return 'Download $count $_temp0';
+  }
+
+  @override
+  String get bulkDownloadSelectPlaylists => 'Select playlists to download';
+
+  @override
+  String get snackbarSelectedPlaylistsEmpty =>
+      'Selected playlists have no tracks';
+
+  @override
+  String playlistsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count playlists',
+      one: '1 playlist',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get editMetadataAutoFill => 'Auto-fill from online';
+
+  @override
+  String get editMetadataAutoFillDesc =>
+      'Select fields to fill automatically from online metadata';
+
+  @override
+  String get editMetadataAutoFillFetch => 'Fetch & Fill';
+
+  @override
+  String get editMetadataAutoFillSearching => 'Searching online...';
+
+  @override
+  String get editMetadataAutoFillNoResults =>
+      'No matching metadata found online';
+
+  @override
+  String editMetadataAutoFillDone(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'fields',
+      one: 'field',
+    );
+    return 'Filled $count $_temp0 from online metadata';
+  }
+
+  @override
+  String get editMetadataAutoFillNoneSelected =>
+      'Select at least one field to auto-fill';
+
+  @override
+  String get editMetadataFieldTitle => 'Title';
+
+  @override
+  String get editMetadataFieldArtist => 'Artist';
+
+  @override
+  String get editMetadataFieldAlbum => 'Album';
+
+  @override
+  String get editMetadataFieldAlbumArtist => 'Album Artist';
+
+  @override
+  String get editMetadataFieldDate => 'Date';
+
+  @override
+  String get editMetadataFieldTrackNum => 'Track #';
+
+  @override
+  String get editMetadataFieldDiscNum => 'Disc #';
+
+  @override
+  String get editMetadataFieldGenre => 'Genre';
+
+  @override
+  String get editMetadataFieldIsrc => 'ISRC';
+
+  @override
+  String get editMetadataFieldLabel => 'Label';
+
+  @override
+  String get editMetadataFieldCopyright => 'Copyright';
+
+  @override
+  String get editMetadataFieldCover => 'Cover Art';
+
+  @override
+  String get editMetadataSelectAll => 'All';
+
+  @override
+  String get editMetadataSelectEmpty => 'Empty only';
 }
 
 /// The translations for Portuguese, as used in Portugal (`pt_PT`).
@@ -2705,7 +3278,7 @@ class AppLocalizationsPtPt extends AppLocalizationsPt {
 
   @override
   String get aboutAppDescription =>
-      'Baixe faixas do Spotify em qualidade sem perdas do Tidal, Qobuz e Amazon Music.';
+      'Baixe faixas do Spotify em qualidade sem perdas do Tidal e Qobuz.';
 
   @override
   String get artistAlbums => 'Álbuns';
@@ -4147,7 +4720,7 @@ class AppLocalizationsPtPt extends AppLocalizationsPt {
 
   @override
   String get tutorialWelcomeTip2 =>
-      'Get FLAC quality audio from Tidal, Qobuz, or Amazon Music';
+      'Obtenha áudio em qualidade FLAC do Tidal, Qobuz ou Deezer';
 
   @override
   String get tutorialWelcomeTip3 =>

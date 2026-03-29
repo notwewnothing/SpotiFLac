@@ -23,7 +23,7 @@ class BuiltInService {
 }
 
 /// Default quality options for built-in services
-/// Note: Tidal lossy (HIGH) removed - use YouTube for lossy downloads
+/// Default quality options for each built-in service
 const _builtInServices = [
   BuiltInService(
     id: 'tidal',
@@ -68,24 +68,13 @@ const _builtInServices = [
     ],
   ),
   BuiltInService(
-    id: 'amazon',
-    label: 'Amazon',
-    qualityOptions: [
-      QualityOption(
-        id: 'LOSSLESS',
-        label: 'FLAC Best Available',
-        description: 'Amazon API delivers the best available lossless quality',
-      ),
-    ],
-  ),
-  BuiltInService(
     id: 'deezer',
     label: 'Deezer',
     qualityOptions: [
       QualityOption(
         id: 'FLAC',
-        label: 'FLAC Lossless',
-        description: '16-bit / 44.1kHz (CD Quality)',
+        label: 'FLAC Best Quality',
+        description: 'Up to 24-bit / 48kHz+',
       ),
     ],
   ),
@@ -94,9 +83,9 @@ const _builtInServices = [
     label: 'YouTube',
     qualityOptions: [
       QualityOption(
-        id: 'opus_256',
-        label: 'Opus 256kbps',
-        description: 'Best quality lossy (~8MB per track)',
+        id: 'opus_320',
+        label: 'Opus 320kbps',
+        description: 'Best quality lossy (~10MB per track)',
       ),
       QualityOption(
         id: 'mp3_320',
@@ -157,7 +146,7 @@ class DownloadServicePicker extends ConsumerStatefulWidget {
 }
 
 class _DownloadServicePickerState extends ConsumerState<DownloadServicePicker> {
-  static const List<int> _youtubeOpusSupportedBitrates = [128, 256];
+  static const List<int> _youtubeOpusSupportedBitrates = [128, 256, 320];
   static const List<int> _youtubeMp3SupportedBitrates = [128, 256, 320];
 
   late String _selectedService;
@@ -209,7 +198,6 @@ class _DownloadServicePickerState extends ConsumerState<DownloadServicePicker> {
       return ext.qualityOptions;
     }
 
-    // Default fallback options
     return [
       const QualityOption(
         id: 'DEFAULT',

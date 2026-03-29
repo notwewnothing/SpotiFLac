@@ -30,12 +30,25 @@ func TestParseYouTubeQualityInput_Mp3NormalizesToSupportedBitrates(t *testing.T)
 
 func TestParseYouTubeQualityInput_PicksNearestSupportedBitrate(t *testing.T) {
 	_, opusBitrate, _ := parseYouTubeQualityInput("opus_999")
-	if opusBitrate != 256 {
-		t.Fatalf("expected opus normalization to 256, got %d", opusBitrate)
+	if opusBitrate != 320 {
+		t.Fatalf("expected opus normalization to 320, got %d", opusBitrate)
 	}
 
 	_, mp3Bitrate, _ := parseYouTubeQualityInput("mp3_1")
 	if mp3Bitrate != 128 {
 		t.Fatalf("expected mp3 normalization to 128, got %d", mp3Bitrate)
+	}
+}
+
+func TestParseYouTubeQualityInput_Opus320(t *testing.T) {
+	format, bitrate, normalized := parseYouTubeQualityInput("opus_320")
+	if format != "opus" {
+		t.Fatalf("expected opus format, got %s", format)
+	}
+	if bitrate != 320 {
+		t.Fatalf("expected 320 bitrate, got %d", bitrate)
+	}
+	if normalized != YouTubeQualityOpus320 {
+		t.Fatalf("expected %s normalized, got %s", YouTubeQualityOpus320, normalized)
 	}
 }
