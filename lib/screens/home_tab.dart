@@ -3368,13 +3368,10 @@ class _TrackItemWithStatus extends ConsumerWidget {
     }
 
     if (isInLocalLibrary) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(context.l10n.snackbarAlreadyInLibrary(track.name)),
-          ),
-        );
-      }
+      await ref.read(playbackProvider.notifier).playTrack(
+            track: track,
+            service: settings.defaultService,
+          );
       return;
     }
 
@@ -3385,15 +3382,10 @@ class _TrackItemWithStatus extends ConsumerWidget {
       if (historyItem != null) {
         final exists = await fileExists(historyItem.filePath);
         if (exists) {
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  context.l10n.snackbarAlreadyDownloaded(track.name),
-                ),
-              ),
-            );
-          }
+          await ref.read(playbackProvider.notifier).playTrack(
+                track: track,
+                service: settings.defaultService,
+              );
           return;
         } else {
           ref

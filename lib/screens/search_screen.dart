@@ -11,6 +11,7 @@ import 'package:spotiflac_android/providers/playback_provider.dart';
 import 'package:spotiflac_android/providers/library_collections_provider.dart';
 import 'package:spotiflac_android/screens/album_screen.dart';
 import 'package:spotiflac_android/screens/artist_screen.dart';
+import 'package:spotiflac_android/widgets/playlist_picker_sheet.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
   final String query;
@@ -327,12 +328,23 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               color: Colors.grey[900],
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               onSelected: (value) {
-                if (value == 'download') _downloadTrack(track);
+                if (value == 'download') {
+                  _downloadTrack(track);
+                } else if (value == 'playlist') {
+                  showAddTracksToPlaylistSheet(context, ref, [track]);
+                }
               },
               itemBuilder: (context) => [
                 const PopupMenuItem(
                   value: 'download',
                   child: Text('Download', style: TextStyle(color: Colors.white)),
+                ),
+                const PopupMenuItem(
+                  value: 'playlist',
+                  child: Text(
+                    'Add to Playlist',
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
               ],
             ),

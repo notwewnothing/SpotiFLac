@@ -70,12 +70,13 @@ class StreamingPlayerScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<StreamingPlayerScreen> createState() => _StreamingPlayerScreenState();
+  ConsumerState<StreamingPlayerScreen> createState() =>
+      _StreamingPlayerScreenState();
 }
 
 class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
   _PlayerViewMode _viewMode = _PlayerViewMode.defaultView;
-  
+
   bool _isLoadingLyrics = false;
   String? _rawLyrics;
   List<_LrcLine> _lrcLines = [];
@@ -110,7 +111,10 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
       if (mounted) {
         setState(() {
           _dominantColor = palette.dominantColor?.color ?? Colors.black;
-          _mutedColor = palette.darkMutedColor?.color ?? palette.mutedColor?.color ?? Colors.black;
+          _mutedColor =
+              palette.darkMutedColor?.color ??
+              palette.mutedColor?.color ??
+              Colors.black;
         });
       }
     } catch (_) {}
@@ -173,20 +177,24 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
         artistName: track.artistName,
         coverUrl: track.coverUrl,
         onSelect: (quality, service) {
-          ref.read(downloadQueueProvider.notifier).addToQueue(track, service, qualityOverride: quality);
+          ref
+              .read(downloadQueueProvider.notifier)
+              .addToQueue(track, service, qualityOverride: quality);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Added "${track.name}" to download queue')),
           );
         },
       );
     } else {
-      ref.read(downloadQueueProvider.notifier).addToQueue(track, settings.defaultService);
+      ref
+          .read(downloadQueueProvider.notifier)
+          .addToQueue(track, settings.defaultService);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Added "${track.name}" to download queue')),
       );
     }
   }
-  
+
   void _toggleLike(Track track) async {
     final notifier = ref.read(libraryCollectionsProvider.notifier);
     final state = ref.read(libraryCollectionsProvider);
@@ -223,12 +231,16 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
     final isLoading = s.state == PlaybackState.loading;
 
     // Auto-scroll lyrics
-    if (_viewMode == _PlayerViewMode.lyrics && _lrcLines.isNotEmpty && track != null) {
+    if (_viewMode == _PlayerViewMode.lyrics &&
+        _lrcLines.isNotEmpty &&
+        track != null) {
       final activeIdx = _activeLrcIndex(_lrcLines, s.position);
       final scrollKey = '${track.id}_$activeIdx';
       if (scrollKey != _lastScrolledTrackId) {
         _lastScrolledTrackId = scrollKey;
-        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToActiveLine(activeIdx));
+        WidgetsBinding.instance.addPostFrameCallback(
+          (_) => _scrollToActiveLine(activeIdx),
+        );
       }
     }
 
@@ -239,9 +251,12 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
       backgroundColor: Colors.black, // Deep OLED black
       body: GestureDetector(
         onPanUpdate: (details) {
-          if (details.delta.dx < -10 && _viewMode != _PlayerViewMode.lyrics) { // Swipe left -> lyrics
+          if (details.delta.dx < -10 && _viewMode != _PlayerViewMode.lyrics) {
+            // Swipe left -> lyrics
             _setViewMode(_PlayerViewMode.lyrics, track);
-          } else if (details.delta.dx > 10 && _viewMode != _PlayerViewMode.defaultView) { // Swipe right -> default
+          } else if (details.delta.dx > 10 &&
+              _viewMode != _PlayerViewMode.defaultView) {
+            // Swipe right -> default
             _setViewMode(_PlayerViewMode.defaultView, track);
           }
         },
@@ -263,10 +278,11 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
                 ),
               ),
             ),
-            
+
             SafeArea(
               child: Column(
                 children: [
+                  const SizedBox(height: 50),
                   // ── Drag handle ──
                   Center(
                     child: Container(
@@ -285,44 +301,58 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
                     duration: const Duration(milliseconds: 400),
                     curve: Curves.easeInOutBack,
                     height: isMinimisedMode ? 60 : screenWidth * 0.9,
-                    margin: isMinimisedMode 
-                        ? const EdgeInsets.symmetric(horizontal: 24, vertical: 8)
-                        : EdgeInsets.symmetric(horizontal: screenWidth * 0.05, vertical: 24),
+                    margin: isMinimisedMode
+                        ? const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 8,
+                          )
+                        : EdgeInsets.symmetric(
+                            horizontal: screenWidth * 0.05,
+                            vertical: 24,
+                          ),
                     child: Stack(
                       children: [
                         AnimatedAlign(
                           duration: const Duration(milliseconds: 400),
                           curve: Curves.easeInOutBack,
-                          alignment: isMinimisedMode ? Alignment.centerLeft : Alignment.topCenter,
+                          alignment: isMinimisedMode
+                              ? Alignment.centerLeft
+                              : Alignment.topCenter,
                           child: AspectRatio(
                             aspectRatio: 1.0,
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 400),
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(isMinimisedMode ? 8 : 24),
+                                borderRadius: BorderRadius.circular(
+                                  isMinimisedMode ? 8 : 24,
+                                ),
                                 boxShadow: [
                                   BoxShadow(
                                     color: Colors.black.withValues(alpha: 0.5),
                                     blurRadius: isMinimisedMode ? 10 : 30,
                                     offset: Offset(0, isMinimisedMode ? 4 : 15),
-                                  )
+                                  ),
                                 ],
                               ),
                               child: ClipRRect(
-                                borderRadius: BorderRadius.circular(isMinimisedMode ? 8 : 24),
+                                borderRadius: BorderRadius.circular(
+                                  isMinimisedMode ? 8 : 24,
+                                ),
                                 child: track?.coverUrl != null
                                     ? CachedNetworkImage(
                                         imageUrl: track!.coverUrl!,
                                         fit: BoxFit.cover,
-                                        placeholder: (_, __) => _artPlaceholder(),
-                                        errorWidget: (_, __, ___) => _artPlaceholder(),
+                                        placeholder: (_, __) =>
+                                            _artPlaceholder(),
+                                        errorWidget: (_, __, ___) =>
+                                            _artPlaceholder(),
                                       )
                                     : _artPlaceholder(),
                               ),
                             ),
                           ),
                         ),
-                        
+
                         // Text Info placed besides the minimised album art
                         AnimatedOpacity(
                           duration: const Duration(milliseconds: 300),
@@ -332,7 +362,9 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
                             child: Align(
                               alignment: Alignment.centerLeft,
                               child: Padding(
-                                padding: const EdgeInsets.only(left: 76.0), // 60 width + 16 spacing
+                                padding: const EdgeInsets.only(
+                                  left: 76.0,
+                                ), // 60 width + 16 spacing
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -341,14 +373,23 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
                                       track?.name ?? 'Loading…',
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                     const SizedBox(height: 2),
                                     ClickableArtistName(
                                       artistName: track?.artistName ?? '',
                                       artistId: track?.artistId,
                                       extensionId: track?.source,
-                                      style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14),
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.7,
+                                        ),
+                                        fontSize: 14,
+                                      ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
@@ -367,10 +408,10 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
                     child: AnimatedOpacity(
                       duration: const Duration(milliseconds: 300),
                       opacity: isMinimisedMode ? 1.0 : 0.0,
-                      child: isMinimisedMode 
-                          ? (_viewMode == _PlayerViewMode.lyrics 
-                              ? _buildSyncedLyrics(s, notifier)
-                              : _buildQueueList(s, notifier))
+                      child: isMinimisedMode
+                          ? (_viewMode == _PlayerViewMode.lyrics
+                                ? _buildSyncedLyrics(s, notifier)
+                                : _buildQueueList(s, notifier))
                           : const SizedBox(),
                     ),
                   ),
@@ -378,7 +419,10 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
                   // ── Title, Artist & Like Row (Only visible in Default mode) ──
                   if (!isMinimisedMode)
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 12,
+                      ),
                       child: Row(
                         children: [
                           Expanded(
@@ -414,7 +458,9 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
                           if (track != null)
                             Consumer(
                               builder: (context, ref, child) {
-                                final isLoved = ref.watch(libraryCollectionsProvider).isLoved(track);
+                                final isLoved = ref
+                                    .watch(libraryCollectionsProvider)
+                                    .isLoved(track);
                                 return Container(
                                   decoration: BoxDecoration(
                                     color: Colors.white.withValues(alpha: 0.1),
@@ -422,14 +468,18 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
                                   ),
                                   child: IconButton(
                                     icon: Icon(
-                                      isLoved ? Icons.favorite : Icons.favorite_border,
-                                      color: isLoved ? Colors.white : Colors.white.withValues(alpha: 0.6),
+                                      isLoved
+                                          ? Icons.favorite
+                                          : Icons.favorite_border,
+                                      color: isLoved
+                                          ? Colors.white
+                                          : Colors.white.withValues(alpha: 0.6),
                                     ),
                                     onPressed: () => _toggleLike(track),
                                   ),
                                 );
                               },
-                            )
+                            ),
                         ],
                       ),
                     ),
@@ -448,15 +498,29 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
                       ),
                     ),
                   ),
-                  
+
                   // Timestamps
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 32),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(_fmt(s.position), style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13, fontWeight: FontWeight.w500)),
-                        Text(_fmt(s.duration), style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13, fontWeight: FontWeight.w500)),
+                        Text(
+                          _fmt(s.position),
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.5),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Text(
+                          _fmt(s.duration),
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.5),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -473,10 +537,17 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
                         // Shuffle / Prev Control
                         IconButton(
                           iconSize: 32,
-                          icon: Icon(Icons.fast_rewind_rounded, color: Colors.white.withValues(alpha: s.currentQueueIndex > 0 ? 1.0 : 0.4)),
-                          onPressed: s.currentQueueIndex > 0 ? () => notifier.playPreviousInQueue() : null,
+                          icon: Icon(
+                            Icons.fast_rewind_rounded,
+                            color: Colors.white.withValues(
+                              alpha: (s.currentQueueIndex > 0 || s.shuffling) && s.queue.isNotEmpty ? 1.0 : 0.4,
+                            ),
+                          ),
+                          onPressed: (s.currentQueueIndex > 0 || s.shuffling) && s.queue.isNotEmpty
+                              ? () => notifier.playPreviousInQueue()
+                              : null,
                         ),
-                        
+
                         // Play / Pause Circle
                         GestureDetector(
                           onTap: isLoading ? null : () => notifier.toggle(),
@@ -490,21 +561,35 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
                             child: isLoading
                                 ? const Padding(
                                     padding: EdgeInsets.all(22.0),
-                                    child: CircularProgressIndicator(strokeWidth: 3, color: Colors.black),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 3,
+                                      color: Colors.black,
+                                    ),
                                   )
                                 : Icon(
-                                    isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                                    isPlaying
+                                        ? Icons.pause_rounded
+                                        : Icons.play_arrow_rounded,
                                     color: Colors.black,
                                     size: 42,
                                   ),
                           ),
                         ),
-                        
+
                         // Next Control
                         IconButton(
                           iconSize: 32,
-                          icon: Icon(Icons.fast_forward_rounded, color: Colors.white.withValues(alpha: s.currentQueueIndex < s.queue.length - 1 ? 1.0 : 0.4)),
-                          onPressed: s.currentQueueIndex < s.queue.length - 1 ? () => notifier.playNextInQueue() : null,
+                          icon: Icon(
+                            Icons.fast_forward_rounded,
+                            color: Colors.white.withValues(
+                              alpha: (s.currentQueueIndex < s.queue.length - 1 || s.shuffling) && s.queue.isNotEmpty
+                                  ? 1.0
+                                  : 0.4,
+                            ),
+                          ),
+                          onPressed: (s.currentQueueIndex < s.queue.length - 1 || s.shuffling) && s.queue.isNotEmpty
+                              ? () => notifier.playNextInQueue()
+                              : null,
                         ),
                       ],
                     ),
@@ -521,7 +606,8 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
                         _iconToggle(
                           icon: Icons.library_books_rounded,
                           active: _viewMode == _PlayerViewMode.lyrics,
-                          onTap: () => _setViewMode(_PlayerViewMode.lyrics, track),
+                          onTap: () =>
+                              _setViewMode(_PlayerViewMode.lyrics, track),
                         ),
                         _iconToggle(
                           icon: Icons.shuffle_rounded,
@@ -532,17 +618,26 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
                         _iconToggle(
                           icon: Icons.format_list_bulleted_rounded,
                           active: _viewMode == _PlayerViewMode.queue,
-                          onTap: () => _setViewMode(_PlayerViewMode.queue, track),
+                          onTap: () =>
+                              _setViewMode(_PlayerViewMode.queue, track),
                         ),
                         _iconToggle(
-                          icon: s.looping ? Icons.repeat_one_rounded : Icons.repeat_rounded,
+                          icon: s.looping
+                              ? Icons.repeat_one_rounded
+                              : Icons.repeat_rounded,
                           active: s.looping,
                           onTap: () => notifier.toggleLoop(),
                         ),
                         // Download icon
                         IconButton(
-                          icon: Icon(Icons.download_rounded, color: Colors.white.withValues(alpha: 0.6), size: 24),
-                          onPressed: track != null ? () => _downloadCurrentTrack(track) : null,
+                          icon: Icon(
+                            Icons.download_rounded,
+                            color: Colors.white.withValues(alpha: 0.6),
+                            size: 24,
+                          ),
+                          onPressed: track != null
+                              ? () => _downloadCurrentTrack(track)
+                              : null,
                         ),
                       ],
                     ),
@@ -569,18 +664,30 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
   Widget _artPlaceholder() {
     return Container(
       color: Colors.grey[900],
-      child: Center(child: Icon(Icons.music_note_rounded, size: 48, color: Colors.grey[700])),
+      child: Center(
+        child: Icon(
+          Icons.music_note_rounded,
+          size: 48,
+          color: Colors.grey[700],
+        ),
+      ),
     );
   }
 
-  Widget _iconToggle({required IconData icon, required bool active, required VoidCallback onTap}) {
+  Widget _iconToggle({
+    required IconData icon,
+    required bool active,
+    required VoidCallback onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: active ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
+          color: active
+              ? Colors.white.withValues(alpha: 0.2)
+              : Colors.transparent,
           shape: BoxShape.circle,
         ),
         child: Icon(
@@ -593,9 +700,14 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
   }
 
   // ── Synced Lyrics Widget ──
-  Widget _buildSyncedLyrics(StreamingAudioState s, StreamingAudioNotifier notifier) {
+  Widget _buildSyncedLyrics(
+    StreamingAudioState s,
+    StreamingAudioNotifier notifier,
+  ) {
     if (_isLoadingLyrics) {
-      return const Center(child: CircularProgressIndicator(color: Colors.white));
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      );
     }
     if (_lrcLines.isEmpty) {
       return Center(
@@ -604,7 +716,11 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
           child: Text(
             _rawLyrics ?? 'No lyrics available.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 18, height: 1.6),
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.5),
+              fontSize: 18,
+              height: 1.6,
+            ),
           ),
         ),
       );
@@ -617,7 +733,12 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
         return LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Colors.transparent, Colors.white, Colors.white, Colors.transparent],
+          colors: [
+            Colors.transparent,
+            Colors.white,
+            Colors.white,
+            Colors.transparent,
+          ],
           stops: const [0.0, 0.15, 0.85, 1.0],
         ).createShader(bounds);
       },
@@ -641,8 +762,11 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
                 style: TextStyle(
                   fontSize: isActive ? 24 : 18,
                   fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
-                  color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.4),
-                  fontFamily: 'SF Pro Display', // Assume standard sans system fallback if not exactly SF Pro
+                  color: isActive
+                      ? Colors.white
+                      : Colors.white.withValues(alpha: 0.4),
+                  fontFamily:
+                      'SF Pro Display', // Assume standard sans system fallback if not exactly SF Pro
                 ),
                 child: Text(
                   line.text,
@@ -658,16 +782,31 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
   }
 
   // ── Queue List Widget ──
-  Widget _buildQueueList(StreamingAudioState s, StreamingAudioNotifier notifier) {
+  Widget _buildQueueList(
+    StreamingAudioState s,
+    StreamingAudioNotifier notifier,
+  ) {
     if (s.queue.isEmpty) {
-      return const Center(child: Text('No tracks in queue', style: TextStyle(color: Colors.white54, fontSize: 18)));
+      return const Center(
+        child: Text(
+          'No tracks in queue',
+          style: TextStyle(color: Colors.white54, fontSize: 18),
+        ),
+      );
     }
 
     final upcomingStart = s.currentQueueIndex + 1;
-    final upcoming = upcomingStart < s.queue.length ? s.queue.sublist(upcomingStart) : <StreamingTrackInfo>[];
+    final upcoming = upcomingStart < s.queue.length
+        ? s.queue.sublist(upcomingStart)
+        : <StreamingTrackInfo>[];
 
     if (upcoming.isEmpty) {
-      return const Center(child: Text('Queue finished', style: TextStyle(color: Colors.white54, fontSize: 18)));
+      return const Center(
+        child: Text(
+          'Queue finished',
+          style: TextStyle(color: Colors.white54, fontSize: 18),
+        ),
+      );
     }
 
     return Column(
@@ -675,7 +814,14 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          child: Text('Up Next', style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 20, fontWeight: FontWeight.bold)),
+          child: Text(
+            'Up Next',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.9),
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
         Expanded(
           child: ReorderableListView.builder(
@@ -686,13 +832,18 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
               if (oldIndex < newIndex) {
                 newIndex -= 1;
               }
-              notifier.reorderQueue(upcomingStart + oldIndex, upcomingStart + newIndex);
+              notifier.reorderQueue(
+                upcomingStart + oldIndex,
+                upcomingStart + newIndex,
+              );
             },
             itemBuilder: (context, i) {
               final item = upcoming[i];
               final realIndex = upcomingStart + i;
               return Dismissible(
-                key: ValueKey('${item.track.id}_${item.addedAt.millisecondsSinceEpoch}'),
+                key: ValueKey(
+                  '${item.track.id}_${item.addedAt.millisecondsSinceEpoch}',
+                ),
                 direction: DismissDirection.endToStart,
                 background: Container(
                   alignment: Alignment.centerRight,
@@ -702,14 +853,20 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
                 ),
                 onDismissed: (_) => notifier.removeFromQueue(realIndex),
                 child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 4,
+                  ),
                   leading: ClipRRect(
                     borderRadius: BorderRadius.circular(6),
                     child: SizedBox(
                       width: 48,
                       height: 48,
                       child: item.track.coverUrl != null
-                          ? CachedNetworkImage(imageUrl: item.track.coverUrl!, fit: BoxFit.cover)
+                          ? CachedNetworkImage(
+                              imageUrl: item.track.coverUrl!,
+                              fit: BoxFit.cover,
+                            )
                           : _artPlaceholder(),
                     ),
                   ),
@@ -717,15 +874,25 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
                     item.track.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   subtitle: Text(
                     item.track.artistName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 14),
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.6),
+                      fontSize: 14,
+                    ),
                   ),
-                  trailing: Icon(Icons.drag_handle_rounded, color: Colors.white.withValues(alpha: 0.5)),
+                  trailing: Icon(
+                    Icons.drag_handle_rounded,
+                    color: Colors.white.withValues(alpha: 0.5),
+                  ),
                   onTap: () => notifier.playQueueIndex(realIndex),
                 ),
               );

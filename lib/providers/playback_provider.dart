@@ -28,6 +28,22 @@ class PlaybackController extends Notifier<PlaybackState> {
     final settings = ref.read(settingsProvider);
     _log.d('playTrack: ${track.name} (mode: ${settings.appmode})');
 
+    // Check if we have a local file for this track regardless of app mode
+    final resolvedPath = await _resolveTrackPath(track);
+    if (resolvedPath != null) {
+      _log.i('Found local file for ${track.name}, using built-in player');
+      await playStreamingTrack(
+        track: track.copyWith(
+          source: 'local_file',
+          id: resolvedPath, // So JustAudio can play the raw URI
+        ),
+        service: service,
+        playlist: playlist,
+        playlistStartIndex: playlistStartIndex,
+      );
+      return;
+    }
+
     if (settings.appmode == 'stream') {
       await playStreamingTrack(
         track: track,
@@ -36,24 +52,9 @@ class PlaybackController extends Notifier<PlaybackState> {
         playlistStartIndex: playlistStartIndex,
       );
     } else {
-      // Download mode - force use internal player for local files
-      _log.d('Download mode: checking for downloaded file');
-      final resolvedPath = await _resolveTrackPath(track);
-      if (resolvedPath != null) {
-        await playStreamingTrack(
-          track: track.copyWith(
-            source: 'local_file',
-            id: resolvedPath, // So JustAudio can play the raw URI
-          ),
-          service: service,
-          playlist: playlist,
-          playlistStartIndex: playlistStartIndex,
-        );
-      } else {
-        _log.w(
-          'No local file found for ${track.name}, cannot play in download mode',
-        );
-      }
+      _log.w(
+        'No local file found for ${track.name}, and app is in download mode',
+      );
     }
   }
 
@@ -85,52 +86,46 @@ class PlaybackController extends Notifier<PlaybackState> {
     if (isCueVirtualPath(path)) {
       throw Exception(cueVirtualTrackRequiresSplitMessage);
     }
-    _log.d('Opening external player for "$title" by $artist: $path');
-    await openFile(path);
+    _log.d('Playing local file in built-in player: $path');
+
+    final localTrack =
+        track ??
+        Track(
+          id: path,
+          name: title,
+          artistName: artist,
+          albumName: album,
+          duration: 0,
+          coverUrl: coverUrl,
+          source: 'local_file',
+        );
+
+    await playStreamingTrack(track: localTrack, service: 'local');
   }
 
   Future<void> playTrackList(List<Track> tracks, {int startIndex = 0}) async {
     if (tracks.isEmpty) return;
 
-    final orderedTracks = _orderedTracksFromStartIndex(tracks, startIndex);
-    var skippedCueVirtualTrack = false;
-    for (final track in orderedTracks) {
-      final resolvedPath = await _resolveTrackPath(track);
-      if (resolvedPath == null) {
-        continue;
+    final List<Track> playlist = [];
+    for (final track in tracks) {
+      final path = await _resolveTrackPath(track);
+      if (path != null && !isCueVirtualPath(path)) {
+        playlist.add(track.copyWith(source: 'local_file', id: path));
+      } else {
+        playlist.add(track);
       }
-      if (isCueVirtualPath(resolvedPath)) {
-        skippedCueVirtualTrack = true;
-        continue;
-      }
-
-      _log.d(
-        'Opening first available external track for list playback: '
-        '"${track.name}" by ${track.artistName} -> $resolvedPath',
-      );
-      await openFile(resolvedPath);
-      return;
     }
 
-    if (skippedCueVirtualTrack) {
-      throw Exception(cueVirtualTrackRequiresSplitMessage);
+    if (playlist.isEmpty) {
+      throw Exception('No playable tracks found in the list');
     }
 
-    throw Exception(
-      'No local audio file is available to open. Download the track first.',
+    await playStreamingTrack(
+      track: playlist[startIndex],
+      service: 'multi',
+      playlist: playlist,
+      playlistStartIndex: startIndex,
     );
-  }
-
-  List<Track> _orderedTracksFromStartIndex(List<Track> tracks, int startIndex) {
-    final safeStart = startIndex.clamp(0, tracks.length - 1);
-    if (safeStart == 0) {
-      return List<Track>.from(tracks, growable: false);
-    }
-
-    return <Track>[
-      ...tracks.sublist(safeStart),
-      ...tracks.sublist(0, safeStart),
-    ];
   }
 
   Future<String?> _resolveTrackPath(Track track) async {

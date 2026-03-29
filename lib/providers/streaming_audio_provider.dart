@@ -6,6 +6,9 @@ import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/services/ffmpeg_service.dart';
 import 'package:spotiflac_android/services/streaming_service.dart';
 import 'package:spotiflac_android/utils/logger.dart';
+import 'package:spotiflac_android/utils/playback_utils.dart';
+import 'package:spotiflac_android/providers/local_library_provider.dart';
+import 'package:spotiflac_android/providers/download_queue_provider.dart';
 
 final _log = AppLogger('StreamingAudioProvider');
 
@@ -154,15 +157,11 @@ class StreamingAudioNotifier extends Notifier<StreamingAudioState> {
     }
 
     if (state.shuffling) {
-      final rng = Random();
-      int nextIndex;
-      if (state.queue.length <= 1) {
-        nextIndex = 0;
-      } else {
-        do {
-          nextIndex = rng.nextInt(state.queue.length);
-        } while (nextIndex == state.currentQueueIndex);
-      }
+      final nextIndex = _getRandomQueueIndex(exclude: state.currentQueueIndex);
+      final nextTrack = state.queue[nextIndex];
+      _log.i(
+        'Shuffle: next random track is ${nextTrack.track.name} (index $nextIndex)',
+      );
       _playTrackByIndex(nextIndex);
       return;
     }
@@ -230,34 +229,56 @@ class StreamingAudioNotifier extends Notifier<StreamingAudioState> {
         fallbackServices.insert(0, trackInfo.service);
       }
 
-      final streamingUrl = await StreamingService.getStreamingUrlWithFallback(
-        track: trackInfo.track,
-        services: fallbackServices,
-        quality: quality,
-      );
+      String playableUrl;
+      String? decryptionKey;
 
-      // Abort if superseded during the async fetch
-      if (generation != _playGeneration) {
-        _log.d('Stale URL response (gen $generation), discarding');
-        return;
+      String? readablePath = trackInfo.track.source == 'local_file'
+          ? trackInfo.track.id
+          : null;
+      if (readablePath == null) {
+        final localState = ref.read(localLibraryProvider);
+        final historyState = ref.read(downloadHistoryProvider);
+        readablePath = await PlaybackUtils.resolveTrackPath(
+          track: trackInfo.track,
+          localState: localState,
+          historyState: historyState,
+        );
       }
 
-      _log.d(
-        'Got streaming URL from ${streamingUrl.service}: ${streamingUrl.url.substring(0, streamingUrl.url.length.clamp(0, 80))}...',
-      );
+      if (readablePath != null) {
+        _log.i('Playing local file: $readablePath');
+        playableUrl = readablePath;
+      } else {
+        final streamingUrl = await StreamingService.getStreamingUrlWithFallback(
+          track: trackInfo.track,
+          services: fallbackServices,
+          quality: quality,
+        );
 
-      String playableUrl = streamingUrl.url;
+        // Abort if superseded during the async fetch
+        if (generation != _playGeneration) {
+          _log.d('Stale URL response (gen $generation), discarding');
+          return;
+        }
+
+        _log.d(
+          'Got streaming URL from ${streamingUrl.service}: ${streamingUrl.url.substring(0, streamingUrl.url.length.clamp(0, 80))}...',
+        );
+
+        playableUrl = streamingUrl.url;
+        decryptionKey = streamingUrl.decryptionKey;
+      }
 
       // If there's a decryption key (Amazon), pipe through FFmpeg live decrypt tunnel
-      if (streamingUrl.decryptionKey != null &&
-          streamingUrl.decryptionKey!.isNotEmpty) {
+      if (decryptionKey != null && decryptionKey.isNotEmpty) {
         _log.i(
           'Amazon encrypted stream detected, starting live decrypt tunnel...',
         );
-        final liveStream = await FFmpegService.startEncryptedLiveDecryptedStream(
-          encryptedStreamUrl: streamingUrl.url,
-          decryptionKey: streamingUrl.decryptionKey!,
-        );
+        final liveStream =
+            await FFmpegService.startEncryptedLiveDecryptedStream(
+              encryptedStreamUrl: playableUrl,
+              decryptionKey: decryptionKey,
+            );
         if (generation != _playGeneration) return;
         if (liveStream != null) {
           playableUrl = liveStream.localUrl;
@@ -347,7 +368,9 @@ class StreamingAudioNotifier extends Notifier<StreamingAudioState> {
   }
 
   void toggleShuffle() {
-    state = state.copyWith(shuffling: !state.shuffling);
+    final newShuffle = !state.shuffling;
+    _log.i('Shuffle toggled: $newShuffle');
+    state = state.copyWith(shuffling: newShuffle);
   }
 
   Future<void> stop() async {
@@ -377,6 +400,12 @@ class StreamingAudioNotifier extends Notifier<StreamingAudioState> {
       return;
     }
 
+    if (state.shuffling && state.queue.length > 1) {
+      int nextIndex = _getRandomQueueIndex(exclude: state.currentQueueIndex);
+      _playTrackByIndex(nextIndex);
+      return;
+    }
+
     final nextIndex = state.currentQueueIndex + 1;
     if (nextIndex < state.queue.length) {
       _playTrackByIndex(nextIndex);
@@ -386,8 +415,25 @@ class StreamingAudioNotifier extends Notifier<StreamingAudioState> {
     }
   }
 
+  int _getRandomQueueIndex({int? exclude}) {
+    if (state.queue.length <= 1) return 0;
+    int next;
+    final rand = Random();
+    do {
+      next = rand.nextInt(state.queue.length);
+    } while (exclude != null && next == exclude);
+    return next;
+  }
+
   Future<void> playNextInQueue() async {
     if (_isDisposed || state.queue.isEmpty) return;
+
+    if (state.shuffling && state.queue.length > 1) {
+      final nextIndex = _getRandomQueueIndex(exclude: state.currentQueueIndex);
+      await _playTrackByIndex(nextIndex);
+      return;
+    }
+
     final nextIndex = state.currentQueueIndex + 1;
     if (nextIndex < state.queue.length) {
       await _playTrackByIndex(nextIndex);
@@ -396,6 +442,13 @@ class StreamingAudioNotifier extends Notifier<StreamingAudioState> {
 
   Future<void> playPreviousInQueue() async {
     if (_isDisposed || state.queue.isEmpty) return;
+
+    if (state.shuffling && state.queue.length > 1) {
+      final prevIndex = _getRandomQueueIndex(exclude: state.currentQueueIndex);
+      await _playTrackByIndex(prevIndex);
+      return;
+    }
+
     final prevIndex = state.currentQueueIndex - 1;
     if (prevIndex >= 0) {
       await _playTrackByIndex(prevIndex);

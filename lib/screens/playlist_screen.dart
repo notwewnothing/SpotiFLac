@@ -11,7 +11,6 @@ import 'package:spotiflac_android/utils/file_access.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/providers/local_library_provider.dart';
 import 'package:spotiflac_android/providers/playback_provider.dart';
-import 'package:spotiflac_android/providers/streaming_audio_provider.dart';
 import 'package:spotiflac_android/widgets/download_service_picker.dart';
 import 'package:spotiflac_android/widgets/playlist_picker_sheet.dart';
 import 'package:spotiflac_android/widgets/track_collection_quick_actions.dart';
@@ -411,6 +410,8 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
           key: ValueKey(track.id),
           child: _PlaylistTrackItem(
             track: track,
+            playlist: _tracks,
+            index: index,
             onDownload: () => _downloadTrack(context, track),
           ),
         );
@@ -518,19 +519,22 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
     final isStreamMode = settings.appmode == 'stream';
 
     return FilledButton.icon(
-      onPressed: _tracks.isEmpty ? null : () {
-        if (isStreamMode) {
-          ref.read(streamingAudioProvider.notifier).playTrack(
-            _tracks.first,
-            settings.defaultService,
-            playlist: _tracks,
-          );
-        } else {
-          _confirmDownloadAll(context);
-        }
-      },
-      icon: Icon(isStreamMode ? Icons.play_arrow_rounded : Icons.download_rounded, size: 18),
-      label: Text(isStreamMode ? "Play All" : context.l10n.downloadAllCount(_tracks.length)),
+      onPressed: _tracks.isEmpty
+          ? null
+          : () {
+              if (isStreamMode) {
+                ref.read(playbackProvider.notifier).playTrackList(_tracks);
+              } else {
+                _confirmDownloadAll(context);
+              }
+            },
+      icon: Icon(
+        isStreamMode ? Icons.play_arrow_rounded : Icons.download_rounded,
+        size: 18,
+      ),
+      label: Text(
+        isStreamMode ? "Play All" : context.l10n.downloadAllCount(_tracks.length),
+      ),
       style: FilledButton.styleFrom(
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
@@ -546,7 +550,12 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
       tooltip: context.l10n.tooltipAddToPlaylist,
       onPressed: _tracks.isEmpty
           ? null
-          : () => showAddTracksToPlaylistSheet(context, ref, _tracks, playlistNamePrefill: widget.playlistName),
+          : () => showAddTracksToPlaylistSheet(
+              context,
+              ref,
+              _tracks,
+              playlistNamePrefill: widget.playlistName,
+            ),
     );
   }
 
@@ -625,17 +634,21 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
     // Skip already-downloaded tracks
     final historyState = ref.read(downloadHistoryProvider);
     final settings = ref.read(settingsProvider);
-    final localLibState = (settings.localLibraryEnabled && settings.localLibraryShowDuplicates)
+    final localLibState =
+        (settings.localLibraryEnabled && settings.localLibraryShowDuplicates)
         ? ref.read(localLibraryProvider)
         : null;
     final tracksToQueue = <Track>[];
     int skippedCount = 0;
 
     for (final track in tracks) {
-      final isInHistory = historyState.isDownloaded(track.id) ||
+      final isInHistory =
+          historyState.isDownloaded(track.id) ||
           (track.isrc != null && historyState.getByIsrc(track.isrc!) != null) ||
-          historyState.findByTrackAndArtist(track.name, track.artistName) != null;
-      final isInLocal = localLibState?.existsInLibrary(
+          historyState.findByTrackAndArtist(track.name, track.artistName) !=
+              null;
+      final isInLocal =
+          localLibState?.existsInLibrary(
             isrc: track.isrc,
             trackName: track.name,
             artistName: track.artistName,
@@ -693,18 +706,25 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
     final message = skipped > 0
         ? context.l10n.discographySkippedDownloaded(added, skipped)
         : context.l10n.snackbarAddedTracksToQueue(added);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }
 
 /// Separate Consumer widget for each track - only rebuilds when this specific track's status changes
 class _PlaylistTrackItem extends ConsumerWidget {
   final Track track;
+  final List<Track> playlist;
+  final int index;
   final VoidCallback onDownload;
 
-  const _PlaylistTrackItem({required this.track, required this.onDownload});
+  const _PlaylistTrackItem({
+    required this.track,
+    required this.playlist,
+    required this.index,
+    required this.onDownload,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -853,89 +873,13 @@ class _PlaylistTrackItem extends ConsumerWidget {
     if (isQueued) return;
 
     final settings = ref.read(settingsProvider);
-    if (settings.appmode == 'stream') {
-      await ref.read(playbackProvider.notifier).playTrack(
-            track: track,
-            service: settings.defaultService,
-          );
-      return;
-    }
-
-    final playedLocal = await _playLocalIfAvailable(context, ref);
-    if (playedLocal) {
-      return;
-    }
-
-    onDownload();
-  }
-
-  Future<bool> _playLocalIfAvailable(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
-    final localState = ref.read(localLibraryProvider);
-    final historyState = ref.read(downloadHistoryProvider);
-    final historyNotifier = ref.read(downloadHistoryProvider.notifier);
-
-    try {
-      DownloadHistoryItem? historyItem = historyNotifier.getBySpotifyId(
-        track.id,
-      );
-      final isrc = track.isrc?.trim();
-      historyItem ??= (isrc != null && isrc.isNotEmpty)
-          ? historyNotifier.getByIsrc(isrc)
-          : null;
-      historyItem ??= historyState.findByTrackAndArtist(
-        track.name,
-        track.artistName,
-      );
-
-      if (historyItem != null) {
-        final exists = await fileExists(historyItem.filePath);
-        if (exists) {
-          await ref
-              .read(playbackProvider.notifier)
-              .playLocalPath(
-                path: historyItem.filePath,
-                title: track.name,
-                artist: track.artistName,
-                album: track.albumName,
-                coverUrl: track.coverUrl ?? '',
-              );
-          return true;
-        }
-        historyNotifier.removeFromHistory(historyItem.id);
-      }
-
-      var localItem = (isrc != null && isrc.isNotEmpty)
-          ? localState.getByIsrc(isrc)
-          : null;
-      localItem ??= localState.findByTrackAndArtist(
-        track.name,
-        track.artistName,
-      );
-
-      if (localItem != null && await fileExists(localItem.filePath)) {
-        await ref
-            .read(playbackProvider.notifier)
-            .playLocalPath(
-              path: localItem.filePath,
-              title: localItem.trackName,
-              artist: localItem.artistName,
-              album: localItem.albumName,
-              coverUrl: localItem.coverPath ?? track.coverUrl ?? '',
-            );
-        return true;
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.snackbarCannotOpenFile('$e'))),
+    await ref
+        .read(playbackProvider.notifier)
+        .playTrack(
+          track: track,
+          service: settings.defaultService,
+          playlist: playlist,
+          playlistStartIndex: index,
         );
-      }
-      return true;
-    }
-
-    return false;
   }
 }

@@ -34,6 +34,7 @@ import 'package:spotiflac_android/utils/clickable_metadata.dart';
 import 'package:spotiflac_android/utils/path_match_keys.dart';
 import 'package:spotiflac_android/utils/string_utils.dart';
 import 'package:spotiflac_android/widgets/download_service_picker.dart';
+import 'package:spotiflac_android/widgets/playlist_picker_sheet.dart';
 
 enum LibraryItemSource { downloaded, local }
 
@@ -4748,6 +4749,24 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     if (filesToShare.isNotEmpty) {
       await SharePlus.instance.share(ShareParams(files: filesToShare));
     }
+    _exitSelectionMode();
+  }
+
+  void _addSelectedToPlaylist(List<UnifiedLibraryItem> allItems) {
+    final itemsById = {for (final item in allItems) item.id: item};
+    final selectedTracks = <Track>[];
+
+    for (final id in _selectedIds) {
+      final item = itemsById[id];
+      if (item != null) {
+        selectedTracks.add(item.toTrack());
+      }
+    }
+
+    if (selectedTracks.isEmpty) return;
+
+    showAddTracksToPlaylistSheet(context, ref, selectedTracks);
+    _exitSelectionMode();
   }
 
   /// Show batch convert bottom sheet for selected tracks
@@ -5461,23 +5480,9 @@ class _QueueTabState extends ConsumerState<QueueTab> {
 
               const SizedBox(height: 12),
 
-              // Action buttons row: Share/Re-enrich, Convert, Delete
+              // Action buttons row 1: Share/Re-enrich, Convert
               Row(
                 children: [
-                  if (localOnlySelection) ...[
-                    Expanded(
-                      child: _SelectionActionButton(
-                        icon: Icons.download_for_offline_outlined,
-                        label:
-                            '${context.l10n.queueFlacAction} ($selectedCount)',
-                        onPressed: selectedCount > 0
-                            ? () => _queueSelectedLocalAsFlac(unifiedItems)
-                            : null,
-                        colorScheme: colorScheme,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
                   Expanded(
                     child: _SelectionActionButton(
                       icon: localOnlySelection
@@ -5501,6 +5506,39 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                       label: context.l10n.selectionConvertCount(selectedCount),
                       onPressed: selectedCount > 0
                           ? () => _showBatchConvertSheet(context, unifiedItems)
+                          : null,
+                      colorScheme: colorScheme,
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 8),
+
+              // Action buttons row 2: FLAC (if local), Add to Playlist
+              Row(
+                children: [
+                  if (localOnlySelection) ...[
+                    Expanded(
+                      child: _SelectionActionButton(
+                        icon: Icons.download_for_offline_outlined,
+                        label:
+                            '${context.l10n.queueFlacAction} ($selectedCount)',
+                        onPressed: selectedCount > 0
+                            ? () => _queueSelectedLocalAsFlac(unifiedItems)
+                            : null,
+                        colorScheme: colorScheme,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  Expanded(
+                    child: _SelectionActionButton(
+                      icon: Icons.playlist_add,
+                      label:
+                          '${context.l10n.collectionAddToPlaylist} ($selectedCount)',
+                      onPressed: selectedCount > 0
+                          ? () => _addSelectedToPlaylist(unifiedItems)
                           : null,
                       colorScheme: colorScheme,
                     ),

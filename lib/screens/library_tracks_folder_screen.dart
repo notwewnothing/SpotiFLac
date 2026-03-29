@@ -12,7 +12,7 @@ import 'package:spotiflac_android/providers/library_collections_provider.dart';
 import 'package:spotiflac_android/providers/local_library_provider.dart';
 import 'package:spotiflac_android/services/library_database.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
-import 'package:spotiflac_android/providers/streaming_audio_provider.dart';
+import 'package:spotiflac_android/providers/playback_provider.dart';
 import 'package:spotiflac_android/services/cover_cache_manager.dart';
 import 'package:spotiflac_android/screens/track_metadata_screen.dart';
 import 'package:spotiflac_android/widgets/download_service_picker.dart';
@@ -355,6 +355,7 @@ class _LibraryTracksFolderScreenState
                           playlistId: widget.playlistId,
                           localLibraryState: localState,
                           folderTracks: folderTracks,
+                          index: index,
                           isSelectionMode: _isSelectionMode,
                           isSelected: isSelected,
                           onTap: _isSelectionMode
@@ -785,11 +786,13 @@ class _LibraryTracksFolderScreenState
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              _buildHeaderActionPlaceholder(),
+                              Expanded(child: _buildPlayAllButton(entries)),
                               const SizedBox(width: 12),
-                              _buildDownloadAllCenterButton(entries),
+                              Expanded(child: _buildDownloadAllButton(entries)),
                               const SizedBox(width: 12),
-                              _buildHeaderActionPlaceholder(),
+                              _buildLoveAllButton(entries),
+                              const SizedBox(width: 12),
+                              _buildAddToPlaylistButton(entries),
                             ],
                           ),
                         ],
@@ -825,35 +828,103 @@ class _LibraryTracksFolderScreenState
     );
   }
 
-  Widget _buildHeaderActionPlaceholder() =>
-      const SizedBox(width: 48, height: 48);
 
-  Widget _buildDownloadAllCenterButton(List<CollectionTrackEntry> entries) {
+  Widget _buildPlayAllButton(List<CollectionTrackEntry> entries) {
     final tracks = entries.map((e) => e.track).toList(growable: false);
-    final settings = ref.watch(settingsProvider);
-    final isStreamMode = settings.appmode == 'stream';
-
     return FilledButton.icon(
-      onPressed: tracks.isEmpty ? null : () {
-        if (isStreamMode) {
-          ref.read(streamingAudioProvider.notifier).playTrack(
-            tracks.first,
-            settings.defaultService,
-            playlist: tracks,
-          );
-        } else {
-          _confirmDownloadAll(tracks);
-        }
-      },
-      icon: Icon(isStreamMode ? Icons.play_arrow_rounded : Icons.download_rounded, size: 18),
-      label: Text(isStreamMode ? "Play All" : context.l10n.downloadAllCount(tracks.length)),
+      onPressed: tracks.isEmpty
+          ? null
+          : () {
+              ref.read(playbackProvider.notifier).playTrackList(tracks);
+            },
+      icon: const Icon(Icons.play_arrow_rounded, size: 24, color: Colors.black),
+      label: const Text(
+        "Play",
+        style: TextStyle(
+          color: Colors.black,
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+        ),
+      ),
       style: FilledButton.styleFrom(
         backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
-        minimumSize: const Size(0, 48),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     );
+  }
+
+  Widget _buildDownloadAllButton(List<CollectionTrackEntry> entries) {
+    final tracks = entries.map((e) => e.track).toList(growable: false);
+    return FilledButton.icon(
+      onPressed: tracks.isEmpty ? null : () => _confirmDownloadAll(tracks),
+      icon: const Icon(
+        Icons.cloud_download_rounded,
+        size: 22,
+        color: Colors.white,
+      ),
+      label: const Text(
+        "Download",
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+        ),
+      ),
+      style: FilledButton.styleFrom(
+        backgroundColor: Colors.grey[850],
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+    );
+  }
+
+  Widget _buildLoveAllButton(List<CollectionTrackEntry> entries) {
+    final tracks = entries.map((e) => e.track).toList(growable: false);
+    return Container(
+      width: 52,
+      height: 52,
+      decoration: BoxDecoration(
+        color: Colors.grey[850],
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: IconButton(
+        onPressed: tracks.isEmpty ? null : () => _loveAll(tracks),
+        icon: const Icon(Icons.favorite_border_rounded, color: Colors.white, size: 24),
+      ),
+    );
+  }
+
+  Widget _buildAddToPlaylistButton(List<CollectionTrackEntry> entries) {
+    final tracks = entries.map((e) => e.track).toList(growable: false);
+    return Container(
+      width: 52,
+      height: 52,
+      decoration: BoxDecoration(
+        color: Colors.grey[850],
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: IconButton(
+        onPressed: tracks.isEmpty
+            ? null
+            : () => showAddTracksToPlaylistSheet(context, ref, tracks),
+        icon: const Icon(Icons.playlist_add, color: Colors.white, size: 24),
+      ),
+    );
+  }
+
+  void _loveAll(List<Track> tracks) async {
+    final notifier = ref.read(libraryCollectionsProvider.notifier);
+    int added = 0;
+    for (final track in tracks) {
+      final success = await notifier.toggleLoved(track);
+      if (success) added++;
+    }
+    if (mounted && added > 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.collectionAddedToLoved(added.toString()))),
+      );
+    }
   }
 
   void _confirmDownloadAll(List<Track> tracks) {
@@ -1008,6 +1079,7 @@ class _CollectionTrackTile extends ConsumerWidget {
   final String? playlistId;
   final LocalLibraryState localLibraryState;
   final List<Track> folderTracks;
+  final int index;
   final bool isSelectionMode;
   final bool isSelected;
   final VoidCallback? onTap;
@@ -1019,6 +1091,7 @@ class _CollectionTrackTile extends ConsumerWidget {
     required this.playlistId,
     required this.localLibraryState,
     required this.folderTracks,
+    required this.index,
     this.isSelectionMode = false,
     this.isSelected = false,
     this.onTap,
@@ -1174,6 +1247,17 @@ class _CollectionTrackTile extends ConsumerWidget {
               : () {
                   if (mode == LibraryTracksFolderMode.wishlist) {
                     _downloadTrack(context, ref);
+                    return;
+                  }
+
+                  if (mode == LibraryTracksFolderMode.playlist) {
+                    final settings = ref.read(settingsProvider);
+                    ref.read(playbackProvider.notifier).playTrack(
+                          track: track,
+                          service: settings.defaultService,
+                          playlist: folderTracks,
+                          playlistStartIndex: index,
+                        );
                     return;
                   }
 

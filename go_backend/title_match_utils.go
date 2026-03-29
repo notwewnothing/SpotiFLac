@@ -83,9 +83,14 @@ type resolvedTrackInfo struct {
 func trackMatchesRequest(req DownloadRequest, resolved resolvedTrackInfo, logPrefix string) bool {
 	if req.ArtistName != "" && resolved.ArtistName != "" &&
 		!artistsMatch(req.ArtistName, resolved.ArtistName) {
-		GoLog("[%s] Verification failed: artist mismatch — expected '%s', got '%s'\n",
-			logPrefix, req.ArtistName, resolved.ArtistName)
-		return false
+		if req.TrackName != "" && resolved.Title != "" && titlesMatch(req.TrackName, resolved.Title) {
+			GoLog("[%s] Lenient Match: artist mismatch ('%s' vs '%s') but title matches perfectly. Proceeding...\n",
+				logPrefix, req.ArtistName, resolved.ArtistName)
+		} else {
+			GoLog("[%s] Verification failed: artist mismatch — expected '%s', got '%s'\n",
+				logPrefix, req.ArtistName, resolved.ArtistName)
+			return false
+		}
 	}
 
 	if req.TrackName != "" && resolved.Title != "" &&

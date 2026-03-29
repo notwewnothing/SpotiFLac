@@ -15,6 +15,8 @@ import 'package:spotiflac_android/utils/lyrics_metadata_helper.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/providers/playback_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
+import 'package:spotiflac_android/models/track.dart';
+import 'package:spotiflac_android/widgets/playlist_picker_sheet.dart';
 import 'package:spotiflac_android/screens/track_metadata_screen.dart';
 import 'package:spotiflac_android/services/downloaded_embedded_cover_resolver.dart';
 
@@ -264,6 +266,38 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
         );
       }
     }
+  }
+
+  void _addSelectedToPlaylist(List<DownloadHistoryItem> currentTracks) {
+    final tracksById = {for (final track in currentTracks) track.id: track};
+    final selectedTracks = <Track>[];
+
+    for (final id in _selectedIds) {
+      final item = tracksById[id];
+      if (item != null) {
+        selectedTracks.add(
+          Track(
+            id: item.spotifyId ?? item.id,
+            name: item.trackName,
+            artistName: item.artistName,
+            albumName: item.albumName,
+            albumArtist: item.albumArtist,
+            duration: (item.duration ?? 0).round(),
+            coverUrl: item.coverUrl,
+            isrc: item.isrc,
+            trackNumber: item.trackNumber,
+            discNumber: item.discNumber,
+            releaseDate: item.releaseDate,
+            source: 'local_file',
+          ),
+        );
+      }
+    }
+
+    if (selectedTracks.isEmpty) return;
+
+    showAddTracksToPlaylistSheet(context, ref, selectedTracks);
+    _exitSelectionMode();
   }
 
   Future<void> _openFile(DownloadHistoryItem track) async {
@@ -1489,6 +1523,18 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
                       label: context.l10n.selectionConvertCount(selectedCount),
                       onPressed: selectedCount > 0
                           ? () => _showBatchConvertSheet(context, tracks)
+                          : null,
+                      colorScheme: colorScheme,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _DownloadedAlbumSelectionActionButton(
+                      icon: Icons.playlist_add,
+                      label:
+                          '${context.l10n.collectionAddToPlaylist} ($selectedCount)',
+                      onPressed: selectedCount > 0
+                          ? () => _addSelectedToPlaylist(tracks)
                           : null,
                       colorScheme: colorScheme,
                     ),

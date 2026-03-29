@@ -16,6 +16,7 @@ import 'package:spotiflac_android/services/local_track_redownload_service.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/providers/local_library_provider.dart';
 import 'package:spotiflac_android/providers/playback_provider.dart';
+import 'package:spotiflac_android/widgets/playlist_picker_sheet.dart';
 
 class LocalAlbumScreen extends ConsumerStatefulWidget {
   final String albumName;
@@ -213,6 +214,38 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
         }
       }
     }
+  }
+
+  void _addSelectedToPlaylist(List<LocalLibraryItem> allTracks) {
+    final tracksById = {for (final t in allTracks) t.id: t};
+    final selectedTracks = <Track>[];
+
+    for (final id in _selectedIds) {
+      final item = tracksById[id];
+      if (item != null) {
+        selectedTracks.add(
+          Track(
+            id: item.id,
+            name: item.trackName,
+            artistName: item.artistName,
+            albumName: item.albumName,
+            albumArtist: item.albumArtist,
+            duration: (item.duration ?? 0).round(),
+            coverUrl: item.coverPath,
+            isrc: item.isrc,
+            trackNumber: item.trackNumber,
+            discNumber: item.discNumber,
+            releaseDate: item.releaseDate,
+            source: 'local_file',
+          ),
+        );
+      }
+    }
+
+    if (selectedTracks.isEmpty) return;
+
+    showAddTracksToPlaylistSheet(context, ref, selectedTracks);
+    _exitSelectionMode();
   }
 
   Future<void> _openFile(LocalLibraryItem track) async {
@@ -1768,13 +1801,28 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
                       colorScheme: colorScheme,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
                   Expanded(
                     child: _LocalAlbumSelectionActionButton(
                       icon: Icons.swap_horiz,
                       label: context.l10n.selectionConvertCount(selectedCount),
                       onPressed: selectedCount > 0
                           ? () => _showBatchConvertSheet(context, tracks)
+                          : null,
+                      colorScheme: colorScheme,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _LocalAlbumSelectionActionButton(
+                      icon: Icons.playlist_add,
+                      label: '${context.l10n.collectionAddToPlaylist} ($selectedCount)',
+                      onPressed: selectedCount > 0
+                          ? () => _addSelectedToPlaylist(tracks)
                           : null,
                       colorScheme: colorScheme,
                     ),

@@ -439,7 +439,27 @@ class _AlbumScreenState extends ConsumerState<AlbumScreen> {
                     onPressed: tracks.isEmpty ? null : () => _loveAll(tracks),
                     icon: Icon(
                       allLoved ? Icons.favorite : Icons.favorite_border_rounded,
-                      color: allLoved ? Colors.white : Colors.white,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Add Album to Playlist Button
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[850],
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: IconButton(
+                    onPressed: tracks.isEmpty
+                        ? null
+                        : () => showAddTracksToPlaylistSheet(context, ref, tracks),
+                    icon: const Icon(
+                      Icons.playlist_add,
+                      color: Colors.white,
                       size: 24,
                     ),
                   ),
@@ -637,20 +657,40 @@ class _AlbumTrackItem extends ConsumerWidget {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 onSelected: (value) {
                   if (value == 'queue') {
-                    ref.read(streamingAudioProvider.notifier).addToQueue(track, ref.read(settingsProvider).defaultService);
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to Queue')));
+                    ref.read(streamingAudioProvider.notifier).addToQueue(
+                      track,
+                      ref.read(settingsProvider).defaultService,
+                    );
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Added to Queue')),
+                    );
                   } else if (value == 'save') {
                     onDownload();
+                  } else if (value == 'playlist') {
+                    showAddTracksToPlaylistSheet(context, ref, [track]);
                   }
                 },
                 itemBuilder: (context) => [
                   const PopupMenuItem(
                     value: 'queue',
-                    child: Text('Add to Queue', style: TextStyle(color: Colors.white)),
+                    child: Text(
+                      'Add to Queue',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                   const PopupMenuItem(
                     value: 'save',
-                    child: Text('Save Song (Download)', style: TextStyle(color: Colors.white)),
+                    child: Text(
+                      'Save Song (Download)',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'playlist',
+                    child: Text(
+                      'Add to Playlist',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ],
               ),
