@@ -11,6 +11,7 @@ import 'package:spotiflac_android/providers/library_collections_provider.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/widgets/download_service_picker.dart';
 import 'package:spotiflac_android/widgets/audio_waveform_scrubber.dart';
+import 'package:spotiflac_android/utils/clickable_metadata.dart';
 
 // ─── LRC line model ───
 class _LrcLine {
@@ -343,11 +344,13 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
                                       style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                                     ),
                                     const SizedBox(height: 2),
-                                    Text(
-                                      track?.artistName ?? '',
+                                    ClickableArtistName(
+                                      artistName: track?.artistName ?? '',
+                                      artistId: track?.artistId,
+                                      extensionId: track?.source,
+                                      style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14),
                                     ),
                                   ],
                                 ),
@@ -393,14 +396,16 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
                                   ),
                                 ),
                                 const SizedBox(height: 4),
-                                Text(
-                                  track?.artistName ?? '',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                                ClickableArtistName(
+                                  artistName: track?.artistName ?? '',
+                                  artistId: track?.artistId,
+                                  extensionId: track?.source,
                                   style: TextStyle(
                                     color: Colors.white.withValues(alpha: 0.6),
                                     fontSize: 18,
                                   ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ],
                             ),
