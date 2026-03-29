@@ -10,6 +10,7 @@ import (
 type TrackIDCacheEntry struct {
 	TidalTrackID  int64
 	QobuzTrackID  int64
+	AmazonURL     string
 	ExpiresAt     time.Time
 }
 
@@ -97,6 +98,25 @@ func (c *TrackIDCache) SetQobuz(isrc string, trackID int64) {
 		c.cache[isrc] = entry
 	}
 	entry.QobuzTrackID = trackID
+	now := time.Now()
+	entry.ExpiresAt = now.Add(c.ttl)
+
+	if c.cleanupInterval > 0 && (c.lastCleanup.IsZero() || now.Sub(c.lastCleanup) >= c.cleanupInterval) {
+		c.pruneExpiredLocked(now)
+		c.lastCleanup = now
+	}
+}
+
+func (c *TrackIDCache) SetAmazonURL(isrc string, amazonURL string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	entry, exists := c.cache[isrc]
+	if !exists {
+		entry = &TrackIDCacheEntry{}
+		c.cache[isrc] = entry
+	}
+	entry.AmazonURL = amazonURL
 	now := time.Now()
 	entry.ExpiresAt = now.Add(c.ttl)
 

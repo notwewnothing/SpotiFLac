@@ -174,6 +174,12 @@ import Gobackend  // Import Go framework
             if let error = error { throw error }
             return response
 
+        case "getStreamingUrl":
+            let requestJson = call.arguments as! String
+            let response = GobackendGetStreamingUrl(requestJson, &error)
+            if let error = error { throw error }
+            return response
+
         case "getDownloadProgress":
             let response = GobackendGetDownloadProgress()
             return response
