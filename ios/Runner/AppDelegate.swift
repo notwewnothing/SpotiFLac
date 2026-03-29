@@ -369,7 +369,7 @@ import Gobackend  // Import Go framework
             let trackLimit = args["track_limit"] as? Int ?? 15
             let artistLimit = args["artist_limit"] as? Int ?? 3
             let filter = args["filter"] as? String ?? ""
-            let response = GobackendSearchDeezerAll(query, Int(trackLimit), Int(artistLimit), filter, &error)
+            let response = GobackendSearchDeezerAll(query, Int64(trackLimit), Int64(artistLimit), filter, &error)
             if let error = error { throw error }
             return response
 
@@ -379,7 +379,7 @@ import Gobackend  // Import Go framework
             let trackLimit = args["track_limit"] as? Int ?? 15
             let artistLimit = args["artist_limit"] as? Int ?? 3
             let filter = args["filter"] as? String ?? ""
-            let response = GobackendSearchTidalAll(query, Int(trackLimit), Int(artistLimit), filter, &error)
+            let response = GobackendSearchTidalAll(query, Int64(trackLimit), Int64(artistLimit), filter, &error)
             if let error = error { throw error }
             return response
 
@@ -389,7 +389,7 @@ import Gobackend  // Import Go framework
             let trackLimit = args["track_limit"] as? Int ?? 15
             let artistLimit = args["artist_limit"] as? Int ?? 3
             let filter = args["filter"] as? String ?? ""
-            let response = GobackendSearchQobuzAll(query, Int(trackLimit), Int(artistLimit), filter, &error)
+            let response = GobackendSearchQobuzAll(query, Int64(trackLimit), Int64(artistLimit), filter, &error)
             if let error = error { throw error }
             return response
 
@@ -397,7 +397,7 @@ import Gobackend  // Import Go framework
             let args = call.arguments as! [String: Any]
             let artistId = args["artist_id"] as! String
             let limit = args["limit"] as? Int ?? 12
-            let response = GobackendGetDeezerRelatedArtists(artistId, Int(limit), &error)
+            let response = GobackendGetDeezerRelatedArtists(artistId, Int64(limit), &error)
             if let error = error { throw error }
             return response
 
@@ -535,7 +535,7 @@ import Gobackend  // Import Go framework
         case "getLogsSince":
             let args = call.arguments as! [String: Any]
             let index = args["index"] as? Int ?? 0
-            let response = GobackendGetLogsSince(Int(index))
+            let response = GobackendGetLogsSince(Int64(index))
             return response
             
         case "clearLogs":
@@ -646,7 +646,7 @@ import Gobackend  // Import Go framework
             let args = call.arguments as! [String: Any]
             let query = args["query"] as! String
             let limit = args["limit"] as? Int ?? 20
-            let response = GobackendSearchTracksWithExtensionsJSON(query, Int(limit), &error)
+            let response = GobackendSearchTracksWithExtensionsJSON(query, Int64(limit), &error)
             if let error = error { throw error }
             return response
 
@@ -657,7 +657,7 @@ import Gobackend  // Import Go framework
             let includeExtensions = args["include_extensions"] as? Bool ?? true
             let response = GobackendSearchTracksWithMetadataProvidersJSON(
                 query,
-                Int(limit),
+                Int64(limit),
                 includeExtensions,
                 &error
             )
@@ -724,7 +724,7 @@ import Gobackend  // Import Go framework
             let accessToken = args["access_token"] as! String
             let refreshToken = args["refresh_token"] as? String ?? ""
             let expiresIn = args["expires_in"] as? Int ?? 0
-            GobackendSetExtensionTokensByID(extensionId, accessToken, refreshToken, Int(expiresIn))
+            GobackendSetExtensionTokensByID(extensionId, accessToken, refreshToken, Int64(expiresIn))
             return nil
             
         case "clearExtensionPendingAuth":
