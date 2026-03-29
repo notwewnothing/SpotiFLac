@@ -1110,12 +1110,12 @@ func ClearTrackIDCache() {
 	ClearTrackCache()
 }
 
-func SearchDeezerAll(query string, trackLimit, artistLimit int, filter string) (string, error) {
+func SearchDeezerAll(query string, trackLimit, artistLimit int64, filter string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	client := GetDeezerClient()
-	results, err := client.SearchAll(ctx, query, trackLimit, artistLimit, filter)
+	results, err := client.SearchAll(ctx, query, int(trackLimit), int(artistLimit), filter)
 	if err != nil {
 		return "", err
 	}
@@ -1128,12 +1128,54 @@ func SearchDeezerAll(query string, trackLimit, artistLimit int, filter string) (
 	return string(jsonBytes), nil
 }
 
-func GetDeezerRelatedArtists(artistID string, limit int) (string, error) {
+func SearchTidalAll(query string, trackLimit, artistLimit int64, filter string) (string, error) {
+	downloader := NewTidalDownloader()
+	tracks, err := downloader.SearchTracks(query, int(trackLimit))
+	if err != nil {
+		return "", err
+	}
+
+	results := map[string]interface{}{
+		"tracks":  tracks,
+		"artists": []interface{}{},
+		"albums":  []interface{}{},
+	}
+
+	jsonBytes, err := json.Marshal(results)
+	if err != nil {
+		return "", err
+	}
+
+	return string(jsonBytes), nil
+}
+
+func SearchQobuzAll(query string, trackLimit, artistLimit int64, filter string) (string, error) {
+	downloader := NewQobuzDownloader()
+	tracks, err := downloader.SearchTracks(query, int(trackLimit))
+	if err != nil {
+		return "", err
+	}
+
+	results := map[string]interface{}{
+		"tracks":  tracks,
+		"artists": []interface{}{},
+		"albums":  []interface{}{},
+	}
+
+	jsonBytes, err := json.Marshal(results)
+	if err != nil {
+		return "", err
+	}
+
+	return string(jsonBytes), nil
+}
+
+func GetDeezerRelatedArtists(artistID string, limit int64) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
 	client := GetDeezerClient()
-	artists, err := client.GetRelatedArtists(ctx, artistID, limit)
+	artists, err := client.GetRelatedArtists(ctx, artistID, int(limit))
 	if err != nil {
 		return "", err
 	}
@@ -2423,9 +2465,9 @@ func SetExtensionSettingsJSON(extensionID, settingsJSON string) error {
 	return manager.InitializeExtension(extensionID, settings)
 }
 
-func SearchTracksWithExtensionsJSON(query string, limit int) (string, error) {
+func SearchTracksWithExtensionsJSON(query string, limit int64) (string, error) {
 	manager := GetExtensionManager()
-	tracks, err := manager.SearchTracksWithExtensions(query, limit)
+	tracks, err := manager.SearchTracksWithExtensions(query, int(limit))
 	if err != nil {
 		return "", err
 	}
@@ -2438,9 +2480,9 @@ func SearchTracksWithExtensionsJSON(query string, limit int) (string, error) {
 	return string(jsonBytes), nil
 }
 
-func SearchTracksWithMetadataProvidersJSON(query string, limit int, includeExtensions bool) (string, error) {
+func SearchTracksWithMetadataProvidersJSON(query string, limit int64, includeExtensions bool) (string, error) {
 	manager := GetExtensionManager()
-	tracks, err := manager.SearchTracksWithMetadataProviders(query, limit, includeExtensions)
+	tracks, err := manager.SearchTracksWithMetadataProviders(query, int(limit), includeExtensions)
 	if err != nil {
 		return "", err
 	}
@@ -2529,7 +2571,7 @@ func SetExtensionAuthCodeByID(extensionID, authCode string) {
 	SetExtensionAuthCode(extensionID, authCode)
 }
 
-func SetExtensionTokensByID(extensionID, accessToken, refreshToken string, expiresIn int) {
+func SetExtensionTokensByID(extensionID, accessToken, refreshToken string, expiresIn int64) {
 	var expiresAt time.Time
 	if expiresIn > 0 {
 		expiresAt = time.Now().Add(time.Duration(expiresIn) * time.Second)
