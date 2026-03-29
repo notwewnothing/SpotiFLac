@@ -535,7 +535,7 @@ import Gobackend  // Import Go framework
         case "getLogsSince":
             let args = call.arguments as! [String: Any]
             let index = args["index"] as? Int ?? 0
-            let response = GobackendGetLogsSince(Int64(index))
+            let response = GobackendGetLogsSince(index)
             return response
             
         case "clearLogs":
