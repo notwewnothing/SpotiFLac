@@ -300,11 +300,14 @@ func DoRequestWithRetry(client *http.Client, req *http.Request, config RetryConf
 			continue
 		}
 
+		// Check for ISP blocking via HTTP status codes
+		// Some ISPs return 403 or 451 when blocking content
 		if resp.StatusCode == 403 || resp.StatusCode == 451 {
 			body, _ := io.ReadAll(resp.Body)
 			resp.Body.Close()
 			bodyStr := strings.ToLower(string(body))
 
+			// Check if response looks like ISP blocking page
 			ispBlockingIndicators := []string{
 				"blocked", "forbidden", "access denied", "not available in your",
 				"restricted", "censored", "unavailable for legal", "blocked by",
@@ -343,12 +346,11 @@ func calculateNextDelay(currentDelay time.Duration, config RetryConfig) time.Dur
 	return min(nextDelay, config.MaxDelay)
 }
 
-// Returns 0 if the header is missing or invalid so callers can keep their
-// normal exponential backoff instead of stalling for an arbitrary minute.
+// Returns 60 seconds as default if header is missing or invalid
 func getRetryAfterDuration(resp *http.Response) time.Duration {
 	retryAfter := resp.Header.Get("Retry-After")
 	if retryAfter == "" {
-		return 0
+		return 60 * time.Second
 	}
 
 	if seconds, err := strconv.Atoi(retryAfter); err == nil {
@@ -362,7 +364,7 @@ func getRetryAfterDuration(resp *http.Response) time.Duration {
 		}
 	}
 
-	return 0
+	return 60 * time.Second
 }
 
 func ReadResponseBody(resp *http.Response) ([]byte, error) {
@@ -515,6 +517,7 @@ func IsISPBlocking(err error, requestURL string) *ISPBlockingError {
 	return nil
 }
 
+// Returns true if ISP blocking was detected
 func CheckAndLogISPBlocking(err error, requestURL string, tag string) bool {
 	ispErr := IsISPBlocking(err, requestURL)
 	if ispErr != nil {
@@ -549,6 +552,7 @@ func extractDomain(rawURL string) string {
 	return "unknown"
 }
 
+// If ISP blocking is detected, returns a more descriptive error
 func WrapErrorWithISPCheck(err error, requestURL string, tag string) error {
 	if err == nil {
 		return nil

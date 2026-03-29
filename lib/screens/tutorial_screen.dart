@@ -527,7 +527,7 @@ class _InteractiveDownloadExampleState
 
     for (int i = 0; i <= 100; i += 5) {
       if (!mounted) return;
-      await Future<void>.delayed(const Duration(milliseconds: 50));
+      await Future.delayed(const Duration(milliseconds: 50));
       setState(() => _progress = i / 100);
     }
 
@@ -536,7 +536,7 @@ class _InteractiveDownloadExampleState
       _isCompleted = true;
     });
 
-    await Future<void>.delayed(const Duration(seconds: 2));
+    await Future.delayed(const Duration(seconds: 2));
     if (mounted) {
       setState(() {
         _isCompleted = false;

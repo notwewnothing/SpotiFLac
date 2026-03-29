@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:sqflite_common/sqflite.dart' show databaseFactory, Database;
+import 'package:go_router/go_router.dart';
 import 'package:spotiflac_android/app.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/providers/extension_provider.dart';
@@ -14,10 +17,21 @@ import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/services/notification_service.dart';
 import 'package:spotiflac_android/services/share_intent_service.dart';
 import 'package:spotiflac_android/services/cover_cache_manager.dart';
-import 'package:spotiflac_android/utils/local_library_scan_prefs.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize sqflite FFI for desktop platforms
+  if (!Platform.isAndroid && !Platform.isIOS) {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  }
+
+  // Configure go_router for desktop platforms
+  if (!Platform.isAndroid && !Platform.isIOS) {
+    GoRouter.optionURLReflectsImperativeAPIs = true;
+  }
+
   final runtimeProfile = await _resolveRuntimeProfile();
   _configureImageCache(runtimeProfile);
 
@@ -100,6 +114,8 @@ class _EagerInitializationState extends ConsumerState<_EagerInitialization>
   Timer? _localLibraryWarmupTimer;
   bool _localLibraryWarmupScheduled = false;
   bool _autoScanTriggeredOnLaunch = false;
+
+  static const _lastScannedAtKey = 'local_library_last_scanned_at';
 
   @override
   void initState() {
@@ -192,14 +208,17 @@ class _EagerInitializationState extends ConsumerState<_EagerInitialization>
     if (settings.localLibraryPath.isEmpty) return;
     if (settings.localLibraryAutoScan == 'off') return;
 
+    // Don't start a scan if one is already running.
     final libraryState = ref.read(localLibraryProvider);
     if (libraryState.isScanning) return;
 
+    // Determine cooldown based on auto-scan mode.
     final now = DateTime.now();
     final prefs = await SharedPreferences.getInstance();
-    final lastScanned = readLocalLibraryLastScannedAt(prefs);
+    final lastScannedMs = prefs.getInt(_lastScannedAtKey);
 
-    if (lastScanned != null) {
+    if (lastScannedMs != null) {
+      final lastScanned = DateTime.fromMillisecondsSinceEpoch(lastScannedMs);
       final elapsed = now.difference(lastScanned);
 
       switch (settings.localLibraryAutoScan) {
@@ -218,13 +237,12 @@ class _EagerInitializationState extends ConsumerState<_EagerInitialization>
       }
     }
 
+    // All checks passed -- start an incremental scan.
     final iosBookmark = settings.localLibraryBookmark;
-    ref
-        .read(localLibraryProvider.notifier)
-        .startScan(
-          settings.localLibraryPath,
-          iosBookmark: iosBookmark.isNotEmpty ? iosBookmark : null,
-        );
+    ref.read(localLibraryProvider.notifier).startScan(
+      settings.localLibraryPath,
+      iosBookmark: iosBookmark.isNotEmpty ? iosBookmark : null,
+    );
   }
 
   Future<void> _initializeAppServices() async {

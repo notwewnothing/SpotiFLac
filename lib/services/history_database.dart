@@ -12,6 +12,7 @@ final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
 /// Cached current iOS container path for path normalization
 String? _currentContainerPath;
 
+/// SQLite database service for download history
 /// Provides O(1) lookups by spotify_id and isrc with proper indexing
 class HistoryDatabase {
   static final HistoryDatabase instance = HistoryDatabase._init();
@@ -77,6 +78,7 @@ class HistoryDatabase {
       )
     ''');
 
+    // Indexes for fast lookups
     await db.execute('CREATE INDEX idx_spotify_id ON history(spotify_id)');
     await db.execute('CREATE INDEX idx_isrc ON history(isrc)');
     await db.execute(
@@ -169,6 +171,7 @@ class HistoryDatabase {
     try {
       final db = await database;
 
+      // Get all items with iOS paths
       final rows = await db.query('history', columns: ['id', 'file_path']);
       int updatedCount = 0;
       final batch = db.batch();
@@ -195,6 +198,7 @@ class HistoryDatabase {
         await batch.commit(noResult: true);
       }
 
+      // Save current container path
       await prefs.setString('ios_last_container_path', _currentContainerPath!);
 
       _log.i('iOS path migration complete: $updatedCount paths updated');
@@ -224,7 +228,7 @@ class HistoryDatabase {
     }
 
     try {
-      final jsonList = List<dynamic>.from(jsonDecode(jsonStr) as List);
+      final List<dynamic> jsonList = jsonDecode(jsonStr);
       _log.i(
         'Migrating ${jsonList.length} items from SharedPreferences to SQLite',
       );
@@ -233,7 +237,7 @@ class HistoryDatabase {
       final batch = db.batch();
 
       for (final json in jsonList) {
-        final map = Map<String, dynamic>.from(json as Map);
+        final map = json as Map<String, dynamic>;
         batch.insert(
           'history',
           _jsonToDbRow(map),
@@ -319,6 +323,7 @@ class HistoryDatabase {
     };
   }
 
+  /// Insert or update a history item
   Future<void> upsert(Map<String, dynamic> json) async {
     final db = await database;
     await db.insert(
@@ -326,20 +331,6 @@ class HistoryDatabase {
       _jsonToDbRow(json),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
-  }
-
-  Future<void> upsertBatch(List<Map<String, dynamic>> items) async {
-    if (items.isEmpty) return;
-    final db = await database;
-    final batch = db.batch();
-    for (final json in items) {
-      batch.insert(
-        'history',
-        _jsonToDbRow(json),
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
-    }
-    await batch.commit(noResult: true);
   }
 
   /// Get all history items ordered by download date (newest first)
@@ -354,6 +345,7 @@ class HistoryDatabase {
     return rows.map(_dbRowToJson).toList();
   }
 
+  /// Get item by ID
   Future<Map<String, dynamic>?> getById(String id) async {
     final db = await database;
     final rows = await db.query(
@@ -411,22 +403,26 @@ class HistoryDatabase {
     return rows.map((r) => r['spotify_id'] as String).toSet();
   }
 
+  /// Delete by ID
   Future<void> deleteById(String id) async {
     final db = await database;
     await db.delete('history', where: 'id = ?', whereArgs: [id]);
   }
 
+  /// Delete by Spotify ID
   Future<void> deleteBySpotifyId(String spotifyId) async {
     final db = await database;
     await db.delete('history', where: 'spotify_id = ?', whereArgs: [spotifyId]);
   }
 
+  /// Clear all history
   Future<void> clearAll() async {
     final db = await database;
     await db.delete('history');
     _log.i('Cleared all history');
   }
 
+  /// Get total count
   Future<int> getCount() async {
     final db = await database;
     final result = await db.rawQuery('SELECT COUNT(*) as count FROM history');
@@ -463,6 +459,7 @@ class HistoryDatabase {
     return null;
   }
 
+  /// Close database
   Future<void> close() async {
     final db = await database;
     await db.close();
@@ -543,29 +540,6 @@ class HistoryDatabase {
       FROM history 
       WHERE file_path IS NOT NULL AND file_path != ""
     ''');
-    return rows.map((r) => Map<String, dynamic>.from(r)).toList();
-  }
-
-  Future<List<Map<String, dynamic>>> getEntriesWithPathsPage({
-    required int limit,
-    int offset = 0,
-  }) async {
-    final db = await database;
-    final rows = await db.query(
-      'history',
-      columns: [
-        'id',
-        'file_path',
-        'storage_mode',
-        'download_tree_uri',
-        'saf_relative_dir',
-        'saf_file_name',
-      ],
-      where: 'file_path IS NOT NULL AND file_path != ""',
-      orderBy: 'downloaded_at DESC, id DESC',
-      limit: limit,
-      offset: offset,
-    );
     return rows.map((r) => Map<String, dynamic>.from(r)).toList();
   }
 

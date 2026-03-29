@@ -1,6 +1,6 @@
 import 'dart:collection';
 import 'dart:io';
-
+import 'package:spotiflac_android/utils/platform_spoof.dart' as platform;
 import 'package:flutter/widgets.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/utils/file_access.dart';

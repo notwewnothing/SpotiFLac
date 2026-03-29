@@ -1,25 +1,10 @@
 import 'dart:convert';
-import 'dart:io';
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:spotiflac_android/constants/app_info.dart';
 import 'package:spotiflac_android/utils/logger.dart';
+import 'package:spotiflac_android/utils/platform_spoof.dart' as platform;
 
 final _log = AppLogger('UpdateChecker');
-
-enum _ApkVariant { arm64, arm32, universal }
-
-class _ApkAsset {
-  final String name;
-  final String url;
-  final _ApkVariant variant;
-
-  const _ApkAsset({
-    required this.name,
-    required this.url,
-    required this.variant,
-  });
-}
 
 class UpdateInfo {
   final String version;
@@ -48,10 +33,6 @@ class UpdateChecker {
   /// Check for updates based on channel preference
   /// [channel] can be 'stable' or 'preview'
   static Future<UpdateInfo?> checkForUpdate({String channel = 'stable'}) async {
-    if (!Platform.isAndroid) {
-      return null;
-    }
-
     try {
       Map<String, dynamic>? releaseData;
 
@@ -109,15 +90,32 @@ class UpdateChecker {
           DateTime.tryParse(releaseData['published_at'] as String? ?? '') ??
           DateTime.now();
 
-      final assets = _collectApkAssets(
-        releaseData['assets'] as List<dynamic>? ?? const [],
-      );
-      final selectedAsset = await _selectApkForCurrentDevice(assets);
-      final apkUrl = selectedAsset?.url;
+      String? arm64Url;
+      String? universalUrl;
+
+      final assets = releaseData['assets'] as List<dynamic>? ?? [];
+      for (final asset in assets) {
+        final name = (asset['name'] as String? ?? '').toLowerCase();
+        if (name.endsWith('.apk')) {
+          final downloadUrl = asset['browser_download_url'] as String?;
+          final uri = downloadUrl != null ? Uri.tryParse(downloadUrl) : null;
+          if (uri == null || uri.scheme != 'https') {
+            _log.w('Skipping non-HTTPS APK URL: $downloadUrl');
+            continue;
+          }
+          if (name.contains('arm64') || name.contains('v8a')) {
+            arm64Url = downloadUrl;
+          } else if (name.contains('universal')) {
+            universalUrl = downloadUrl;
+          }
+        }
+      }
+
+      // Only arm64 is supported; fall back to universal if available
+      final apkUrl = arm64Url ?? universalUrl;
 
       _log.i(
-        'Update available: $latestVersion (prerelease: $isPrerelease), '
-        'APK asset: ${selectedAsset?.name ?? 'none'}, APK URL: $apkUrl',
+        'Update available: $latestVersion (prerelease: $isPrerelease), APK URL: $apkUrl',
       );
 
       return UpdateInfo(
@@ -167,128 +165,4 @@ class UpdateChecker {
   }
 
   static String get currentVersion => AppInfo.version;
-
-  static List<_ApkAsset> _collectApkAssets(List<dynamic> assets) {
-    final apkAssets = <_ApkAsset>[];
-
-    for (final asset in assets.whereType<Map<Object?, Object?>>()) {
-      final assetMap = Map<String, dynamic>.from(asset);
-      final name = (assetMap['name'] as String? ?? '').trim();
-      final normalizedName = name.toLowerCase();
-      if (!normalizedName.endsWith('.apk')) {
-        continue;
-      }
-
-      final downloadUrl = assetMap['browser_download_url'] as String?;
-      final uri = downloadUrl != null ? Uri.tryParse(downloadUrl) : null;
-      if (uri == null || uri.scheme != 'https') {
-        _log.w('Skipping non-HTTPS APK URL: $downloadUrl');
-        continue;
-      }
-
-      final variant = _apkVariantFromName(normalizedName);
-      if (variant == null) {
-        _log.w('Skipping APK with unknown variant: $name');
-        continue;
-      }
-
-      apkAssets.add(
-        _ApkAsset(name: name, url: uri.toString(), variant: variant),
-      );
-    }
-
-    return apkAssets;
-  }
-
-  static _ApkVariant? _apkVariantFromName(String name) {
-    if (name.contains('universal')) {
-      return _ApkVariant.universal;
-    }
-    if (name.contains('arm64') || name.contains('arm64-v8a')) {
-      return _ApkVariant.arm64;
-    }
-    if (name.contains('arm32') ||
-        name.contains('armeabi') ||
-        name.contains('armv7') ||
-        name.contains('v7a')) {
-      return _ApkVariant.arm32;
-    }
-    return null;
-  }
-
-  static Future<_ApkAsset?> _selectApkForCurrentDevice(
-    List<_ApkAsset> assets,
-  ) async {
-    if (assets.isEmpty) {
-      return null;
-    }
-
-    _ApkAsset? arm64Asset;
-    _ApkAsset? arm32Asset;
-    _ApkAsset? universalAsset;
-    for (final asset in assets) {
-      switch (asset.variant) {
-        case _ApkVariant.arm64:
-          arm64Asset ??= asset;
-          break;
-        case _ApkVariant.arm32:
-          arm32Asset ??= asset;
-          break;
-        case _ApkVariant.universal:
-          universalAsset ??= asset;
-          break;
-      }
-    }
-
-    final supportedAbis = await _getSupportedAndroidAbis();
-    final hasArm64 = supportedAbis.any(_isArm64Abi);
-    final hasArm32 = supportedAbis.any(_isArm32Abi);
-
-    if (hasArm64) {
-      return arm64Asset ?? universalAsset ?? arm32Asset;
-    }
-    if (hasArm32) {
-      return arm32Asset ?? universalAsset;
-    }
-
-    if (universalAsset != null) {
-      _log.w(
-        'Could not match APK asset to supported ABIs ${supportedAbis.join(', ')}; '
-        'falling back to universal APK.',
-      );
-      return universalAsset;
-    }
-
-    _log.w(
-      'Could not match APK asset to supported ABIs ${supportedAbis.join(', ')}; '
-      'no universal APK available.',
-    );
-    return null;
-  }
-
-  static Future<List<String>> _getSupportedAndroidAbis() async {
-    if (!Platform.isAndroid) {
-      return const [];
-    }
-
-    try {
-      final androidInfo = await DeviceInfoPlugin().androidInfo;
-      final supportedAbis = androidInfo.supportedAbis
-          .map((abi) => abi.toLowerCase())
-          .where((abi) => abi.isNotEmpty)
-          .toSet()
-          .toList();
-      _log.i('Detected supported Android ABIs: ${supportedAbis.join(', ')}');
-      return supportedAbis;
-    } catch (e) {
-      _log.w('Failed to detect supported Android ABIs: $e');
-      return const [];
-    }
-  }
-
-  static bool _isArm64Abi(String abi) =>
-      abi.contains('arm64') || abi.contains('aarch64');
-
-  static bool _isArm32Abi(String abi) =>
-      abi.contains('armeabi') || abi.contains('armv7') || abi.contains('arm');
 }

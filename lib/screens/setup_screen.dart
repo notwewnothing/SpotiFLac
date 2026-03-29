@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/l10n/l10n.dart';
+
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/utils/file_access.dart';
 
@@ -29,7 +30,15 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
   bool _isLoading = false;
   int _androidSdkVersion = 0;
 
-  int get _totalSteps => _androidSdkVersion >= 33 ? 4 : 3;
+  int get _totalSteps {
+    // Welcome + Storage + Directory = 3 steps minimum
+    // Android 13+ adds Notification step = 4 steps
+    // Linux/macOS/Windows: No notification permission needed, just 3 steps
+    if (Platform.isAndroid && _androidSdkVersion >= 33) {
+      return 4;
+    }
+    return 3;
+  }
 
   @override
   void initState() {
@@ -92,10 +101,13 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
         });
       }
     } else {
-      setState(() {
-        _storagePermissionGranted = true;
-        _notificationPermissionGranted = true;
-      });
+      // Linux, macOS, Windows: Direct file system access, no permission system needed
+      if (mounted) {
+        setState(() {
+          _storagePermissionGranted = true;
+          _notificationPermissionGranted = true;
+        });
+      }
     }
   }
 
@@ -124,7 +136,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
             final shouldOpen = await _showAndroid11StorageDialog();
             if (shouldOpen == true) {
               await Permission.manageExternalStorage.request();
-              await Future<void>.delayed(const Duration(milliseconds: 500));
+              await Future.delayed(const Duration(milliseconds: 500));
               manageStatus = await Permission.manageExternalStorage.status;
             }
           }
@@ -145,6 +157,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
           );
         }
       } else {
+        // Linux, macOS, Windows: Direct file system access, automatically granted
         setState(() => _storagePermissionGranted = true);
       }
     } catch (e) {
@@ -203,7 +216,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
   }
 
   Future<void> _showPermissionDeniedDialog(String permissionType) async {
-    await showDialog<void>(
+    await showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(context.l10n.setupPermissionRequired(permissionType)),
@@ -278,6 +291,15 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
             }
           }
         }
+      } else {
+        // Linux, macOS, Windows: Use FilePicker
+        final result = await FilePicker.platform.getDirectoryPath();
+        if (result != null) {
+          setState(() {
+            _selectedDirectory = result;
+            _selectedTreeUri = '';
+          });
+        }
       }
     } finally {
       setState(() => _isLoading = false);
@@ -286,7 +308,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
 
   Future<void> _showIOSDirectoryOptions() async {
     final colorScheme = Theme.of(context).colorScheme;
-    await showModalBottomSheet<void>(
+    await showModalBottomSheet(
       context: context,
       useRootNavigator: true,
       backgroundColor: colorScheme.surfaceContainerHigh,
@@ -441,9 +463,14 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
 
   void _nextPage() {
     bool canProceed = false;
+    // Step 0 is Welcome, always can proceed
     if (_currentStep == 0) {
       canProceed = true;
     } else {
+      // Logic for other steps (offset by 1 because of welcome step)
+      // Step 1: Storage
+      // Step 2: Notification (if android 13+) OR Directory
+      // etc.
       canProceed = _isStepCompleted(_currentStep);
     }
 
@@ -465,8 +492,9 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
   }
 
   bool _isStepCompleted(int step) {
-    if (step == 0) return true;
+    if (step == 0) return true; // Welcome
 
+    // Adjust step index for logic because we added Welcome at 0
     final logicStep = step - 1;
 
     if (_androidSdkVersion >= 33) {

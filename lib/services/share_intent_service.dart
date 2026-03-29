@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import 'package:spotiflac_android/utils/logger.dart';
+import 'package:spotiflac_android/utils/platform_spoof.dart' as platform;
 
 final _log = AppLogger('ShareIntent');
 
@@ -58,14 +59,21 @@ class ShareIntentService {
     if (_initialized) return;
     _initialized = true;
 
-    if (!Platform.isAndroid && !Platform.isIOS) {
-      _log.i('Share intent is not supported on this platform');
+    // receive_sharing_intent is not supported on Linux yet
+    // Check actual platform, not spoofed one
+    if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+      _log.i('Share intent not supported on this platform');
+      return;
+    }
+
+    if (!platform.isAndroid && !platform.isIOS) {
+      _log.i('Share intent not supported on this platform');
       return;
     }
 
     _mediaSubscription = ReceiveSharingIntent.instance.getMediaStream().listen(
       _handleSharedMedia,
-      onError: (Object err) => _log.e('Error: $err'),
+      onError: (err) => _log.e('Error: $err'),
     );
 
     final initialMedia = await ReceiveSharingIntent.instance.getInitialMedia();
@@ -80,6 +88,7 @@ class ShareIntentService {
     bool isInitial = false,
   }) {
     for (final file in files) {
+      // Check both path and message - apps may share URL in either field
       final textsToCheck = [file.path, if (file.message != null) file.message!];
 
       for (final textToCheck in textsToCheck) {
@@ -99,11 +108,13 @@ class ShareIntentService {
   String? _extractMusicUrl(String text) {
     if (text.isEmpty) return null;
 
+    // Try Spotify URI first
     final uriMatch = _spotifyUriPattern.firstMatch(text);
     if (uriMatch != null) {
       return uriMatch.group(0);
     }
 
+    // Try all URL patterns
     final patterns = [
       _spotifyUrlPattern,
       _deezerUrlPattern,

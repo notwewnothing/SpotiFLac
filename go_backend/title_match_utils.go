@@ -3,8 +3,6 @@ package gobackend
 import (
 	"strings"
 	"unicode"
-
-	"golang.org/x/text/unicode/norm"
 )
 
 // normalizeLooseTitle collapses separators/punctuation so titles like
@@ -24,39 +22,11 @@ func normalizeLooseTitle(title string) string {
 			b.WriteRune(r)
 		case unicode.IsSpace(r):
 			b.WriteByte(' ')
+		// Treat common separators as spaces.
 		case r == '/', r == '\\', r == '_', r == '-', r == '|', r == '.', r == '&', r == '+':
 			b.WriteByte(' ')
 		default:
-		}
-	}
-
-	return strings.Join(strings.Fields(b.String()), " ")
-}
-
-// normalizeLooseArtistName folds diacritics and common separators so artist
-// verification is resilient to variants like "Özkent" vs "Ozkent".
-func normalizeLooseArtistName(name string) string {
-	trimmed := strings.TrimSpace(strings.ToLower(name))
-	if trimmed == "" {
-		return ""
-	}
-
-	decomposed := norm.NFD.String(trimmed)
-
-	var b strings.Builder
-	b.Grow(len(decomposed))
-
-	for _, r := range decomposed {
-		switch {
-		case unicode.Is(unicode.Mn, r), unicode.Is(unicode.Mc, r), unicode.Is(unicode.Me, r):
-			continue
-		case unicode.IsLetter(r), unicode.IsNumber(r):
-			b.WriteRune(r)
-		case unicode.IsSpace(r):
-			b.WriteByte(' ')
-		case r == '/', r == '\\', r == '_', r == '-', r == '|', r == '.', r == '&', r == '+':
-			b.WriteByte(' ')
-		default:
+			// Drop other punctuation/symbols (including emoji) for loose matching.
 		}
 	}
 
@@ -99,11 +69,13 @@ func normalizeSymbolOnlyTitle(title string) string {
 	return b.String()
 }
 
+// ==================== Shared Track Verification ====================
+
 // resolvedTrackInfo holds the metadata fetched from a provider for verification.
 type resolvedTrackInfo struct {
 	Title      string
 	ArtistName string
-	Duration   int
+	Duration   int // seconds
 }
 
 // trackMatchesRequest checks whether a resolved track from a provider matches

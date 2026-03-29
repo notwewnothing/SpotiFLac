@@ -3,15 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/utils/logger.dart';
+import 'package:spotiflac_android/utils/platform_spoof.dart' as platform;
 import 'package:spotiflac_android/providers/extension_provider.dart';
-import 'package:spotiflac_android/providers/settings_provider.dart';
 
 final _log = AppLogger('ExploreProvider');
 
 class ExploreItem {
   final String id;
   final String uri;
-  final String type;
+  final String type; // track, album, playlist, artist, station
   final String name;
   final String artists;
   final String? description;
@@ -168,6 +168,7 @@ class ExploreNotifier extends Notifier<ExploreState> {
     return const ExploreState();
   }
 
+  /// Restore cached home feed from SharedPreferences immediately on startup
   Future<void> _restoreFromCache() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -198,6 +199,7 @@ class ExploreNotifier extends Notifier<ExploreState> {
     }
   }
 
+  /// Save home feed to SharedPreferences for instant restore on next launch
   Future<void> _saveToCache(List<ExploreSection> sections) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -210,9 +212,11 @@ class ExploreNotifier extends Notifier<ExploreState> {
     }
   }
 
+  /// Fetch home feed from spotify-web extension
   Future<void> fetchHomeFeed({bool forceRefresh = false}) async {
     _log.i('fetchHomeFeed called, forceRefresh=$forceRefresh');
 
+    // If we have cached content and it's fresh enough, skip network fetch
     if (!forceRefresh &&
         state.hasContent &&
         state.lastFetched != null &&
@@ -226,31 +230,22 @@ class ExploreNotifier extends Notifier<ExploreState> {
       return;
     }
 
+    // Only show loading spinner if we have no cached content to display
     final showLoading = !state.hasContent;
     state = state.copyWith(isLoading: showLoading, error: null);
 
     try {
       final extState = ref.read(extensionProvider);
-      final settings = ref.read(settingsProvider);
-      final preferredId = settings.homeFeedProvider;
-      _log.d(
-        'Extensions count: ${extState.extensions.length}, preferred home feed: $preferredId',
-      );
+      _log.d('Extensions count: ${extState.extensions.length}');
 
       Extension? targetExt;
       for (final extension in extState.extensions) {
         if (!extension.enabled || !extension.hasHomeFeed) {
           continue;
         }
-        if (preferredId != null &&
-            preferredId.isNotEmpty &&
-            extension.id == preferredId) {
-          targetExt = extension;
-          break;
-        }
         if (targetExt == null || extension.id == 'spotify-web') {
           targetExt = extension;
-          if (preferredId == null && extension.id == 'spotify-web') {
+          if (extension.id == 'spotify-web') {
             break;
           }
         }
@@ -310,6 +305,7 @@ class ExploreNotifier extends Notifier<ExploreState> {
         lastFetched: DateTime.now(),
       );
 
+      // Save to disk cache for instant restore on next app launch
       _saveToCache(sections);
     } catch (e, stack) {
       _log.e('Error fetching home feed: $e', e, stack);

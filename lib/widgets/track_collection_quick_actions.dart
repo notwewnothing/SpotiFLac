@@ -7,6 +7,8 @@ import 'package:spotiflac_android/providers/library_collections_provider.dart';
 import 'package:spotiflac_android/services/cover_cache_manager.dart';
 import 'package:spotiflac_android/widgets/playlist_picker_sheet.dart';
 import 'package:spotiflac_android/utils/clickable_metadata.dart';
+import 'package:spotiflac_android/providers/settings_provider.dart';
+import 'package:spotiflac_android/providers/streaming_audio_provider.dart';
 
 class TrackCollectionQuickActions extends ConsumerWidget {
   final Track track;
@@ -64,6 +66,8 @@ class _TrackOptionsSheet extends ConsumerWidget {
     final isInWishlist = ref.watch(
       libraryCollectionsProvider.select((state) => state.isInWishlist(track)),
     );
+    final settings = ref.watch(settingsProvider);
+    final isStreamMode = settings.appmode == 'stream';
 
     return SafeArea(
       child: ConstrainedBox(
@@ -224,6 +228,20 @@ class _TrackOptionsSheet extends ConsumerWidget {
                   showAddTrackToPlaylistSheet(context, ref, track);
                 },
               ),
+              if (isStreamMode) ...[
+                _OptionTile(
+                  icon: Icons.queue_music,
+                  title: "Add to Queue",
+                  onTap: () {
+                    Navigator.pop(context);
+                    ref.read(streamingAudioProvider.notifier).addToQueue(track, settings.defaultService);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Added to Queue: ${track.name}')),
+                    );
+                  },
+                ),
+              ],
+
 
               const SizedBox(height: 16),
             ],

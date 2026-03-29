@@ -22,6 +22,7 @@ class BuiltInService {
   });
 }
 
+/// Default quality options for built-in services
 /// Default quality options for each built-in service
 const _builtInServices = [
   BuiltInService(
@@ -77,14 +78,32 @@ const _builtInServices = [
       ),
     ],
   ),
+  BuiltInService(
+    id: 'youtube',
+    label: 'YouTube',
+    qualityOptions: [
+      QualityOption(
+        id: 'opus_320',
+        label: 'Opus 320kbps',
+        description: 'Best quality lossy (~10MB per track)',
+      ),
+      QualityOption(
+        id: 'mp3_320',
+        label: 'MP3 320kbps',
+        description: 'Best compatibility (~10MB per track)',
+      ),
+    ],
+    isDisabled: false,
+    disabledReason: null,
+  ),
 ];
 
+/// A reusable widget for selecting download service (built-in + extensions)
 class DownloadServicePicker extends ConsumerStatefulWidget {
   final String? trackName;
   final String? artistName;
   final String? coverUrl;
   final void Function(String quality, String service) onSelect;
-  final String? recommendedService; // Service to show as "(Recommended)"
 
   const DownloadServicePicker({
     super.key,
@@ -92,7 +111,6 @@ class DownloadServicePicker extends ConsumerStatefulWidget {
     this.artistName,
     this.coverUrl,
     required this.onSelect,
-    this.recommendedService,
   });
 
   @override
@@ -105,12 +123,11 @@ class DownloadServicePicker extends ConsumerStatefulWidget {
     String? trackName,
     String? artistName,
     String? coverUrl,
-    String? recommendedService,
     required void Function(String quality, String service) onSelect,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    showModalBottomSheet<void>(
+    showModalBottomSheet(
       context: context,
       useRootNavigator: true,
       backgroundColor: colorScheme.surfaceContainerHigh,
@@ -123,29 +140,49 @@ class DownloadServicePicker extends ConsumerStatefulWidget {
         artistName: artistName,
         coverUrl: coverUrl,
         onSelect: onSelect,
-        recommendedService: recommendedService,
       ),
     );
   }
 }
 
 class _DownloadServicePickerState extends ConsumerState<DownloadServicePicker> {
+  static const List<int> _youtubeOpusSupportedBitrates = [128, 256, 320];
+  static const List<int> _youtubeMp3SupportedBitrates = [128, 256, 320];
+
   late String _selectedService;
 
   @override
   void initState() {
     super.initState();
-    // Default to recommended service if available, otherwise use default
-    final recommended = widget.recommendedService;
-    if (recommended != null && recommended.isNotEmpty) {
-      _selectedService = recommended;
-    } else {
-      _selectedService = ref.read(settingsProvider).defaultService;
-    }
+    _selectedService = ref.read(settingsProvider).defaultService;
   }
 
   /// Get quality options for the selected service
   List<QualityOption> _getQualityOptions() {
+    final settings = ref.read(settingsProvider);
+    if (_selectedService == 'youtube') {
+      final opusBitrate = _nearestSupportedBitrate(
+        settings.youtubeOpusBitrate,
+        _youtubeOpusSupportedBitrates,
+      );
+      final mp3Bitrate = _nearestSupportedBitrate(
+        settings.youtubeMp3Bitrate,
+        _youtubeMp3SupportedBitrates,
+      );
+      return [
+        QualityOption(
+          id: 'opus_$opusBitrate',
+          label: 'Opus ${opusBitrate}kbps',
+          description: 'Configured from YouTube settings',
+        ),
+        QualityOption(
+          id: 'mp3_$mp3Bitrate',
+          label: 'MP3 ${mp3Bitrate}kbps',
+          description: 'Configured from YouTube settings',
+        ),
+      ];
+    }
+
     final builtIn = _builtInServices
         .where((s) => s.id == _selectedService)
         .firstOrNull;
@@ -168,6 +205,22 @@ class _DownloadServicePickerState extends ConsumerState<DownloadServicePicker> {
         description: 'Best available',
       ),
     ];
+  }
+
+  int _nearestSupportedBitrate(int value, List<int> supported) {
+    var nearest = supported.first;
+    var nearestDistance = (value - nearest).abs();
+
+    for (final option in supported.skip(1)) {
+      final distance = (value - option).abs();
+      if (distance < nearestDistance ||
+          (distance == nearestDistance && option > nearest)) {
+        nearest = option;
+        nearestDistance = distance;
+      }
+    }
+
+    return nearest;
   }
 
   @override
@@ -231,8 +284,6 @@ class _DownloadServicePickerState extends ConsumerState<DownloadServicePicker> {
                     _ServiceChip(
                       label: service.isDisabled
                           ? '${service.label} (${service.disabledReason})'
-                          : widget.recommendedService == service.id
-                          ? '${service.label} (Recommended)'
                           : service.label,
                       isSelected: _selectedService == service.id,
                       isDisabled: service.isDisabled,
@@ -242,9 +293,7 @@ class _DownloadServicePickerState extends ConsumerState<DownloadServicePicker> {
                     ),
                   for (final ext in downloadExtensions)
                     _ServiceChip(
-                      label: widget.recommendedService == ext.id
-                          ? '${ext.displayName} (Recommended)'
-                          : ext.displayName,
+                      label: ext.displayName,
                       isSelected: _selectedService == ext.id,
                       onTap: () => setState(() => _selectedService = ext.id),
                       iconPath: ext.iconPath,
@@ -263,11 +312,25 @@ class _DownloadServicePickerState extends ConsumerState<DownloadServicePicker> {
               ),
             ),
 
-            if (_builtInServices.any((s) => s.id == _selectedService))
+            if (_builtInServices.any(
+              (s) => s.id == _selectedService && s.id != 'youtube',
+            ))
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
                 child: Text(
                   context.l10n.qualityNote,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
+
+            if (_selectedService == 'youtube')
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+                child: Text(
+                  context.l10n.youtubeQualityNote,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                     fontStyle: FontStyle.italic,

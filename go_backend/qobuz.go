@@ -49,10 +49,9 @@ const (
 	qobuzArtistGetBaseURL   = "https://www.qobuz.com/api.json/0.2/artist/get?artist_id="
 	qobuzPlaylistGetBaseURL = "https://www.qobuz.com/api.json/0.2/playlist/get?playlist_id="
 	qobuzStoreSearchBaseURL = "https://www.qobuz.com/us-en/search/tracks/"
-	qobuzTrackOpenBaseURL   = "https://open.qobuz.com/track/"
 	qobuzTrackPlayBaseURL   = "https://play.qobuz.com/track/"
 	qobuzStoreBaseURL       = "https://www.qobuz.com/us-en"
-	qobuzDownloadAPIURL     = "https://dl.musicdl.me/qobuz/download"
+	qobuzDownloadAPIURL     = "https://www.musicdl.me/api/qobuz/download"
 	qobuzDabMusicAPIURL     = "https://dabmusic.xyz/api/stream?trackId="
 	qobuzDeebAPIURL         = "https://dab.yeet.su/api/stream?trackId="
 	qobuzAfkarAPIURL        = "https://qbz.afkarxyz.qzz.io/api/track/"
@@ -262,35 +261,26 @@ func qobuzTrackDisplayTitle(track *QobuzTrack) string {
 	return fmt.Sprintf("%s (%s)", title, version)
 }
 
-var qobuzImageSizeRe = regexp.MustCompile(`_\d+\.jpg$`)
-
-func qobuzUpscaleImageURL(url string) string {
-	if url == "" {
-		return ""
-	}
-	return qobuzImageSizeRe.ReplaceAllString(url, "_max.jpg")
-}
-
 func qobuzTrackAlbumImage(track *QobuzTrack) string {
 	if track == nil {
 		return ""
 	}
-	return qobuzUpscaleImageURL(qobuzFirstNonEmpty(
+	return qobuzFirstNonEmpty(
 		track.Album.Image.Large,
 		track.Album.Image.Small,
 		track.Album.Image.Thumbnail,
-	))
+	)
 }
 
 func qobuzAlbumImage(album *qobuzAlbumDetails) string {
 	if album == nil {
 		return ""
 	}
-	return qobuzUpscaleImageURL(qobuzFirstNonEmpty(
+	return qobuzFirstNonEmpty(
 		album.Image.Large,
 		album.Image.Small,
 		album.Image.Thumbnail,
-	))
+	)
 }
 
 func qobuzTrackArtistID(track *QobuzTrack) string {
@@ -488,8 +478,8 @@ func parseQobuzURL(input string) (string, string, error) {
 }
 
 func qobuzArtistsMatch(expectedArtist, foundArtist string) bool {
-	normExpected := normalizeLooseArtistName(expectedArtist)
-	normFound := normalizeLooseArtistName(foundArtist)
+	normExpected := strings.ToLower(strings.TrimSpace(expectedArtist))
+	normFound := strings.ToLower(strings.TrimSpace(foundArtist))
 
 	if normExpected == normFound {
 		return true
@@ -945,17 +935,7 @@ func (q *QobuzDownloader) GetAlbumMetadata(resourceID string) (*AlbumResponsePay
 
 	tracks := make([]AlbumTrackMetadata, 0, len(album.Tracks.Items))
 	for i := range album.Tracks.Items {
-		track := &album.Tracks.Items[i]
-		track.Album.ID = album.ID
-		track.Album.Title = album.Title
-		track.Album.ReleaseDate = album.ReleaseDateOriginal
-		track.Album.Image = qobuzImageSet{
-			Thumbnail: album.Image.Thumbnail,
-			Small:     album.Image.Small,
-			Large:     album.Image.Large,
-		}
-		track.Album.TracksCount = album.TracksCount
-		tracks = append(tracks, qobuzTrackToAlbumTrackMetadata(track))
+		tracks = append(tracks, qobuzTrackToAlbumTrackMetadata(&album.Tracks.Items[i]))
 	}
 
 	return &AlbumResponsePayload{
@@ -1326,134 +1306,6 @@ func (q *QobuzDownloader) SearchTracks(query string, limit int) ([]ExtTrackMetad
 	return results, nil
 }
 
-// SearchAll searches Qobuz for tracks, artists, and albums matching the query.
-// Returns results in the same SearchAllResult format as Deezer's SearchAll.
-func (q *QobuzDownloader) SearchAll(query string, trackLimit, artistLimit int, filter string) (*SearchAllResult, error) {
-	GoLog("[Qobuz] SearchAll: query=%q, trackLimit=%d, artistLimit=%d, filter=%q\n", query, trackLimit, artistLimit, filter)
-
-	cleanQuery := strings.TrimSpace(query)
-	if cleanQuery == "" {
-		return nil, fmt.Errorf("empty qobuz search query")
-	}
-
-	albumLimit := 5
-
-	if filter != "" {
-		switch filter {
-		case "track":
-			trackLimit = 50
-			artistLimit = 0
-			albumLimit = 0
-		case "artist":
-			trackLimit = 0
-			artistLimit = 20
-			albumLimit = 0
-		case "album":
-			trackLimit = 0
-			artistLimit = 0
-			albumLimit = 20
-		}
-	}
-
-	result := &SearchAllResult{
-		Tracks:    make([]TrackMetadata, 0, trackLimit),
-		Artists:   make([]SearchArtistResult, 0, artistLimit),
-		Albums:    make([]SearchAlbumResult, 0, albumLimit),
-		Playlists: make([]SearchPlaylistResult, 0),
-	}
-
-	if trackLimit > 0 {
-		tracks, err := q.searchQobuzTracksWithFallback(cleanQuery, trackLimit)
-		if err != nil {
-			GoLog("[Qobuz] Track search failed: %v\n", err)
-			return nil, fmt.Errorf("qobuz track search failed: %w", err)
-		}
-		GoLog("[Qobuz] Got %d tracks from API\n", len(tracks))
-		for i := range tracks {
-			result.Tracks = append(result.Tracks, qobuzTrackToTrackMetadata(&tracks[i]))
-		}
-	}
-
-	if artistLimit > 0 {
-		searchURL := fmt.Sprintf("https://www.qobuz.com/api.json/0.2/artist/search?query=%s&limit=%d&app_id=%s",
-			url.QueryEscape(cleanQuery), artistLimit, q.appID)
-		req, err := http.NewRequest("GET", searchURL, nil)
-		if err == nil {
-			resp, reqErr := DoRequestWithUserAgent(q.client, req)
-			if reqErr == nil {
-				defer resp.Body.Close()
-				if resp.StatusCode == 200 {
-					var artistResp struct {
-						Artists struct {
-							Items []struct {
-								ID    int64         `json:"id"`
-								Name  string        `json:"name"`
-								Image qobuzImageSet `json:"image"`
-							} `json:"items"`
-						} `json:"artists"`
-					}
-					if decErr := json.NewDecoder(resp.Body).Decode(&artistResp); decErr == nil {
-						GoLog("[Qobuz] Got %d artists from API\n", len(artistResp.Artists.Items))
-						for _, artist := range artistResp.Artists.Items {
-							imageURL := qobuzFirstNonEmpty(artist.Image.Large, artist.Image.Small, artist.Image.Thumbnail)
-							result.Artists = append(result.Artists, SearchArtistResult{
-								ID:     qobuzPrefixedNumericID(artist.ID),
-								Name:   strings.TrimSpace(artist.Name),
-								Images: imageURL,
-							})
-						}
-					} else {
-						GoLog("[Qobuz] Artist search decode failed: %v\n", decErr)
-					}
-				}
-			} else {
-				GoLog("[Qobuz] Artist search request failed: %v\n", reqErr)
-			}
-		}
-	}
-
-	if albumLimit > 0 {
-		searchURL := fmt.Sprintf("https://www.qobuz.com/api.json/0.2/album/search?query=%s&limit=%d&app_id=%s",
-			url.QueryEscape(cleanQuery), albumLimit, q.appID)
-		req, err := http.NewRequest("GET", searchURL, nil)
-		if err == nil {
-			resp, reqErr := DoRequestWithUserAgent(q.client, req)
-			if reqErr == nil {
-				defer resp.Body.Close()
-				if resp.StatusCode == 200 {
-					var albumResp struct {
-						Albums struct {
-							Items []qobuzAlbumDetails `json:"items"`
-						} `json:"albums"`
-					}
-					if decErr := json.NewDecoder(resp.Body).Decode(&albumResp); decErr == nil {
-						GoLog("[Qobuz] Got %d albums from API\n", len(albumResp.Albums.Items))
-						for i := range albumResp.Albums.Items {
-							album := &albumResp.Albums.Items[i]
-							result.Albums = append(result.Albums, SearchAlbumResult{
-								ID:          qobuzPrefixedID(album.ID),
-								Name:        strings.TrimSpace(album.Title),
-								Artists:     qobuzArtistsDisplayName(album.Artists, album.Artist.Name),
-								Images:      qobuzAlbumImage(album),
-								ReleaseDate: qobuzNormalizeReleaseDate(album.ReleaseDateOriginal),
-								TotalTracks: album.TracksCount,
-								AlbumType:   qobuzNormalizeAlbumType(album.ReleaseType, album.ProductType, album.TracksCount),
-							})
-						}
-					} else {
-						GoLog("[Qobuz] Album search decode failed: %v\n", decErr)
-					}
-				}
-			} else {
-				GoLog("[Qobuz] Album search request failed: %v\n", reqErr)
-			}
-		}
-	}
-
-	GoLog("[Qobuz] SearchAll complete: %d tracks, %d artists, %d albums\n", len(result.Tracks), len(result.Artists), len(result.Albums))
-	return result, nil
-}
-
 func (q *QobuzDownloader) SearchTrackByMetadataWithDuration(trackName, artistName string, expectedDurationSec int) (*QobuzTrack, error) {
 	queries := []string{}
 
@@ -1779,23 +1631,19 @@ func fetchQobuzURLWithRetry(provider qobuzAPIProvider, trackID int64, quality st
 	return fetchQobuzURLSingleAttempt(provider, trackID, quality, timeout, "")
 }
 
-func buildQobuzMusicDLPayload(trackID int64, quality string) ([]byte, error) {
-	requestQuality := mapQobuzQualityCodeToAPI(quality)
-	payload := map[string]any{
-		"quality":      requestQuality,
-		"upload_to_r2": false,
-		"url":          fmt.Sprintf("%s%d", qobuzTrackOpenBaseURL, trackID),
-	}
-	return json.Marshal(payload)
-}
-
 func fetchQobuzURLSingleAttempt(provider qobuzAPIProvider, trackID int64, quality string, timeout time.Duration, country string) (qobuzDownloadInfo, error) {
 	var lastErr error
 	retryDelay := qobuzRetryDelay
 	var payloadBytes []byte
 	if provider.Kind == qobuzAPIKindMusicDL {
+		requestQuality := mapQobuzQualityCodeToAPI(quality)
+		payload := map[string]any{
+			"quality":      requestQuality,
+			"upload_to_r2": false,
+			"url":          fmt.Sprintf("%s%d", qobuzTrackPlayBaseURL, trackID),
+		}
 		var err error
-		payloadBytes, err = buildQobuzMusicDLPayload(trackID, quality)
+		payloadBytes, err = json.Marshal(payload)
 		if err != nil {
 			return qobuzDownloadInfo{}, fmt.Errorf("failed to encode qobuz request: %w", err)
 		}
@@ -1840,6 +1688,7 @@ func fetchQobuzURLSingleAttempt(provider qobuzAPIProvider, trackID int64, qualit
 		}
 		if provider.Kind == qobuzAPIKindMusicDL {
 			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set("X-Debug-Key", getQobuzDebugKey())
 		}
 
 		resp, err := DoRequestWithUserAgent(client, req)
@@ -2086,7 +1935,6 @@ type QobuzDownloadResult struct {
 	TrackNumber int
 	DiscNumber  int
 	ISRC        string
-	CoverURL    string
 	LyricsLRC   string
 }
 
@@ -2148,8 +1996,8 @@ func resolveQobuzTrackForRequest(req DownloadRequest, downloader *QobuzDownloade
 		}
 	}
 
-	// Strategy 3: Try to get QobuzID from SongLink if we have SpotifyID but no ISRC
-	if track == nil && req.SpotifyID != "" && req.QobuzID == "" && req.ISRC == "" {
+	// Strategy 3: Try to get QobuzID from SongLink if we have SpotifyID
+	if track == nil && req.SpotifyID != "" && req.QobuzID == "" {
 		GoLog("[%s] Trying to get Qobuz ID from SongLink for Spotify ID: %s\n", logPrefix, req.SpotifyID)
 		songLinkClient := NewSongLinkClient()
 		availability, slErr := songLinkCheckTrackAvailabilityFunc(songLinkClient, req.SpotifyID, req.ISRC)
@@ -2280,10 +2128,7 @@ func downloadFromQobuz(req DownloadRequest) (QobuzDownloadResult, error) {
 	parallelDone := make(chan struct{})
 	go func() {
 		defer close(parallelDone)
-		coverURL := strings.TrimSpace(req.CoverURL)
-		if coverURL == "" {
-			coverURL = strings.TrimSpace(qobuzTrackAlbumImage(track))
-		}
+		coverURL := req.CoverURL
 		embedLyrics := req.EmbedLyrics
 		if !req.EmbedMetadata {
 			coverURL = ""
@@ -2416,7 +2261,6 @@ func downloadFromQobuz(req DownloadRequest) (QobuzDownloadResult, error) {
 		TrackNumber: resultTrackNumber,
 		DiscNumber:  resultDiscNumber,
 		ISRC:        track.ISRC,
-		CoverURL:    strings.TrimSpace(qobuzTrackAlbumImage(track)),
 		LyricsLRC:   lyricsLRC,
 	}, nil
 }

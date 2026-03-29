@@ -344,7 +344,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get aboutAppDescription =>
-      'Download Spotify tracks in lossless quality from Tidal and Qobuz.';
+      'Tidal, Qobuz, Amazon Music에서 Spotify 트랙을 무손실 음질로 다운로드하세요.';
 
   @override
   String get artistAlbums => '앨범';
@@ -740,36 +740,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get searchPlaylists => '재생목록들';
-
-  @override
-  String get searchSortTitle => 'Sort Results';
-
-  @override
-  String get searchSortDefault => 'Default';
-
-  @override
-  String get searchSortTitleAZ => 'Title (A-Z)';
-
-  @override
-  String get searchSortTitleZA => 'Title (Z-A)';
-
-  @override
-  String get searchSortArtistAZ => 'Artist (A-Z)';
-
-  @override
-  String get searchSortArtistZA => 'Artist (Z-A)';
-
-  @override
-  String get searchSortDurationShort => 'Duration (Shortest)';
-
-  @override
-  String get searchSortDurationLong => 'Duration (Longest)';
-
-  @override
-  String get searchSortDateOldest => 'Release Date (Oldest)';
-
-  @override
-  String get searchSortDateNewest => 'Release Date (Newest)';
 
   @override
   String get tooltipPlay => '재생';
@@ -1400,40 +1370,18 @@ class AppLocalizationsKo extends AppLocalizations {
   String get qualityHiResFlacMaxSubtitle => '24-bit / up to 192kHz';
 
   @override
-  String get downloadLossy320 => 'Lossy 320kbps';
-
-  @override
-  String get downloadLossyFormat => 'Lossy Format';
-
-  @override
-  String get downloadLossy320Format => 'Lossy 320kbps Format';
-
-  @override
-  String get downloadLossy320FormatDesc =>
-      'Choose the output format for Tidal 320kbps lossy downloads. The original AAC stream will be converted to your selected format.';
-
-  @override
-  String get downloadLossyMp3 => 'MP3 320kbps';
-
-  @override
-  String get downloadLossyMp3Subtitle => 'Best compatibility, ~10MB per track';
-
-  @override
-  String get downloadLossyOpus256 => 'Opus 256kbps';
-
-  @override
-  String get downloadLossyOpus256Subtitle =>
-      'Best quality Opus, ~8MB per track';
-
-  @override
-  String get downloadLossyOpus128 => 'Opus 128kbps';
-
-  @override
-  String get downloadLossyOpus128Subtitle => 'Smallest size, ~4MB per track';
-
-  @override
   String get qualityNote =>
       'Actual quality depends on track availability from the service';
+
+  @override
+  String get youtubeQualityNote =>
+      'YouTube provides lossy audio only. Not part of lossless fallback.';
+
+  @override
+  String get youtubeOpusBitrateTitle => 'YouTube Opus Bitrate';
+
+  @override
+  String get youtubeMp3BitrateTitle => 'YouTube MP3 Bitrate';
 
   @override
   String get downloadAskBeforeDownload => 'Ask Before Download';
@@ -1531,13 +1479,6 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get albumFolderArtistAlbumSinglesSubtitle =>
       'Artist/Album/ and Artist/Singles/';
-
-  @override
-  String get albumFolderArtistAlbumFlat => 'Artist / Album (Singles flat)';
-
-  @override
-  String get albumFolderArtistAlbumFlatSubtitle =>
-      'Artist/Album/ and Artist/song.flac';
 
   @override
   String get downloadedAlbumDeleteSelected => 'Delete Selected';
@@ -1929,7 +1870,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get tutorialWelcomeTip2 =>
-      'Get FLAC quality audio from Tidal, Qobuz, or Deezer';
+      'Get FLAC quality audio from Tidal, Qobuz, or Amazon Music';
 
   @override
   String get tutorialWelcomeTip3 =>
@@ -2724,22 +2665,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get downloadArtistNameFilters => 'Artist Name Filters';
 
   @override
-  String get downloadCreatePlaylistSourceFolder =>
-      'Create playlist source folder';
-
-  @override
-  String get downloadCreatePlaylistSourceFolderEnabled =>
-      'Playlist downloads use Playlist/ plus your normal folder structure.';
-
-  @override
-  String get downloadCreatePlaylistSourceFolderDisabled =>
-      'Playlist downloads use the normal folder structure only.';
-
-  @override
-  String get downloadCreatePlaylistSourceFolderRedundant =>
-      'By Playlist already places downloads inside a playlist folder.';
-
-  @override
   String get downloadSongLinkRegion => 'SongLink Region';
 
   @override
@@ -2969,106 +2894,4 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get editMetadataSelectEmpty => 'Empty only';
-
-  @override
-  String queueDownloadingCount(int count) {
-    return 'Downloading ($count)';
-  }
-
-  @override
-  String get queueDownloadedHeader => 'Downloaded';
-
-  @override
-  String get queueFilteringIndicator => 'Filtering...';
-
-  @override
-  String queueTrackCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count tracks',
-      one: '1 track',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String queueAlbumCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count albums',
-      one: '1 album',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get queueEmptyAlbums => 'No album downloads';
-
-  @override
-  String get queueEmptyAlbumsSubtitle =>
-      'Download multiple tracks from an album to see them here';
-
-  @override
-  String get queueEmptySingles => 'No single downloads';
-
-  @override
-  String get queueEmptySinglesSubtitle =>
-      'Single track downloads will appear here';
-
-  @override
-  String get queueEmptyHistory => 'No download history';
-
-  @override
-  String get queueEmptyHistorySubtitle => 'Downloaded tracks will appear here';
-
-  @override
-  String get selectionAllPlaylistsSelected => 'All playlists selected';
-
-  @override
-  String get selectionTapPlaylistsToSelect => 'Tap playlists to select';
-
-  @override
-  String get selectionSelectPlaylistsToDelete => 'Select playlists to delete';
-
-  @override
-  String get audioAnalysisTitle => 'Audio Quality Analysis';
-
-  @override
-  String get audioAnalysisDescription =>
-      'Verify lossless quality with spectrum analysis';
-
-  @override
-  String get audioAnalysisAnalyzing => 'Analyzing audio...';
-
-  @override
-  String get audioAnalysisSampleRate => 'Sample Rate';
-
-  @override
-  String get audioAnalysisBitDepth => 'Bit Depth';
-
-  @override
-  String get audioAnalysisChannels => 'Channels';
-
-  @override
-  String get audioAnalysisDuration => 'Duration';
-
-  @override
-  String get audioAnalysisNyquist => 'Nyquist';
-
-  @override
-  String get audioAnalysisFileSize => 'Size';
-
-  @override
-  String get audioAnalysisDynamicRange => 'Dynamic Range';
-
-  @override
-  String get audioAnalysisPeak => 'Peak';
-
-  @override
-  String get audioAnalysisRms => 'RMS';
-
-  @override
-  String get audioAnalysisSamples => 'Samples';
 }

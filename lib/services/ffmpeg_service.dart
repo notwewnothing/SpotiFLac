@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:spotiflac_android/utils/platform_spoof.dart' as platform;
 import 'package:ffmpeg_kit_flutter_new_full/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_new_full/ffmpeg_kit_config.dart';
 import 'package:ffmpeg_kit_flutter_new_full/ffmpeg_session.dart';
@@ -126,25 +127,6 @@ class FFmpegService {
       );
     } catch (e) {
       _log.e('FFmpeg execute error: $e');
-      return FFmpegResult(success: false, returnCode: -1, output: e.toString());
-    }
-  }
-
-  static Future<FFmpegResult> _executeWithArguments(
-    List<String> arguments,
-  ) async {
-    try {
-      final session = await FFmpegKit.executeWithArguments(arguments);
-      final returnCode = await session.getReturnCode();
-      final output = await session.getOutput() ?? '';
-
-      return FFmpegResult(
-        success: ReturnCode.isSuccess(returnCode),
-        returnCode: returnCode?.getValue() ?? -1,
-        output: output,
-      );
-    } catch (e) {
-      _log.e('FFmpeg executeWithArguments error: $e');
       return FFmpegResult(success: false, returnCode: -1, output: e.toString());
     }
   }
@@ -1049,24 +1031,18 @@ class FFmpegService {
   }) async {
     final tempDir = await getTemporaryDirectory();
     final tempOutput = _nextTempEmbedPath(tempDir.path, '.opus');
-    final arguments = <String>[
-      '-i',
-      opusPath,
-      '-map',
-      '0:a',
-      '-map_metadata',
-      '-1',
-      '-map_metadata:s:a',
-      '-1',
-      '-c:a',
-      'copy',
-    ];
+
+    final StringBuffer cmdBuffer = StringBuffer();
+    cmdBuffer.write('-i "$opusPath" ');
+    cmdBuffer.write('-map 0:a ');
+    cmdBuffer.write('-map_metadata -1 ');
+    cmdBuffer.write('-map_metadata:s:a -1 ');
+    cmdBuffer.write('-c:a copy ');
 
     if (metadata != null) {
       metadata.forEach((key, value) {
-        arguments
-          ..add('-metadata')
-          ..add('$key=$value');
+        final sanitizedValue = value.replaceAll('"', '\\"');
+        cmdBuffer.write('-metadata $key="$sanitizedValue" ');
       });
     }
 
@@ -1074,9 +1050,8 @@ class FFmpegService {
       try {
         final pictureBlock = await _createMetadataBlockPicture(coverPath);
         if (pictureBlock != null) {
-          arguments
-            ..add('-metadata')
-            ..add('METADATA_BLOCK_PICTURE=$pictureBlock');
+          final escapedBlock = pictureBlock.replaceAll('"', '\\"');
+          cmdBuffer.write('-metadata METADATA_BLOCK_PICTURE="$escapedBlock" ');
           _log.d(
             'Created METADATA_BLOCK_PICTURE for Opus (${pictureBlock.length} chars)',
           );
@@ -1088,12 +1063,12 @@ class FFmpegService {
       }
     }
 
-    arguments
-      ..add(tempOutput)
-      ..add('-y');
+    cmdBuffer.write('"$tempOutput" -y');
+
+    final command = cmdBuffer.toString();
     _log.d('Executing FFmpeg Opus embed command');
 
-    final result = await _executeWithArguments(arguments);
+    final result = await _execute(command);
 
     if (result.success) {
       try {
@@ -1129,88 +1104,6 @@ class FFmpegService {
     }
 
     _log.e('Opus Metadata embed failed: ${result.output}');
-    return null;
-  }
-
-  static Future<String?> embedMetadataToM4a({
-    required String m4aPath,
-    String? coverPath,
-    Map<String, String>? metadata,
-  }) async {
-    final tempDir = await getTemporaryDirectory();
-    final tempOutput = _nextTempEmbedPath(tempDir.path, '.m4a');
-
-    final cmdBuffer = StringBuffer();
-    cmdBuffer.write('-i "$m4aPath" ');
-
-    final hasCover = coverPath != null && await File(coverPath).exists();
-    if (hasCover) {
-      cmdBuffer.write('-i "$coverPath" ');
-    }
-
-    cmdBuffer.write('-map 0:a ');
-    cmdBuffer.write('-map_metadata -1 ');
-
-    // For M4A/MP4, cover art is mapped as a video stream and stored in the
-    // 'covr' atom automatically by FFmpeg. The '-disposition attached_pic'
-    // flag is only valid for Matroska/WebM containers and must NOT be used here.
-    if (hasCover) {
-      cmdBuffer.write('-map 1:v -c:v copy ');
-    }
-
-    cmdBuffer.write('-c:a copy ');
-
-    if (metadata != null) {
-      final m4aMetadata = _convertToM4aTags(metadata);
-      for (final entry in m4aMetadata.entries) {
-        final sanitizedValue = entry.value.replaceAll('"', '\\"');
-        cmdBuffer.write('-metadata ${entry.key}="$sanitizedValue" ');
-      }
-    }
-
-    cmdBuffer.write('"$tempOutput" -y');
-
-    final command = cmdBuffer.toString();
-    _log.d(
-      'Executing FFmpeg M4A embed command: ${_previewCommandForLog(command)}',
-    );
-
-    final result = await _execute(command);
-
-    if (result.success) {
-      try {
-        final tempFile = File(tempOutput);
-        final originalFile = File(m4aPath);
-
-        if (await tempFile.exists()) {
-          if (await originalFile.exists()) {
-            await originalFile.delete();
-          }
-          await tempFile.copy(m4aPath);
-          await tempFile.delete();
-
-          _log.d('M4A metadata embedded successfully');
-          return m4aPath;
-        } else {
-          _log.e('Temp M4A output file not found: $tempOutput');
-          return null;
-        }
-      } catch (e) {
-        _log.e('Failed to replace M4A file after metadata embed: $e');
-        return null;
-      }
-    }
-
-    try {
-      final tempFile = File(tempOutput);
-      if (await tempFile.exists()) {
-        await tempFile.delete();
-      }
-    } catch (e) {
-      _log.w('Failed to cleanup temp M4A file: $e');
-    }
-
-    _log.e('M4A Metadata embed failed: ${result.output}');
     return null;
   }
 
@@ -1437,8 +1330,8 @@ class FFmpegService {
     final cmdBuffer = StringBuffer();
     cmdBuffer.write('-i "$inputPath" ');
 
-    final hasCover =
-        coverPath != null &&
+    // Cover art as second input for M4A attached picture
+    final hasCover = coverPath != null &&
         coverPath.trim().isNotEmpty &&
         await File(coverPath).exists();
     if (hasCover) {
@@ -1446,14 +1339,13 @@ class FFmpegService {
     }
 
     cmdBuffer.write('-map 0:a ');
-    // M4A/MP4 containers store cover art in the 'covr' atom automatically.
-    // '-disposition attached_pic' is only for Matroska/WebM and must NOT be used here.
     if (hasCover) {
-      cmdBuffer.write('-map 1:v -c:v copy ');
+      cmdBuffer.write('-map 1:v -c:v copy -disposition:v:0 attached_pic ');
     }
     cmdBuffer.write('-c:a alac ');
     cmdBuffer.write('-map_metadata -1 ');
 
+    // Embed M4A metadata tags
     final m4aTags = _convertToM4aTags(metadata);
     for (final entry in m4aTags.entries) {
       final sanitized = entry.value.replaceAll('"', '\\"');
@@ -1498,8 +1390,7 @@ class FFmpegService {
     final cmdBuffer = StringBuffer();
     cmdBuffer.write('-i "$inputPath" ');
 
-    final hasCover =
-        coverPath != null &&
+    final hasCover = coverPath != null &&
         coverPath.trim().isNotEmpty &&
         await File(coverPath).exists();
     if (hasCover) {
@@ -1618,7 +1509,9 @@ class FFmpegService {
   }
 
   /// Map Vorbis comment keys to M4A/MP4 metadata tag names for FFmpeg.
-  static Map<String, String> _convertToM4aTags(Map<String, String> metadata) {
+  static Map<String, String> _convertToM4aTags(
+    Map<String, String> metadata,
+  ) {
     final m4aMap = <String, String>{};
 
     for (final entry in metadata.entries) {
@@ -1656,9 +1549,6 @@ class FFmpegService {
         case 'GENRE':
           m4aMap['genre'] = value;
           break;
-        case 'ISRC':
-          m4aMap['isrc'] = value;
-          break;
         case 'COMPOSER':
           m4aMap['composer'] = value;
           break;
@@ -1667,10 +1557,6 @@ class FFmpegService {
           break;
         case 'COPYRIGHT':
           m4aMap['copyright'] = value;
-          break;
-        case 'LABEL':
-        case 'ORGANIZATION':
-          m4aMap['organization'] = value;
           break;
         case 'LYRICS':
         case 'UNSYNCEDLYRICS':
@@ -1762,11 +1648,8 @@ class FFmpegService {
 
     final outputPaths = <String>[];
     final inputExt = audioPath.toLowerCase().split('.').last;
-    final outputExt =
-        (inputExt == 'flac' ||
-            inputExt == 'wav' ||
-            inputExt == 'ape' ||
-            inputExt == 'wv')
+    // For lossless formats, keep as FLAC; for others, keep original format
+    final outputExt = (inputExt == 'flac' || inputExt == 'wav' || inputExt == 'ape' || inputExt == 'wv')
         ? 'flac'
         : inputExt;
 
@@ -1799,9 +1682,7 @@ class FFmpegService {
         cmdBuffer.write('-c:a copy ');
       }
 
-      final artist = track.artist.isNotEmpty
-          ? track.artist
-          : (albumMetadata['artist'] ?? '');
+      final artist = track.artist.isNotEmpty ? track.artist : (albumMetadata['artist'] ?? '');
       final album = albumMetadata['album'] ?? '';
       final genre = albumMetadata['genre'] ?? '';
       final date = albumMetadata['date'] ?? '';
@@ -1826,17 +1707,19 @@ class FFmpegService {
       cmdBuffer.write('"$outputPath" -y');
 
       final command = cmdBuffer.toString();
-      _log.d(
-        'CUE split track ${track.number}: ${_previewCommandForLog(command)}',
-      );
+      _log.d('CUE split track ${track.number}: ${_previewCommandForLog(command)}');
 
       final result = await _execute(command);
       if (!result.success) {
         _log.e('CUE split failed for track ${track.number}: ${result.output}');
+        // Continue with remaining tracks instead of failing completely
         continue;
       }
 
+      // Embed cover art if available (for FLAC output)
       if (coverPath != null && coverPath.isNotEmpty && outputExt == 'flac') {
+        // Use the Go backend for FLAC cover embedding via PlatformBridge
+        // (handled by the caller)
       }
 
       outputPaths.add(outputPath);

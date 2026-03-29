@@ -1432,66 +1432,6 @@ abstract class AppLocalizations {
   /// **'Playlists'**
   String get searchPlaylists;
 
-  /// Bottom sheet title for search sort options
-  ///
-  /// In en, this message translates to:
-  /// **'Sort Results'**
-  String get searchSortTitle;
-
-  /// Sort option - default API order
-  ///
-  /// In en, this message translates to:
-  /// **'Default'**
-  String get searchSortDefault;
-
-  /// Sort option - title ascending
-  ///
-  /// In en, this message translates to:
-  /// **'Title (A-Z)'**
-  String get searchSortTitleAZ;
-
-  /// Sort option - title descending
-  ///
-  /// In en, this message translates to:
-  /// **'Title (Z-A)'**
-  String get searchSortTitleZA;
-
-  /// Sort option - artist ascending
-  ///
-  /// In en, this message translates to:
-  /// **'Artist (A-Z)'**
-  String get searchSortArtistAZ;
-
-  /// Sort option - artist descending
-  ///
-  /// In en, this message translates to:
-  /// **'Artist (Z-A)'**
-  String get searchSortArtistZA;
-
-  /// Sort option - shortest duration first
-  ///
-  /// In en, this message translates to:
-  /// **'Duration (Shortest)'**
-  String get searchSortDurationShort;
-
-  /// Sort option - longest duration first
-  ///
-  /// In en, this message translates to:
-  /// **'Duration (Longest)'**
-  String get searchSortDurationLong;
-
-  /// Sort option - oldest release first
-  ///
-  /// In en, this message translates to:
-  /// **'Release Date (Oldest)'**
-  String get searchSortDateOldest;
-
-  /// Sort option - newest release first
-  ///
-  /// In en, this message translates to:
-  /// **'Release Date (Newest)'**
-  String get searchSortDateNewest;
-
   /// Tooltip - play button
   ///
   /// In en, this message translates to:
@@ -2383,7 +2323,7 @@ abstract class AppLocalizations {
   /// Default search provider option
   ///
   /// In en, this message translates to:
-  /// **'Default (Deezer)'**
+  /// **'Default (Deezer/Spotify)'**
   String get extensionDefaultProvider;
 
   /// Subtitle for default provider
@@ -2656,71 +2596,29 @@ abstract class AppLocalizations {
   /// **'24-bit / up to 192kHz'**
   String get qualityHiResFlacMaxSubtitle;
 
-  /// Quality option label for Tidal lossy 320kbps
-  ///
-  /// In en, this message translates to:
-  /// **'Lossy 320kbps'**
-  String get downloadLossy320;
-
-  /// Setting title to pick output format for Tidal lossy downloads
-  ///
-  /// In en, this message translates to:
-  /// **'Lossy Format'**
-  String get downloadLossyFormat;
-
-  /// Title of the Tidal lossy format picker bottom sheet
-  ///
-  /// In en, this message translates to:
-  /// **'Lossy 320kbps Format'**
-  String get downloadLossy320Format;
-
-  /// Description in the Tidal lossy format picker
-  ///
-  /// In en, this message translates to:
-  /// **'Choose the output format for Tidal 320kbps lossy downloads. The original AAC stream will be converted to your selected format.'**
-  String get downloadLossy320FormatDesc;
-
-  /// Tidal lossy format option - MP3 320kbps
-  ///
-  /// In en, this message translates to:
-  /// **'MP3 320kbps'**
-  String get downloadLossyMp3;
-
-  /// Subtitle for MP3 320kbps Tidal lossy option
-  ///
-  /// In en, this message translates to:
-  /// **'Best compatibility, ~10MB per track'**
-  String get downloadLossyMp3Subtitle;
-
-  /// Tidal lossy format option - Opus 256kbps
-  ///
-  /// In en, this message translates to:
-  /// **'Opus 256kbps'**
-  String get downloadLossyOpus256;
-
-  /// Subtitle for Opus 256kbps Tidal lossy option
-  ///
-  /// In en, this message translates to:
-  /// **'Best quality Opus, ~8MB per track'**
-  String get downloadLossyOpus256Subtitle;
-
-  /// Tidal lossy format option - Opus 128kbps
-  ///
-  /// In en, this message translates to:
-  /// **'Opus 128kbps'**
-  String get downloadLossyOpus128;
-
-  /// Subtitle for Opus 128kbps Tidal lossy option
-  ///
-  /// In en, this message translates to:
-  /// **'Smallest size, ~4MB per track'**
-  String get downloadLossyOpus128Subtitle;
-
   /// Note about quality availability
   ///
   /// In en, this message translates to:
   /// **'Actual quality depends on track availability from the service'**
   String get qualityNote;
+
+  /// Note for YouTube service explaining lossy-only quality
+  ///
+  /// In en, this message translates to:
+  /// **'YouTube provides lossy audio only. Not part of lossless fallback.'**
+  String get youtubeQualityNote;
+
+  /// Title for YouTube Opus bitrate setting
+  ///
+  /// In en, this message translates to:
+  /// **'YouTube Opus Bitrate'**
+  String get youtubeOpusBitrateTitle;
+
+  /// Title for YouTube MP3 bitrate setting
+  ///
+  /// In en, this message translates to:
+  /// **'YouTube MP3 Bitrate'**
+  String get youtubeMp3BitrateTitle;
 
   /// Setting - show quality picker
   ///
@@ -2901,18 +2799,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Artist/Album/ and Artist/Singles/'**
   String get albumFolderArtistAlbumSinglesSubtitle;
-
-  /// Album folder option with singles directly in artist folder
-  ///
-  /// In en, this message translates to:
-  /// **'Artist / Album (Singles flat)'**
-  String get albumFolderArtistAlbumFlat;
-
-  /// Folder structure example for flat singles
-  ///
-  /// In en, this message translates to:
-  /// **'Artist/Album/ and Artist/song.flac'**
-  String get albumFolderArtistAlbumFlatSubtitle;
 
   /// Button - delete selected tracks
   ///
@@ -4773,30 +4659,6 @@ abstract class AppLocalizations {
   /// **'Artist Name Filters'**
   String get downloadArtistNameFilters;
 
-  /// Setting title for adding a playlist folder prefix before the normal organization structure
-  ///
-  /// In en, this message translates to:
-  /// **'Create playlist source folder'**
-  String get downloadCreatePlaylistSourceFolder;
-
-  /// Subtitle when playlist source folder prefix is enabled
-  ///
-  /// In en, this message translates to:
-  /// **'Playlist downloads use Playlist/ plus your normal folder structure.'**
-  String get downloadCreatePlaylistSourceFolderEnabled;
-
-  /// Subtitle when playlist source folder prefix is disabled
-  ///
-  /// In en, this message translates to:
-  /// **'Playlist downloads use the normal folder structure only.'**
-  String get downloadCreatePlaylistSourceFolderDisabled;
-
-  /// Subtitle when playlist folder prefix setting is redundant because folder organization is already by playlist
-  ///
-  /// In en, this message translates to:
-  /// **'By Playlist already places downloads inside a playlist folder.'**
-  String get downloadCreatePlaylistSourceFolderRedundant;
-
   /// Setting title for SongLink country region
   ///
   /// In en, this message translates to:
@@ -5138,168 +5000,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Empty only'**
   String get editMetadataSelectEmpty;
-
-  /// Header for active downloads section with count
-  ///
-  /// In en, this message translates to:
-  /// **'Downloading ({count})'**
-  String queueDownloadingCount(int count);
-
-  /// Header label for downloaded items section in library
-  ///
-  /// In en, this message translates to:
-  /// **'Downloaded'**
-  String get queueDownloadedHeader;
-
-  /// Shown while filter results are being computed
-  ///
-  /// In en, this message translates to:
-  /// **'Filtering...'**
-  String get queueFilteringIndicator;
-
-  /// Track count label with plural support
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{1 track} other{{count} tracks}}'**
-  String queueTrackCount(int count);
-
-  /// Album count label with plural support
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{1 album} other{{count} albums}}'**
-  String queueAlbumCount(int count);
-
-  /// Empty state title when no album downloads exist
-  ///
-  /// In en, this message translates to:
-  /// **'No album downloads'**
-  String get queueEmptyAlbums;
-
-  /// Empty state subtitle for album downloads
-  ///
-  /// In en, this message translates to:
-  /// **'Download multiple tracks from an album to see them here'**
-  String get queueEmptyAlbumsSubtitle;
-
-  /// Empty state title when no single track downloads exist
-  ///
-  /// In en, this message translates to:
-  /// **'No single downloads'**
-  String get queueEmptySingles;
-
-  /// Empty state subtitle for single track downloads
-  ///
-  /// In en, this message translates to:
-  /// **'Single track downloads will appear here'**
-  String get queueEmptySinglesSubtitle;
-
-  /// Empty state title when download history is empty
-  ///
-  /// In en, this message translates to:
-  /// **'No download history'**
-  String get queueEmptyHistory;
-
-  /// Empty state subtitle for download history
-  ///
-  /// In en, this message translates to:
-  /// **'Downloaded tracks will appear here'**
-  String get queueEmptyHistorySubtitle;
-
-  /// Shown when all playlists are selected in selection mode
-  ///
-  /// In en, this message translates to:
-  /// **'All playlists selected'**
-  String get selectionAllPlaylistsSelected;
-
-  /// Hint shown in playlist selection mode
-  ///
-  /// In en, this message translates to:
-  /// **'Tap playlists to select'**
-  String get selectionTapPlaylistsToSelect;
-
-  /// Hint shown when no playlists are selected for deletion
-  ///
-  /// In en, this message translates to:
-  /// **'Select playlists to delete'**
-  String get selectionSelectPlaylistsToDelete;
-
-  /// Title for audio analysis section
-  ///
-  /// In en, this message translates to:
-  /// **'Audio Quality Analysis'**
-  String get audioAnalysisTitle;
-
-  /// Description for audio analysis tap-to-analyze prompt
-  ///
-  /// In en, this message translates to:
-  /// **'Verify lossless quality with spectrum analysis'**
-  String get audioAnalysisDescription;
-
-  /// Loading text while analyzing audio
-  ///
-  /// In en, this message translates to:
-  /// **'Analyzing audio...'**
-  String get audioAnalysisAnalyzing;
-
-  /// Sample rate metric label
-  ///
-  /// In en, this message translates to:
-  /// **'Sample Rate'**
-  String get audioAnalysisSampleRate;
-
-  /// Bit depth metric label
-  ///
-  /// In en, this message translates to:
-  /// **'Bit Depth'**
-  String get audioAnalysisBitDepth;
-
-  /// Channels metric label
-  ///
-  /// In en, this message translates to:
-  /// **'Channels'**
-  String get audioAnalysisChannels;
-
-  /// Duration metric label
-  ///
-  /// In en, this message translates to:
-  /// **'Duration'**
-  String get audioAnalysisDuration;
-
-  /// Nyquist frequency metric label
-  ///
-  /// In en, this message translates to:
-  /// **'Nyquist'**
-  String get audioAnalysisNyquist;
-
-  /// File size metric label
-  ///
-  /// In en, this message translates to:
-  /// **'Size'**
-  String get audioAnalysisFileSize;
-
-  /// Dynamic range metric label
-  ///
-  /// In en, this message translates to:
-  /// **'Dynamic Range'**
-  String get audioAnalysisDynamicRange;
-
-  /// Peak amplitude metric label
-  ///
-  /// In en, this message translates to:
-  /// **'Peak'**
-  String get audioAnalysisPeak;
-
-  /// RMS level metric label
-  ///
-  /// In en, this message translates to:
-  /// **'RMS'**
-  String get audioAnalysisRms;
-
-  /// Total samples metric label
-  ///
-  /// In en, this message translates to:
-  /// **'Samples'**
-  String get audioAnalysisSamples;
 }
 
 class _AppLocalizationsDelegate

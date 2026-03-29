@@ -70,6 +70,50 @@ class Track {
   Map<String, dynamic> toJson() => _$TrackToJson(this);
   
   bool get isFromExtension => source != null && source!.isNotEmpty;
+
+  Track copyWith({
+    String? id,
+    String? name,
+    String? artistName,
+    String? albumName,
+    String? albumArtist,
+    String? artistId,
+    String? albumId,
+    String? coverUrl,
+    String? isrc,
+    int? duration,
+    int? trackNumber,
+    int? discNumber,
+    String? releaseDate,
+    String? deezerId,
+    ServiceAvailability? availability,
+    String? source,
+    String? albumType,
+    int? totalTracks,
+    String? itemType,
+  }) {
+    return Track(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      artistName: artistName ?? this.artistName,
+      albumName: albumName ?? this.albumName,
+      albumArtist: albumArtist ?? this.albumArtist,
+      artistId: artistId ?? this.artistId,
+      albumId: albumId ?? this.albumId,
+      coverUrl: coverUrl ?? this.coverUrl,
+      isrc: isrc ?? this.isrc,
+      duration: duration ?? this.duration,
+      trackNumber: trackNumber ?? this.trackNumber,
+      discNumber: discNumber ?? this.discNumber,
+      releaseDate: releaseDate ?? this.releaseDate,
+      deezerId: deezerId ?? this.deezerId,
+      availability: availability ?? this.availability,
+      source: source ?? this.source,
+      albumType: albumType ?? this.albumType,
+      totalTracks: totalTracks ?? this.totalTracks,
+      itemType: itemType ?? this.itemType,
+    );
+  }
 }
 
 @JsonSerializable()

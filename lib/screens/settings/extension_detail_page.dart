@@ -6,6 +6,7 @@ import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/providers/extension_provider.dart';
 import 'package:spotiflac_android/providers/store_provider.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
+import 'package:spotiflac_android/utils/platform_spoof.dart' as platform;
 import 'package:spotiflac_android/utils/app_bar_layout.dart';
 import 'package:spotiflac_android/widgets/settings_group.dart';
 
@@ -61,7 +62,7 @@ class _ExtensionDetailPageState extends ConsumerState<ExtensionDetailPage> {
     final hasError = extension.status == 'error';
 
     return PopScope(
-      canPop: true,
+      canPop: true, // Always allow back gesture
       child: Scaffold(
         body: CustomScrollView(
           slivers: [
@@ -832,9 +833,9 @@ class _SettingItemState extends State<_SettingItem> {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.snackbarError(e.toString()))),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.snackbarError(e.toString()))));
       }
     } finally {
       if (mounted) {
@@ -849,7 +850,7 @@ class _SettingItemState extends State<_SettingItem> {
     );
     final colorScheme = Theme.of(context).colorScheme;
 
-    showDialog<void>(
+    showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(widget.setting.label),

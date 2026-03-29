@@ -1,31 +1,45 @@
 package gobackend
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
-	"math"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 )
 
 // QQMusicClient fetches lyrics from QQ Music.
-// Uses Paxsenix metadata lookup for lyrics.
+// Search uses public QQ Music API, lyrics use the paxsenix proxy.
 type QQMusicClient struct {
 	httpClient *http.Client
 }
 
-type qqLyricsMetadataRequest struct {
-	Artist   []string `json:"artist"`
-	Album    string   `json:"album,omitempty"`
-	SongID   int64    `json:"songid,omitempty"`
-	Title    string   `json:"title"`
-	Duration int64    `json:"duration,omitempty"`
+type qqMusicSearchResponse struct {
+	Data struct {
+		Song struct {
+			List []struct {
+				Title  string `json:"title"`
+				Singer []struct {
+					Name string `json:"name"`
+				} `json:"singer"`
+				Album struct {
+					Name string `json:"name"`
+				} `json:"album"`
+				ID int64 `json:"id"`
+			} `json:"list"`
+		} `json:"song"`
+	} `json:"data"`
 }
 
-type qqLyricsMetadataResponse struct {
-	Lyrics []paxLyrics `json:"lyrics"`
+// QQ Music lyrics request payload for paxsenix proxy
+type qqLyricsPayload struct {
+	Artist []string `json:"artist"`
+	Album  string   `json:"album"`
+	ID     int64    `json:"id"`
+	Title  string   `json:"title"`
 }
 
 func NewQQMusicClient() *QQMusicClient {
@@ -34,29 +48,79 @@ func NewQQMusicClient() *QQMusicClient {
 	}
 }
 
-// fetchLyricsByMetadata asks Paxsenix to resolve and return QQ lyrics using track metadata.
-func (c *QQMusicClient) fetchLyricsByMetadata(trackName, artistName string, durationSec float64) (string, error) {
-	payload := qqLyricsMetadataRequest{
-		Artist: []string{artistName},
-		Title:  trackName,
-	}
-	if durationSec > 0 {
-		payload.Duration = int64(math.Round(durationSec))
+// searchSong searches QQ Music and returns the song info needed for lyrics fetch.
+func (c *QQMusicClient) searchSong(trackName, artistName string) (*qqLyricsPayload, error) {
+	query := trackName + " " + artistName
+	if strings.TrimSpace(query) == "" {
+		return nil, fmt.Errorf("empty search query")
 	}
 
-	lyricsURL := "https://lyrics.paxsenix.org/qq/lyrics-metadata"
+	searchURL := "https://c.y.qq.com/soso/fcgi-bin/client_search_cp"
+	params := url.Values{}
+	params.Set("format", "json")
+	params.Set("inCharset", "utf8")
+	params.Set("outCharset", "utf8")
+	params.Set("platform", "yqq.json")
+	params.Set("new_json", "1")
+	params.Set("w", query)
+
+	fullURL := searchURL + "?" + params.Encode()
+
+	req, err := http.NewRequest("GET", fullURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", getRandomUserAgent())
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("qqmusic search failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("qqmusic search returned HTTP %d", resp.StatusCode)
+	}
+
+	var searchResp qqMusicSearchResponse
+	if err := json.NewDecoder(resp.Body).Decode(&searchResp); err != nil {
+		return nil, fmt.Errorf("failed to decode qqmusic response: %w", err)
+	}
+
+	if len(searchResp.Data.Song.List) == 0 {
+		return nil, fmt.Errorf("no songs found on qqmusic")
+	}
+
+	song := searchResp.Data.Song.List[0]
+
+	var artists []string
+	for _, singer := range song.Singer {
+		artists = append(artists, singer.Name)
+	}
+
+	return &qqLyricsPayload{
+		Artist: artists,
+		Album:  song.Album.Name,
+		ID:     song.ID,
+		Title:  song.Title,
+	}, nil
+}
+
+// fetchLyricsByPayload fetches lyrics from the paxsenix proxy using QQ Music song info.
+func (c *QQMusicClient) fetchLyricsByPayload(payload *qqLyricsPayload) (string, error) {
+	lyricsURL := "https://paxsenix.alwaysdata.net/getQQLyrics.php"
 
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal payload: %w", err)
 	}
 
-	req, err := http.NewRequest("POST", lyricsURL, strings.NewReader(string(payloadBytes)))
+	req, err := http.NewRequest("POST", lyricsURL, bytes.NewReader(payloadBytes))
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", getRandomUserAgent())
 
 	resp, err := c.httpClient.Do(req)
@@ -82,17 +146,6 @@ func (c *QQMusicClient) fetchLyricsByMetadata(trackName, artistName string, dura
 	return bodyStr, nil
 }
 
-func formatQQLyricsMetadataToLRC(rawJSON string, multiPersonWordByWord bool) (string, error) {
-	var response qqLyricsMetadataResponse
-	if err := json.Unmarshal([]byte(rawJSON), &response); err != nil {
-		return "", fmt.Errorf("failed to parse qq metadata lyrics response")
-	}
-	if len(response.Lyrics) == 0 {
-		return "", fmt.Errorf("qq metadata lyrics response was empty")
-	}
-	return formatPaxContent("Syllable", response.Lyrics, multiPersonWordByWord), nil
-}
-
 // FetchLyrics searches QQ Music and returns parsed LyricsResponse.
 func (c *QQMusicClient) FetchLyrics(
 	trackName,
@@ -100,7 +153,12 @@ func (c *QQMusicClient) FetchLyrics(
 	durationSec float64,
 	multiPersonWordByWord bool,
 ) (*LyricsResponse, error) {
-	rawLyrics, err := c.fetchLyricsByMetadata(trackName, artistName, durationSec)
+	payload, err := c.searchSong(trackName, artistName)
+	if err != nil {
+		return nil, err
+	}
+
+	rawLyrics, err := c.fetchLyricsByPayload(payload)
 	if err != nil {
 		return nil, err
 	}
@@ -108,13 +166,11 @@ func (c *QQMusicClient) FetchLyrics(
 		return nil, fmt.Errorf("qqmusic proxy returned non-lyric payload: %s", errMsg)
 	}
 
-	lrcText, err := formatQQLyricsMetadataToLRC(rawLyrics, multiPersonWordByWord)
+	// Try to parse as pax format (word-by-word or line)
+	lrcText, err := formatPaxLyricsToLRC(rawLyrics, multiPersonWordByWord)
 	if err != nil {
-		if fallback, fallbackErr := formatPaxLyricsToLRC(rawLyrics, multiPersonWordByWord); fallbackErr == nil {
-			lrcText = fallback
-		} else {
-			lrcText = rawLyrics
-		}
+		// If pax parsing fails, try to use as direct LRC text
+		lrcText = rawLyrics
 	}
 
 	lines := parseSyncedLyrics(lrcText)

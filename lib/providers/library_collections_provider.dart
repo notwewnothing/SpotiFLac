@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:spotiflac_android/models/track.dart';
 import 'package:spotiflac_android/services/library_collections_database.dart';
+import 'package:spotiflac_android/utils/platform_spoof.dart' as platform;
 
 String trackCollectionKey(Track track) {
   final isrc = track.isrc?.trim();

@@ -17,7 +17,6 @@ import 'package:spotiflac_android/providers/playback_provider.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/screens/track_metadata_screen.dart';
 import 'package:spotiflac_android/services/downloaded_embedded_cover_resolver.dart';
-import 'package:spotiflac_android/widgets/animation_utils.dart';
 
 class DownloadedAlbumScreen extends ConsumerStatefulWidget {
   final String albumName;
@@ -121,6 +120,7 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
 
     final tracks =
         allItems.where((item) {
+          // Use albumArtist if available and not empty, otherwise artistName
           final itemArtist =
               (item.albumArtist != null && item.albumArtist!.isNotEmpty)
               ? item.albumArtist!
@@ -129,6 +129,7 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
               '${item.albumName.toLowerCase()}|${itemArtist.toLowerCase()}';
           return itemKey == _albumLookupKey;
         }).toList()..sort((a, b) {
+          // Sort by disc number first, then by track number
           final aDisc = a.discNumber ?? 1;
           final bDisc = b.discNumber ?? 1;
           if (aDisc != bDisc) return aDisc.compareTo(bDisc);
@@ -309,7 +310,14 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
     if (!mounted) return;
 
     final result = await navigator.push(
-      slidePageRoute<bool>(page: TrackMetadataScreen(item: item)),
+      PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 300),
+        reverseTransitionDuration: const Duration(milliseconds: 250),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            TrackMetadataScreen(item: item),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+            FadeTransition(opacity: animation, child: child),
+      ),
     );
     await DownloadedEmbeddedCoverResolver.scheduleRefreshForPath(
       item.filePath,
@@ -685,10 +693,7 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
           final track = tracks[index];
           return KeyedSubtree(
             key: ValueKey(track.id),
-            child: StaggeredListItem(
-              index: index,
-              child: _buildTrackItem(context, colorScheme, track),
-            ),
+            child: _buildTrackItem(context, colorScheme, track),
           );
         }, childCount: tracks.length),
       );
@@ -696,7 +701,6 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
 
     final discNumbers = _getSortedDiscNumbers(tracks);
     final List<Widget> children = [];
-    var revealIndex = 0;
 
     for (final discNumber in discNumbers) {
       final discTracks = discMap[discNumber];
@@ -708,10 +712,7 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
         children.add(
           KeyedSubtree(
             key: ValueKey(track.id),
-            child: StaggeredListItem(
-              index: revealIndex++,
-              child: _buildTrackItem(context, colorScheme, track),
-            ),
+            child: _buildTrackItem(context, colorScheme, track),
           ),
         );
       }
@@ -795,11 +796,28 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (_isSelectionMode) ...[
-                AnimatedSelectionCheckbox(
-                  visible: true,
-                  selected: isSelected,
-                  colorScheme: colorScheme,
-                  size: 24,
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? colorScheme.primary
+                        : Colors.transparent,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isSelected
+                          ? colorScheme.primary
+                          : colorScheme.outline,
+                      width: 2,
+                    ),
+                  ),
+                  child: isSelected
+                      ? Icon(
+                          Icons.check,
+                          color: colorScheme.onPrimary,
+                          size: 16,
+                        )
+                      : null,
                 ),
                 const SizedBox(width: 12),
               ],
@@ -928,11 +946,10 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
     String selectedFormat = formats.first;
     bool isLosslessTarget =
         selectedFormat == 'ALAC' || selectedFormat == 'FLAC';
-    String selectedBitrate = isLosslessTarget
-        ? '320k'
-        : (selectedFormat == 'Opus' ? '128k' : '320k');
+    String selectedBitrate =
+        isLosslessTarget ? '320k' : (selectedFormat == 'Opus' ? '128k' : '320k');
 
-    showModalBottomSheet<void>(
+    showModalBottomSheet(
       context: context,
       useRootNavigator: true,
       shape: const RoundedRectangleBorder(
@@ -992,9 +1009,8 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
                                 isLosslessTarget =
                                     format == 'ALAC' || format == 'FLAC';
                                 if (!isLosslessTarget) {
-                                  selectedBitrate = format == 'Opus'
-                                      ? '128k'
-                                      : '320k';
+                                  selectedBitrate =
+                                      format == 'Opus' ? '128k' : '320k';
                                 }
                               });
                             }
@@ -1039,8 +1055,11 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
                           const SizedBox(width: 6),
                           Text(
                             context.l10n.trackConvertLosslessHint,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(color: colorScheme.primary),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.copyWith(
+                              color: colorScheme.primary,
+                            ),
                           ),
                         ],
                       ),
@@ -1105,6 +1124,7 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
           ? 'Opus'
           : null;
       if (ext == null || ext == targetFormat) continue;
+      // Skip lossy sources when target is lossless (pointless re-encoding)
       final isLosslessTarget = targetFormat == 'ALAC' || targetFormat == 'FLAC';
       final isLosslessSource = ext == 'FLAC' || ext == 'M4A';
       if (isLosslessTarget && !isLosslessSource) continue;
@@ -1155,8 +1175,7 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
     int successCount = 0;
     final total = selected.length;
     final historyDb = HistoryDatabase.instance;
-    final newQuality =
-        (targetFormat.toUpperCase() == 'ALAC' ||
+    final newQuality = (targetFormat.toUpperCase() == 'ALAC' ||
             targetFormat.toUpperCase() == 'FLAC')
         ? '${targetFormat.toUpperCase()} Lossless'
         : '${targetFormat.toUpperCase()} ${bitrate.trim().toLowerCase()}';
@@ -1187,7 +1206,12 @@ class _DownloadedAlbumScreenState extends ConsumerState<DownloadedAlbumScreen> {
         try {
           final result = await PlatformBridge.readFileMetadata(item.filePath);
           if (result['error'] == null) {
-            mergePlatformMetadataForTagEmbed(target: metadata, source: result);
+            result.forEach((key, value) {
+              if (key == 'error' || value == null) return;
+              final v = value.toString().trim();
+              if (v.isEmpty) return;
+              metadata[key.toUpperCase()] = v;
+            });
           }
         } catch (_) {}
         await ensureLyricsMetadataForConversion(

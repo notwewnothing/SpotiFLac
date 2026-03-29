@@ -1,7 +1,7 @@
 name: spotiflac_android
 description: Download Spotify tracks in FLAC from Tidal, Qobuz & Deezer
 publish_to: "none"
-version: 4.1.1+118
+version: 3.8.6+112
 
 environment:
   sdk: ^3.10.0
@@ -13,7 +13,7 @@ dependencies:
   # Localization
   flutter_localizations:
     sdk: flutter
-  intl: ^0.20.2
+  intl: any
 
   # State Management
   flutter_riverpod: ^3.1.0
@@ -21,15 +21,15 @@ dependencies:
   # Navigation
   go_router: ^17.0.1
 
-# Storage & Persistence
+  # Storage & Persistence
   shared_preferences: ^2.5.3
   flutter_secure_storage: 10.0.0
   path_provider: ^2.1.5
   path: ^1.9.0
   sqflite: ^2.4.1
-  sqflite_common_ffi: ^2.3.6
+  sqflite_common_ffi: ^2.4.0
 
-# HTTP & Network
+  # HTTP & Network
   http: ^1.6.0
   connectivity_plus: 7.0.0
 
@@ -63,14 +63,17 @@ dependencies:
   # Notifications
   flutter_local_notifications: 21.0.0
 
+  # Audio Playback
+  just_audio: ^0.9.41
+  audio_waveforms: ^1.1.0
+  palette_generator: ^0.3.3
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
   build_runner: ^2.10.4
-  custom_lint: ^0.8.1
   riverpod_generator: ^4.0.0
-  riverpod_lint: ^3.1.0
   json_serializable: ^6.11.2
   flutter_launcher_icons: ^0.14.3
 

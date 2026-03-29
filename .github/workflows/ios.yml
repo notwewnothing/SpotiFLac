@@ -1,0 +1,65 @@
+name: Build iOS App
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: iOS Build and Fix Script
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.1 # Specify the Ruby version required by the backend script
+
+    - name: Install Bundler
+      run: gem install bundler
+
+    - name: Install CocoaPods
+      run: bundle exec pod install
+
+    - name: Run Backend Script Fix
+      run: |
+        chmod +x ./scripts/fix-ios-install-backend.sh
+        ./scripts/fix-ios-install-backend.sh
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18 # Specify the required Node.js version
+
+    - name: Install Dependencies
+      run: npm install
+
+    - name: Build iOS App
+      run: |
+        xcodebuild clean -workspace YourApp.xcworkspace -scheme YourAppScheme -configuration Debug
+        xcodebuild build \
+          -workspace YourApp.xcworkspace \
+          -scheme YourAppScheme \
+          -sdk iphoneos \
+          -configuration Release \
+          CODE_SIGNING_ALLOWED=NO
+
+    - name: Export Unsigned IPA
+      run: |
+        xcodebuild -exportArchive \
+          -archivePath ./build/YourApp.xcarchive \
+          -exportPath ./build \
+          -exportOptionsPlist ExportOptions.plist
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: Unsigned-iOS-App
+        path: build/*.ipa

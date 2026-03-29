@@ -8,6 +8,7 @@ import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/providers/local_library_provider.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
+import 'package:spotiflac_android/utils/platform_spoof.dart' as platform;
 import 'package:spotiflac_android/utils/app_bar_layout.dart';
 import 'package:spotiflac_android/widgets/settings_group.dart';
 
@@ -23,15 +24,21 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
   int _androidSdkVersion = 0;
   bool _hasStoragePermission = false;
 
+  /// Convert SAF content URI to a readable display path
   String _getDisplayPath(String path) {
     if (!path.startsWith('content://')) return path;
+    // Extract the path portion from SAF tree URI
+    // e.g. content://com.android.externalstorage.documents/tree/primary%3AMusic
+    // -> /storage/emulated/0/Music
     try {
       final uri = Uri.parse(path);
-      final treePath = uri.pathSegments.last;
+      final treePath =
+          uri.pathSegments.last; // e.g. "primary:Music" or "primary%3AMusic"
       final decoded = Uri.decodeComponent(treePath);
       if (decoded.startsWith('primary:')) {
         return '/storage/emulated/0/${decoded.substring('primary:'.length)}';
       }
+      // For SD card or other volumes, just show the decoded path
       return decoded;
     } catch (_) {
       return path;
@@ -45,7 +52,7 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
   }
 
   Future<void> _initDeviceInfo() async {
-    if (Platform.isAndroid) {
+    if (platform.isAndroid) {
       final deviceInfo = DeviceInfoPlugin();
       final androidInfo = await deviceInfo.androidInfo;
       final sdkVersion = androidInfo.version.sdkInt;
@@ -64,16 +71,21 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
           }
         }
       }
-    } else if (Platform.isIOS) {
+    } else if (platform.isIOS) {
       // iOS doesn't need explicit storage permission for app documents
       setState(() => _hasStoragePermission = true);
     } else {
+      // Linux, macOS, Windows: Direct file system access
       setState(() => _hasStoragePermission = true);
     }
   }
 
   Future<bool> _requestStoragePermission() async {
-    if (!Platform.isAndroid) return true;
+    if (platform.isIOS) return true;
+    if (!platform.isAndroid) {
+      // Linux, macOS, Windows: Direct file system access
+      return true;
+    }
     // SAF on Android 10+ doesn't need MANAGE_EXTERNAL_STORAGE
     if (_androidSdkVersion >= 29) return true;
 
@@ -110,7 +122,7 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
   }
 
   Future<void> _pickLibraryFolder() async {
-    if (Platform.isAndroid && _androidSdkVersion >= 29) {
+    if (platform.isAndroid && _androidSdkVersion >= 29) {
       // Use SAF tree picker - no MANAGE_EXTERNAL_STORAGE needed
       final result = await PlatformBridge.pickSafTree();
       if (result != null) {
@@ -131,9 +143,8 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
         if (Platform.isIOS) {
           // On iOS, create a security-scoped bookmark so we can access
           // this folder across app restarts and from the Go backend.
-          final bookmark = await PlatformBridge.createIosBookmarkFromPath(
-            result,
-          );
+          final bookmark =
+              await PlatformBridge.createIosBookmarkFromPath(result);
           if (bookmark != null && bookmark.isNotEmpty) {
             ref
                 .read(settingsProvider.notifier)
@@ -179,13 +190,11 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
       return;
     }
 
-    await ref
-        .read(localLibraryProvider.notifier)
-        .startScan(
-          libraryPath,
-          forceFullScan: forceFullScan,
-          iosBookmark: iosBookmark.isNotEmpty ? iosBookmark : null,
-        );
+    await ref.read(localLibraryProvider.notifier).startScan(
+      libraryPath,
+      forceFullScan: forceFullScan,
+      iosBookmark: iosBookmark.isNotEmpty ? iosBookmark : null,
+    );
   }
 
   Future<void> _cancelScan() async {
@@ -255,7 +264,7 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
 
   void _showAutoScanPicker(BuildContext context, String current) {
     final colorScheme = Theme.of(context).colorScheme;
-    showModalBottomSheet<void>(
+    showModalBottomSheet(
       context: context,
       useRootNavigator: true,
       backgroundColor: colorScheme.surfaceContainerHigh,
@@ -271,9 +280,10 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
               padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
               child: Text(
                 context.l10n.libraryAutoScan,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(context)
+                    .textTheme
+                    .titleLarge
+                    ?.copyWith(fontWeight: FontWeight.bold),
               ),
             ),
             Padding(
@@ -291,9 +301,7 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
               selected: current == 'off',
               colorScheme: colorScheme,
               onTap: () {
-                ref
-                    .read(settingsProvider.notifier)
-                    .setLocalLibraryAutoScan('off');
+                ref.read(settingsProvider.notifier).setLocalLibraryAutoScan('off');
                 Navigator.pop(context);
               },
             ),
@@ -303,9 +311,7 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
               selected: current == 'on_open',
               colorScheme: colorScheme,
               onTap: () {
-                ref
-                    .read(settingsProvider.notifier)
-                    .setLocalLibraryAutoScan('on_open');
+                ref.read(settingsProvider.notifier).setLocalLibraryAutoScan('on_open');
                 Navigator.pop(context);
               },
             ),
@@ -315,9 +321,7 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
               selected: current == 'daily',
               colorScheme: colorScheme,
               onTap: () {
-                ref
-                    .read(settingsProvider.notifier)
-                    .setLocalLibraryAutoScan('daily');
+                ref.read(settingsProvider.notifier).setLocalLibraryAutoScan('daily');
                 Navigator.pop(context);
               },
             ),
@@ -327,9 +331,7 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
               selected: current == 'weekly',
               colorScheme: colorScheme,
               onTap: () {
-                ref
-                    .read(settingsProvider.notifier)
-                    .setLocalLibraryAutoScan('weekly');
+                ref.read(settingsProvider.notifier).setLocalLibraryAutoScan('weekly');
                 Navigator.pop(context);
               },
             ),
@@ -449,15 +451,9 @@ class _LibrarySettingsPageState extends ConsumerState<LibrarySettingsPage> {
                   child: SettingsItem(
                     icon: Icons.autorenew_rounded,
                     title: context.l10n.libraryAutoScan,
-                    subtitle: _getAutoScanLabel(
-                      context,
-                      settings.localLibraryAutoScan,
-                    ),
+                    subtitle: _getAutoScanLabel(context, settings.localLibraryAutoScan),
                     onTap: settings.localLibraryEnabled
-                        ? () => _showAutoScanPicker(
-                            context,
-                            settings.localLibraryAutoScan,
-                          )
+                        ? () => _showAutoScanPicker(context, settings.localLibraryAutoScan)
                         : null,
                     showDivider: false,
                   ),
@@ -962,7 +958,9 @@ class _AutoScanOption extends StatelessWidget {
     return ListTile(
       leading: Icon(icon),
       title: Text(title),
-      trailing: selected ? Icon(Icons.check, color: colorScheme.primary) : null,
+      trailing: selected
+          ? Icon(Icons.check, color: colorScheme.primary)
+          : null,
       onTap: onTap,
     );
   }

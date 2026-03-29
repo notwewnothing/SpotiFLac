@@ -4,7 +4,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/providers/store_provider.dart';
 import 'package:spotiflac_android/widgets/settings_group.dart';
-import 'package:spotiflac_android/widgets/animation_utils.dart';
 import 'package:spotiflac_android/screens/store/extension_details_screen.dart';
 import 'package:spotiflac_android/utils/app_bar_layout.dart';
 
@@ -59,9 +58,7 @@ class _StoreTabState extends ConsumerState<StoreTab> {
     final downloadingId = ref.watch(
       storeProvider.select((s) => s.downloadingId),
     );
-    final hasRegistryUrl = ref.watch(
-      storeProvider.select((s) => s.hasRegistryUrl),
-    );
+    final hasRegistryUrl = ref.watch(storeProvider.select((s) => s.hasRegistryUrl));
     final registryUrl = ref.watch(storeProvider.select((s) => s.registryUrl));
     final filteredExtensions = StoreState(
       extensions: extensions,
@@ -142,7 +139,7 @@ class _StoreTabState extends ConsumerState<StoreTab> {
                           prefixIcon: const Icon(Icons.search),
                           suffixIcon: value.text.isNotEmpty
                               ? IconButton(
-                                  tooltip: 'Clear',
+                                  tooltip: 'Clear search',
                                   icon: const Icon(Icons.clear),
                                   onPressed: () {
                                     _searchController.clear();
@@ -154,37 +151,23 @@ class _StoreTabState extends ConsumerState<StoreTab> {
                               : null,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(28),
-                            borderSide: BorderSide(
-                              color: colorScheme.outlineVariant,
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(28),
-                            borderSide: BorderSide(
-                              color: colorScheme.outlineVariant,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(28),
-                            borderSide: BorderSide(
-                              color: colorScheme.primary,
-                              width: 2,
-                            ),
+                            borderSide: BorderSide.none,
                           ),
                           filled: true,
-                          fillColor: colorScheme.surfaceContainerHighest,
+                          fillColor:
+                              Theme.of(context).brightness == Brightness.dark
+                              ? Color.alphaBlend(
+                                  Colors.white.withValues(alpha: 0.08),
+                                  colorScheme.surface,
+                                )
+                              : colorScheme.surfaceContainerHighest,
                           contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 16,
+                            horizontal: 16,
+                            vertical: 12,
                           ),
                         ),
                         onChanged: (value) {
-                          ref
-                              .read(storeProvider.notifier)
-                              .setSearchQuery(value);
-                        },
-                        onTapOutside: (_) {
-                          FocusScope.of(context).unfocus();
+                          ref.read(storeProvider.notifier).setSearchQuery(value);
                         },
                       );
                     },
@@ -248,8 +231,7 @@ class _StoreTabState extends ConsumerState<StoreTab> {
                       _CategoryChip(
                         label: context.l10n.storeFilterIntegration,
                         icon: Icons.link,
-                        isSelected:
-                            selectedCategory == StoreCategory.integration,
+                        isSelected: selectedCategory == StoreCategory.integration,
                         onTap: () => ref
                             .read(storeProvider.notifier)
                             .setCategory(StoreCategory.integration),
@@ -260,11 +242,8 @@ class _StoreTabState extends ConsumerState<StoreTab> {
               ),
 
               if (isLoading && extensions.isEmpty)
-                const SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.all(16),
-                    child: TrackListSkeleton(itemCount: 6),
-                  ),
+                const SliverFillRemaining(
+                  child: Center(child: CircularProgressIndicator()),
                 )
               else if (error != null && extensions.isEmpty)
                 SliverFillRemaining(child: _buildErrorState(error, colorScheme))
@@ -330,9 +309,9 @@ class _StoreTabState extends ConsumerState<StoreTab> {
             const SizedBox(height: 24),
             Text(
               context.l10n.storeAddRepoTitle,
-              style: Theme.of(
-                context,
-              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
@@ -343,22 +322,15 @@ class _StoreTabState extends ConsumerState<StoreTab> {
                 labelText: context.l10n.storeRepoUrlLabel,
                 prefixIcon: const Icon(Icons.link),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(28),
-                  borderSide: BorderSide(color: colorScheme.outlineVariant),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(28),
-                  borderSide: BorderSide(color: colorScheme.outlineVariant),
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: colorScheme.outline),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(28),
+                  borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(color: colorScheme.primary, width: 2),
-                ),
-                filled: true,
-                fillColor: colorScheme.surfaceContainerHighest,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 16,
                 ),
               ),
               keyboardType: TextInputType.url,
@@ -375,11 +347,7 @@ class _StoreTabState extends ConsumerState<StoreTab> {
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.error_outline,
-                      size: 20,
-                      color: colorScheme.onErrorContainer,
-                    ),
+                    Icon(Icons.error_outline, size: 20, color: colorScheme.onErrorContainer),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -416,7 +384,7 @@ class _StoreTabState extends ConsumerState<StoreTab> {
 
   void _showChangeRepoDialog(String currentUrl) {
     final changeUrlController = TextEditingController(text: currentUrl);
-    showDialog<void>(
+    showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(context.l10n.storeRepoDialogTitle),
@@ -448,31 +416,7 @@ class _StoreTabState extends ConsumerState<StoreTab> {
                 labelText: context.l10n.storeNewRepoUrlLabel,
                 prefixIcon: const Icon(Icons.link),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(28),
-                  borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.outlineVariant,
-                  ),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(28),
-                  borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.outlineVariant,
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(28),
-                  borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.primary,
-                    width: 2,
-                  ),
-                ),
-                filled: true,
-                fillColor: Theme.of(
-                  context,
-                ).colorScheme.surfaceContainerHighest,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 16,
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
               keyboardType: TextInputType.url,
@@ -559,9 +503,7 @@ class _StoreTabState extends ConsumerState<StoreTab> {
           ),
           const SizedBox(height: 16),
           Text(
-            hasFilters
-                ? context.l10n.storeEmptyNoResults
-                : context.l10n.storeEmptyNoExtensions,
+            hasFilters ? context.l10n.storeEmptyNoResults : context.l10n.storeEmptyNoExtensions,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),
@@ -583,7 +525,7 @@ class _StoreTabState extends ConsumerState<StoreTab> {
 
   void _showExtensionDetails(StoreExtension ext) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(
+      MaterialPageRoute(
         builder: (context) => ExtensionDetailsScreen(extension: ext),
       ),
     );

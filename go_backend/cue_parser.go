@@ -13,6 +13,7 @@ import (
 
 // CueSheet represents a parsed .cue file
 type CueSheet struct {
+	// Album-level metadata
 	Performer string     `json:"performer"`
 	Title     string     `json:"title"`
 	FileName  string     `json:"file_name"`
@@ -31,6 +32,7 @@ type CueTrack struct {
 	Performer string `json:"performer"`
 	ISRC      string `json:"isrc,omitempty"`
 	Composer  string `json:"composer,omitempty"`
+	// Index positions in seconds (fractional)
 	StartTime float64 `json:"start_time"` // INDEX 01 in seconds
 	PreGap    float64 `json:"pre_gap"`    // INDEX 00 in seconds (or -1 if not present)
 }
@@ -80,6 +82,7 @@ func ParseCueFile(cuePath string) (*CueSheet, error) {
 			continue
 		}
 
+		// Handle BOM at start of file
 		if strings.HasPrefix(line, "\xef\xbb\xbf") {
 			line = strings.TrimPrefix(line, "\xef\xbb\xbf")
 			line = strings.TrimSpace(line)
@@ -87,6 +90,7 @@ func ParseCueFile(cuePath string) (*CueSheet, error) {
 
 		upper := strings.ToUpper(line)
 
+		// REM commands (album-level metadata)
 		if strings.HasPrefix(upper, "REM ") {
 			matches := reRemCommand.FindStringSubmatch(line)
 			if len(matches) == 3 {
@@ -132,6 +136,9 @@ func ParseCueFile(cuePath string) (*CueSheet, error) {
 
 		if strings.HasPrefix(upper, "FILE ") {
 			rest := line[len("FILE "):]
+			// Extract filename and type
+			// Format: FILE "filename.flac" WAVE
+			// or: FILE filename.flac WAVE
 			fname, ftype := parseCueFileLine(rest)
 			sheet.FileName = fname
 			sheet.FileType = ftype
@@ -139,6 +146,7 @@ func ParseCueFile(cuePath string) (*CueSheet, error) {
 		}
 
 		if strings.HasPrefix(upper, "TRACK ") {
+			// Save previous track
 			if currentTrack != nil {
 				sheet.Tracks = append(sheet.Tracks, *currentTrack)
 			}
@@ -176,6 +184,7 @@ func ParseCueFile(cuePath string) (*CueSheet, error) {
 			continue
 		}
 
+		// SONGWRITER (used as composer sometimes)
 		if strings.HasPrefix(upper, "SONGWRITER ") {
 			value := unquoteCue(line[len("SONGWRITER "):])
 			if currentTrack != nil {
@@ -187,6 +196,7 @@ func ParseCueFile(cuePath string) (*CueSheet, error) {
 		}
 	}
 
+	// Don't forget the last track
 	if currentTrack != nil {
 		sheet.Tracks = append(sheet.Tracks, *currentTrack)
 	}

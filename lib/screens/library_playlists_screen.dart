@@ -8,7 +8,6 @@ import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/providers/library_collections_provider.dart';
 import 'package:spotiflac_android/screens/library_tracks_folder_screen.dart';
 import 'package:spotiflac_android/services/cover_cache_manager.dart';
-import 'package:spotiflac_android/widgets/bottom_sheet_option_tile.dart';
 import 'package:spotiflac_android/utils/app_bar_layout.dart';
 
 class LibraryPlaylistsScreen extends ConsumerWidget {
@@ -119,7 +118,7 @@ class LibraryPlaylistsScreen extends ConsumerWidget {
                   ),
                   onTap: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute<void>(
+                      MaterialPageRoute(
                         builder: (_) => LibraryTracksFolderScreen(
                           mode: LibraryTracksFolderMode.playlist,
                           playlistId: playlist.id,
@@ -149,7 +148,7 @@ class LibraryPlaylistsScreen extends ConsumerWidget {
   ) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    showModalBottomSheet<void>(
+    showModalBottomSheet(
       context: context,
       useRootNavigator: true,
       backgroundColor: colorScheme.surfaceContainerHigh,
@@ -211,7 +210,7 @@ class LibraryPlaylistsScreen extends ConsumerWidget {
               color: colorScheme.outlineVariant.withValues(alpha: 0.5),
             ),
 
-            BottomSheetOptionTile(
+            _PlaylistOptionTile(
               icon: Icons.edit_outlined,
               title: context.l10n.collectionRenamePlaylist,
               onTap: () {
@@ -225,7 +224,7 @@ class LibraryPlaylistsScreen extends ConsumerWidget {
               },
             ),
 
-            BottomSheetOptionTile(
+            _PlaylistOptionTile(
               icon: Icons.image_outlined,
               title: context.l10n.collectionPlaylistChangeCover,
               onTap: () {
@@ -234,7 +233,7 @@ class LibraryPlaylistsScreen extends ConsumerWidget {
               },
             ),
 
-            BottomSheetOptionTile(
+            _PlaylistOptionTile(
               icon: Icons.delete_outline,
               iconColor: colorScheme.error,
               title: context.l10n.collectionDeletePlaylist,
@@ -541,6 +540,43 @@ class LibraryPlaylistsScreen extends ConsumerWidget {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(context.l10n.collectionPlaylistDeleted)),
+    );
+  }
+}
+
+/// Styled like _OptionTile in track_collection_quick_actions.dart
+class _PlaylistOptionTile extends StatelessWidget {
+  final IconData icon;
+  final Color? iconColor;
+  final String title;
+  final VoidCallback onTap;
+
+  const _PlaylistOptionTile({
+    required this.icon,
+    this.iconColor,
+    required this.title,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+      leading: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: colorScheme.primaryContainer,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(
+          icon,
+          color: iconColor ?? colorScheme.onPrimaryContainer,
+          size: 20,
+        ),
+      ),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
+      onTap: onTap,
     );
   }
 }

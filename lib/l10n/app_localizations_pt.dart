@@ -760,36 +760,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get searchPlaylists => 'Playlists';
 
   @override
-  String get searchSortTitle => 'Sort Results';
-
-  @override
-  String get searchSortDefault => 'Default';
-
-  @override
-  String get searchSortTitleAZ => 'Title (A-Z)';
-
-  @override
-  String get searchSortTitleZA => 'Title (Z-A)';
-
-  @override
-  String get searchSortArtistAZ => 'Artist (A-Z)';
-
-  @override
-  String get searchSortArtistZA => 'Artist (Z-A)';
-
-  @override
-  String get searchSortDurationShort => 'Duration (Shortest)';
-
-  @override
-  String get searchSortDurationLong => 'Duration (Longest)';
-
-  @override
-  String get searchSortDateOldest => 'Release Date (Oldest)';
-
-  @override
-  String get searchSortDateNewest => 'Release Date (Newest)';
-
-  @override
   String get tooltipPlay => 'Play';
 
   @override
@@ -1420,40 +1390,18 @@ class AppLocalizationsPt extends AppLocalizations {
   String get qualityHiResFlacMaxSubtitle => '24-bit / up to 192kHz';
 
   @override
-  String get downloadLossy320 => 'Lossy 320kbps';
-
-  @override
-  String get downloadLossyFormat => 'Lossy Format';
-
-  @override
-  String get downloadLossy320Format => 'Lossy 320kbps Format';
-
-  @override
-  String get downloadLossy320FormatDesc =>
-      'Choose the output format for Tidal 320kbps lossy downloads. The original AAC stream will be converted to your selected format.';
-
-  @override
-  String get downloadLossyMp3 => 'MP3 320kbps';
-
-  @override
-  String get downloadLossyMp3Subtitle => 'Best compatibility, ~10MB per track';
-
-  @override
-  String get downloadLossyOpus256 => 'Opus 256kbps';
-
-  @override
-  String get downloadLossyOpus256Subtitle =>
-      'Best quality Opus, ~8MB per track';
-
-  @override
-  String get downloadLossyOpus128 => 'Opus 128kbps';
-
-  @override
-  String get downloadLossyOpus128Subtitle => 'Smallest size, ~4MB per track';
-
-  @override
   String get qualityNote =>
       'Actual quality depends on track availability from the service';
+
+  @override
+  String get youtubeQualityNote =>
+      'YouTube provides lossy audio only. Not part of lossless fallback.';
+
+  @override
+  String get youtubeOpusBitrateTitle => 'YouTube Opus Bitrate';
+
+  @override
+  String get youtubeMp3BitrateTitle => 'YouTube MP3 Bitrate';
 
   @override
   String get downloadAskBeforeDownload => 'Ask Before Download';
@@ -1551,13 +1499,6 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get albumFolderArtistAlbumSinglesSubtitle =>
       'Artist/Album/ and Artist/Singles/';
-
-  @override
-  String get albumFolderArtistAlbumFlat => 'Artist / Album (Singles flat)';
-
-  @override
-  String get albumFolderArtistAlbumFlatSubtitle =>
-      'Artist/Album/ and Artist/song.flac';
 
   @override
   String get downloadedAlbumDeleteSelected => 'Delete Selected';
@@ -2745,22 +2686,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get downloadArtistNameFilters => 'Artist Name Filters';
 
   @override
-  String get downloadCreatePlaylistSourceFolder =>
-      'Create playlist source folder';
-
-  @override
-  String get downloadCreatePlaylistSourceFolderEnabled =>
-      'Playlist downloads use Playlist/ plus your normal folder structure.';
-
-  @override
-  String get downloadCreatePlaylistSourceFolderDisabled =>
-      'Playlist downloads use the normal folder structure only.';
-
-  @override
-  String get downloadCreatePlaylistSourceFolderRedundant =>
-      'By Playlist already places downloads inside a playlist folder.';
-
-  @override
   String get downloadSongLinkRegion => 'SongLink Region';
 
   @override
@@ -2990,108 +2915,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get editMetadataSelectEmpty => 'Empty only';
-
-  @override
-  String queueDownloadingCount(int count) {
-    return 'Downloading ($count)';
-  }
-
-  @override
-  String get queueDownloadedHeader => 'Downloaded';
-
-  @override
-  String get queueFilteringIndicator => 'Filtering...';
-
-  @override
-  String queueTrackCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count tracks',
-      one: '1 track',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String queueAlbumCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count albums',
-      one: '1 album',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get queueEmptyAlbums => 'No album downloads';
-
-  @override
-  String get queueEmptyAlbumsSubtitle =>
-      'Download multiple tracks from an album to see them here';
-
-  @override
-  String get queueEmptySingles => 'No single downloads';
-
-  @override
-  String get queueEmptySinglesSubtitle =>
-      'Single track downloads will appear here';
-
-  @override
-  String get queueEmptyHistory => 'No download history';
-
-  @override
-  String get queueEmptyHistorySubtitle => 'Downloaded tracks will appear here';
-
-  @override
-  String get selectionAllPlaylistsSelected => 'All playlists selected';
-
-  @override
-  String get selectionTapPlaylistsToSelect => 'Tap playlists to select';
-
-  @override
-  String get selectionSelectPlaylistsToDelete => 'Select playlists to delete';
-
-  @override
-  String get audioAnalysisTitle => 'Audio Quality Analysis';
-
-  @override
-  String get audioAnalysisDescription =>
-      'Verify lossless quality with spectrum analysis';
-
-  @override
-  String get audioAnalysisAnalyzing => 'Analyzing audio...';
-
-  @override
-  String get audioAnalysisSampleRate => 'Sample Rate';
-
-  @override
-  String get audioAnalysisBitDepth => 'Bit Depth';
-
-  @override
-  String get audioAnalysisChannels => 'Channels';
-
-  @override
-  String get audioAnalysisDuration => 'Duration';
-
-  @override
-  String get audioAnalysisNyquist => 'Nyquist';
-
-  @override
-  String get audioAnalysisFileSize => 'Size';
-
-  @override
-  String get audioAnalysisDynamicRange => 'Dynamic Range';
-
-  @override
-  String get audioAnalysisPeak => 'Peak';
-
-  @override
-  String get audioAnalysisRms => 'RMS';
-
-  @override
-  String get audioAnalysisSamples => 'Samples';
 }
 
 /// The translations for Portuguese, as used in Portugal (`pt_PT`).
@@ -3455,7 +3278,7 @@ class AppLocalizationsPtPt extends AppLocalizationsPt {
 
   @override
   String get aboutAppDescription =>
-      'Download Spotify tracks in lossless quality from Tidal and Qobuz.';
+      'Baixe faixas do Spotify em qualidade sem perdas do Tidal e Qobuz.';
 
   @override
   String get artistAlbums => 'Álbuns';
@@ -3790,17 +3613,6 @@ class AppLocalizationsPtPt extends AppLocalizationsPt {
   String get errorNoTracksFound => 'Nenhuma faixa encontrada';
 
   @override
-  String get errorUrlNotRecognized => 'Link not recognized';
-
-  @override
-  String get errorUrlNotRecognizedMessage =>
-      'This link is not supported. Make sure the URL is correct and a compatible extension is installed.';
-
-  @override
-  String get errorUrlFetchFailed =>
-      'Failed to load content from this link. Please try again.';
-
-  @override
   String errorMissingExtensionSource(String item) {
     return 'Não é possível carregar $item: faltando a fonte da extensão';
   }
@@ -3864,21 +3676,7 @@ class AppLocalizationsPtPt extends AppLocalizationsPt {
   String get filenameFormat => 'Formato do Nome do Arquivo';
 
   @override
-  String get filenameShowAdvancedTags => 'Show advanced tags';
-
-  @override
-  String get filenameShowAdvancedTagsDescription =>
-      'Enable formatted tags for track padding and date patterns';
-
-  @override
   String get folderOrganizationNone => 'Nenhuma organização';
-
-  @override
-  String get folderOrganizationByPlaylist => 'By Playlist';
-
-  @override
-  String get folderOrganizationByPlaylistSubtitle =>
-      'Separate folder for each playlist';
 
   @override
   String get folderOrganizationByArtist => 'Por Artista';
@@ -4461,6 +4259,10 @@ class AppLocalizationsPtPt extends AppLocalizationsPt {
       'A qualidade real depende da faixa que estiver disponível no serviço';
 
   @override
+  String get youtubeQualityNote =>
+      'YouTube provides lossy audio only. Not part of lossless fallback.';
+
+  @override
   String get downloadAskBeforeDownload => 'Perguntar qualidade antes de baixar';
 
   @override
@@ -4793,17 +4595,6 @@ class AppLocalizationsPtPt extends AppLocalizationsPt {
       'Scans your existing music collection to detect duplicates when downloading. Supports FLAC, M4A, MP3, Opus, and OGG formats. Metadata is read from file tags when available.';
 
   @override
-  String libraryTracksUnit(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'tracks',
-      one: 'track',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String libraryLastScanned(String time) {
     return 'Last scanned: $time';
   }
@@ -4929,7 +4720,7 @@ class AppLocalizationsPtPt extends AppLocalizationsPt {
 
   @override
   String get tutorialWelcomeTip2 =>
-      'Get FLAC quality audio from Tidal, Qobuz, or Deezer';
+      'Obtenha áudio em qualidade FLAC do Tidal, Qobuz ou Deezer';
 
   @override
   String get tutorialWelcomeTip3 =>
@@ -5245,258 +5036,6 @@ class AppLocalizationsPtPt extends AppLocalizationsPt {
 
   @override
   String get trackConvertFailed => 'Conversion failed';
-
-  @override
-  String get cueSplitTitle => 'Split CUE Sheet';
-
-  @override
-  String get cueSplitSubtitle => 'Split CUE+FLAC into individual tracks';
-
-  @override
-  String cueSplitAlbum(String album) {
-    return 'Album: $album';
-  }
-
-  @override
-  String cueSplitArtist(String artist) {
-    return 'Artist: $artist';
-  }
-
-  @override
-  String cueSplitTrackCount(int count) {
-    return '$count tracks';
-  }
-
-  @override
-  String get cueSplitConfirmTitle => 'Split CUE Album';
-
-  @override
-  String cueSplitConfirmMessage(String album, int count) {
-    return 'Split \"$album\" into $count individual FLAC files?\n\nFiles will be saved to the same directory.';
-  }
-
-  @override
-  String cueSplitSplitting(int current, int total) {
-    return 'Splitting CUE sheet... ($current/$total)';
-  }
-
-  @override
-  String cueSplitSuccess(int count) {
-    return 'Split into $count tracks successfully';
-  }
-
-  @override
-  String get cueSplitFailed => 'CUE split failed';
-
-  @override
-  String get cueSplitNoAudioFile => 'Audio file not found for this CUE sheet';
-
-  @override
-  String get cueSplitButton => 'Split into Tracks';
-
-  @override
-  String get actionCreate => 'Create';
-
-  @override
-  String get collectionFoldersTitle => 'My folders';
-
-  @override
-  String get collectionWishlist => 'Wishlist';
-
-  @override
-  String get collectionLoved => 'Loved';
-
-  @override
-  String get collectionPlaylists => 'Playlists';
-
-  @override
-  String get collectionPlaylist => 'Playlist';
-
-  @override
-  String get collectionAddToPlaylist => 'Add to playlist';
-
-  @override
-  String get collectionCreatePlaylist => 'Create playlist';
-
-  @override
-  String get collectionNoPlaylistsYet => 'No playlists yet';
-
-  @override
-  String get collectionNoPlaylistsSubtitle =>
-      'Create a playlist to start categorizing tracks';
-
-  @override
-  String collectionPlaylistTracks(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count tracks',
-      one: '1 track',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String collectionAddedToPlaylist(String playlistName) {
-    return 'Added to \"$playlistName\"';
-  }
-
-  @override
-  String collectionAlreadyInPlaylist(String playlistName) {
-    return 'Already in \"$playlistName\"';
-  }
-
-  @override
-  String get collectionPlaylistCreated => 'Playlist created';
-
-  @override
-  String get collectionPlaylistNameHint => 'Playlist name';
-
-  @override
-  String get collectionPlaylistNameRequired => 'Playlist name is required';
-
-  @override
-  String get collectionRenamePlaylist => 'Rename playlist';
-
-  @override
-  String get collectionDeletePlaylist => 'Delete playlist';
-
-  @override
-  String collectionDeletePlaylistMessage(String playlistName) {
-    return 'Delete \"$playlistName\" and all tracks inside it?';
-  }
-
-  @override
-  String get collectionPlaylistDeleted => 'Playlist deleted';
-
-  @override
-  String get collectionPlaylistRenamed => 'Playlist renamed';
-
-  @override
-  String get collectionWishlistEmptyTitle => 'Wishlist is empty';
-
-  @override
-  String get collectionWishlistEmptySubtitle =>
-      'Tap + on tracks to save what you want to download later';
-
-  @override
-  String get collectionLovedEmptyTitle => 'Loved folder is empty';
-
-  @override
-  String get collectionLovedEmptySubtitle =>
-      'Tap love on tracks to keep your favorites';
-
-  @override
-  String get collectionPlaylistEmptyTitle => 'Playlist is empty';
-
-  @override
-  String get collectionPlaylistEmptySubtitle =>
-      'Long-press + on any track to add it here';
-
-  @override
-  String get collectionRemoveFromPlaylist => 'Remove from playlist';
-
-  @override
-  String get collectionRemoveFromFolder => 'Remove from folder';
-
-  @override
-  String collectionRemoved(String trackName) {
-    return '\"$trackName\" removed';
-  }
-
-  @override
-  String collectionAddedToLoved(String trackName) {
-    return '\"$trackName\" added to Loved';
-  }
-
-  @override
-  String collectionRemovedFromLoved(String trackName) {
-    return '\"$trackName\" removed from Loved';
-  }
-
-  @override
-  String collectionAddedToWishlist(String trackName) {
-    return '\"$trackName\" added to Wishlist';
-  }
-
-  @override
-  String collectionRemovedFromWishlist(String trackName) {
-    return '\"$trackName\" removed from Wishlist';
-  }
-
-  @override
-  String get trackOptionAddToLoved => 'Add to Loved';
-
-  @override
-  String get trackOptionRemoveFromLoved => 'Remove from Loved';
-
-  @override
-  String get trackOptionAddToWishlist => 'Add to Wishlist';
-
-  @override
-  String get trackOptionRemoveFromWishlist => 'Remove from Wishlist';
-
-  @override
-  String get collectionPlaylistChangeCover => 'Change cover image';
-
-  @override
-  String get collectionPlaylistRemoveCover => 'Remove cover image';
-
-  @override
-  String selectionShareCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'tracks',
-      one: 'track',
-    );
-    return 'Share $count $_temp0';
-  }
-
-  @override
-  String get selectionShareNoFiles => 'No shareable files found';
-
-  @override
-  String selectionConvertCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'tracks',
-      one: 'track',
-    );
-    return 'Convert $count $_temp0';
-  }
-
-  @override
-  String get selectionConvertNoConvertible => 'No convertible tracks selected';
-
-  @override
-  String get selectionBatchConvertConfirmTitle => 'Batch Convert';
-
-  @override
-  String selectionBatchConvertConfirmMessage(
-    int count,
-    String format,
-    String bitrate,
-  ) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'tracks',
-      one: 'track',
-    );
-    return 'Convert $count $_temp0 to $format at $bitrate?\n\nOriginal files will be deleted after conversion.';
-  }
-
-  @override
-  String selectionBatchConvertProgress(int current, int total) {
-    return 'Converting $current of $total...';
-  }
-
-  @override
-  String selectionBatchConvertSuccess(int success, int total, String format) {
-    return 'Converted $success of $total tracks to $format';
-  }
 
   @override
   String downloadedAlbumDownloadedCount(int count) {

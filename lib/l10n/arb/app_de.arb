@@ -450,7 +450,7 @@
   "@aboutSpotiSaverDesc": {
     "description": "Credit for SpotiSaver API"
   },
-  "aboutAppDescription": "Lade Spotify-Titel in verlustfreier Qualität von Tidal und Qobuz herunter.",
+  "aboutAppDescription": "Lade Spotify-Titel in verlustfreier Qualität von Tidal, Qobuz und Amazon Music herunter.",
   "@aboutAppDescription": {
     "description": "App description in header card"
   },
@@ -555,7 +555,7 @@
   "@setupDownloadLocationTitle": {
     "description": "Download location dialog title"
   },
-  "setupDownloadLocationIosMessage": "Auf iOS werden Downloads im Dokumentenordner der App gespeichert. Du kannst sie über die Datei-App aufrufen.",
+  "setupDownloadLocationIosMessage": "Auf iOS werden Downloads im Dokumentenverzeichnis der App gespeichert. Du kannst sie über die Datei-App aufrufen.",
   "@setupDownloadLocationIosMessage": {
     "description": "iOS-specific folder info"
   },
@@ -897,18 +897,6 @@
   "@errorNoTracksFound": {
     "description": "Error - search returned no results"
   },
-  "errorUrlNotRecognized": "Link wurde nicht erkannt",
-  "@errorUrlNotRecognized": {
-    "description": "Error title - URL not handled by any extension or service"
-  },
-  "errorUrlNotRecognizedMessage": "Dieser Link ist inkompatibel. Prüfe die URL und stelle sicher, dass eine kompatible Erweiterung installiert ist.",
-  "@errorUrlNotRecognizedMessage": {
-    "description": "Error message - URL not recognized explanation"
-  },
-  "errorUrlFetchFailed": "Laden fehlgeschlagen. Bitte erneut versuchen.",
-  "@errorUrlFetchFailed": {
-    "description": "Error message - generic URL fetch failure"
-  },
   "errorMissingExtensionSource": "Kann {item} nicht lade wegen fehlender Erweiterungsquelle",
   "@errorMissingExtensionSource": {
     "description": "Error - extension source not available",
@@ -959,7 +947,7 @@
   "@selectionAllSelected": {
     "description": "Status - all items selected"
   },
-  "selectionSelectToDelete": "Titel zum Löschen wählen",
+  "selectionSelectToDelete": "Titel zum Löschen auswählen",
   "@selectionSelectToDelete": {
     "description": "Placeholder when nothing selected"
   },
@@ -987,7 +975,7 @@
   "@searchArtists": {
     "description": "Search result category - artists"
   },
-  "searchAlbums": "Alben",
+  "searchAlbums": "Albums",
   "@searchAlbums": {
     "description": "Search result category - albums"
   },
@@ -1015,14 +1003,6 @@
   "@folderOrganizationNone": {
     "description": "Folder option - flat structure"
   },
-  "folderOrganizationByPlaylist": "Nach Playlist",
-  "@folderOrganizationByPlaylist": {
-    "description": "Folder option - playlist folders"
-  },
-  "folderOrganizationByPlaylistSubtitle": "Ordner für jede Playlist trennen",
-  "@folderOrganizationByPlaylistSubtitle": {
-    "description": "Subtitle for playlist folder option"
-  },
   "folderOrganizationByArtist": "Nach Künstler",
   "@folderOrganizationByArtist": {
     "description": "Folder option - artist folders"
@@ -1039,7 +1019,7 @@
   "@folderOrganizationDescription": {
     "description": "Folder organization sheet description"
   },
-  "folderOrganizationNoneSubtitle": "Alle Dateien im Download-Ordner",
+  "folderOrganizationNoneSubtitle": "Alle Dateien im Download-Verzeichnis",
   "@folderOrganizationNoneSubtitle": {
     "description": "Subtitle for no organization option"
   },
@@ -1117,7 +1097,7 @@
   },
   "providerBuiltIn": "Integriert",
   "@providerBuiltIn": {
-    "description": "Label for built-in providers (Tidal/Qobuz)"
+    "description": "Label for built-in providers (Tidal/Qobuz/Amazon)"
   },
   "providerExtension": "Erweiterung",
   "@providerExtension": {
@@ -1773,11 +1753,23 @@
   "@qualityNote": {
     "description": "Note about quality availability"
   },
+  "youtubeQualityNote": "YouTube bietet nur verlustbehaftete Audioqualität. Deswegen ist es kein Teil des verlustfreien Fallbacks.",
+  "@youtubeQualityNote": {
+    "description": "Note for YouTube service explaining lossy-only quality"
+  },
+  "youtubeOpusBitrateTitle": "YouTube Opus Bitrate",
+  "@youtubeOpusBitrateTitle": {
+    "description": "Title for YouTube Opus bitrate setting"
+  },
+  "youtubeMp3BitrateTitle": "YouTube MP3 Bitrate",
+  "@youtubeMp3BitrateTitle": {
+    "description": "Title for YouTube MP3 bitrate setting"
+  },
   "downloadAskBeforeDownload": "Qualität vor Download fragen",
   "@downloadAskBeforeDownload": {
     "description": "Setting - show quality picker"
   },
-  "downloadDirectory": "Download-Ordner",
+  "downloadDirectory": "Downloadverzeichnis",
   "@downloadDirectory": {
     "description": "Setting - download folder"
   },
@@ -1785,15 +1777,15 @@
   "@downloadSeparateSinglesFolder": {
     "description": "Setting - separate folder for singles"
   },
-  "downloadAlbumFolderStructure": "Album-Ordnerstruktur",
+  "downloadAlbumFolderStructure": "Album Folder Structure",
   "@downloadAlbumFolderStructure": {
     "description": "Setting - album folder organization"
   },
-  "downloadUseAlbumArtistForFolders": "Album-Künstler für Ordner verwenden",
+  "downloadUseAlbumArtistForFolders": "Use Album Artist for folders",
   "@downloadUseAlbumArtistForFolders": {
     "description": "Setting - choose whether artist folders use Album Artist or Track Artist"
   },
-  "downloadUsePrimaryArtistOnly": "Primärer Künstler nur für Ordner",
+  "downloadUsePrimaryArtistOnly": "Primary artist only for folders",
   "@downloadUsePrimaryArtistOnly": {
     "description": "Setting - strip featured artists from folder name"
   },
@@ -1801,7 +1793,7 @@
   "@downloadUsePrimaryArtistOnlyEnabled": {
     "description": "Subtitle when primary artist only is enabled"
   },
-  "downloadUsePrimaryArtistOnlyDisabled": "Vollständiger Künstler für Ordnername",
+  "downloadUsePrimaryArtistOnlyDisabled": "Full artist string used for folder name",
   "@downloadUsePrimaryArtistOnlyDisabled": {
     "description": "Subtitle when primary artist only is disabled"
   },
@@ -1829,7 +1821,7 @@
   "@queueClearAllMessage": {
     "description": "Clear queue confirmation"
   },
-  "settingsAutoExportFailed": "Auto-Export fehlgeschlagener Downloads",
+  "settingsAutoExportFailed": "Auto-export failed downloads",
   "@settingsAutoExportFailed": {
     "description": "Setting toggle for auto-export"
   },
@@ -1857,15 +1849,15 @@
   "@albumFolderArtistAlbum": {
     "description": "Album folder option"
   },
-  "albumFolderArtistAlbumSubtitle": "Alben/Künster Name/Album Name/",
+  "albumFolderArtistAlbumSubtitle": "Albums/Artist Name/Album Name/",
   "@albumFolderArtistAlbumSubtitle": {
     "description": "Folder structure example"
   },
-  "albumFolderArtistYearAlbum": "Künstler / [Year] Album",
+  "albumFolderArtistYearAlbum": "Artist / [Year] Album",
   "@albumFolderArtistYearAlbum": {
     "description": "Album folder option with year"
   },
-  "albumFolderArtistYearAlbumSubtitle": "Alben/Künster Name/[2005] Album Name/",
+  "albumFolderArtistYearAlbumSubtitle": "Albums/Künster Name/[2005] Album Name/",
   "@albumFolderArtistYearAlbumSubtitle": {
     "description": "Folder structure example"
   },
@@ -1881,15 +1873,15 @@
   "@albumFolderYearAlbum": {
     "description": "Album folder option with year"
   },
-  "albumFolderYearAlbumSubtitle": "Alben/[2005] Album Name/",
+  "albumFolderYearAlbumSubtitle": "Albums/[2005] Album Name/",
   "@albumFolderYearAlbumSubtitle": {
     "description": "Folder structure example"
   },
-  "albumFolderArtistAlbumSingles": "Künstler / Album + Singles",
+  "albumFolderArtistAlbumSingles": "Artist / Album + Singles",
   "@albumFolderArtistAlbumSingles": {
     "description": "Album folder option with singles inside artist"
   },
-  "albumFolderArtistAlbumSinglesSubtitle": "Künstler/Album/ und Künstler/Singles/",
+  "albumFolderArtistAlbumSinglesSubtitle": "Artist/Album/ and Artist/Singles/",
   "@albumFolderArtistAlbumSinglesSubtitle": {
     "description": "Folder structure example"
   },
@@ -1932,7 +1924,7 @@
       }
     }
   },
-  "downloadedAlbumSelectToDelete": "Titel zum Löschen wählen",
+  "downloadedAlbumSelectToDelete": "Select tracks to delete",
   "@downloadedAlbumSelectToDelete": {
     "description": "Placeholder when nothing selected"
   },
@@ -2004,7 +1996,7 @@
   "@discographyAlbumsOnly": {
     "description": "Option - download only albums"
   },
-  "discographyAlbumsOnlySubtitle": "{count} Titel aus {albumCount} Alben",
+  "discographyAlbumsOnlySubtitle": "{count} Titel von {albumCount} Albums",
   "@discographyAlbumsOnlySubtitle": {
     "description": "Subtitle showing album tracks count",
     "placeholders": {
@@ -2036,7 +2028,7 @@
   "@discographySelectAlbums": {
     "description": "Option - manually select albums to download"
   },
-  "discographySelectAlbumsSubtitle": "Wähle bestimmte Alben oder Singles",
+  "discographySelectAlbumsSubtitle": "Choose specific albums or singles",
   "@discographySelectAlbumsSubtitle": {
     "description": "Subtitle for select albums option"
   },
@@ -2044,7 +2036,7 @@
   "@discographyFetchingTracks": {
     "description": "Progress - fetching album tracks"
   },
-  "discographyFetchingAlbum": "Lade {current} von {total}...",
+  "discographyFetchingAlbum": "Fetching {current} of {total}...",
   "@discographyFetchingAlbum": {
     "description": "Progress - fetching specific album",
     "placeholders": {
@@ -2069,7 +2061,7 @@
   "@discographyDownloadSelected": {
     "description": "Button - download selected albums"
   },
-  "discographyAddedToQueue": "{count} Titel zur Warteschlange hinzugefügt",
+  "discographyAddedToQueue": "Added {count} tracks to queue",
   "@discographyAddedToQueue": {
     "description": "Snackbar - tracks added from discography",
     "placeholders": {
@@ -2094,7 +2086,7 @@
   "@discographyNoAlbums": {
     "description": "Error - no albums found for artist"
   },
-  "discographyFailedToFetch": "Fehler beim Abrufen einiger Alben",
+  "discographyFailedToFetch": "Failed to fetch some albums",
   "@discographyFailedToFetch": {
     "description": "Error - some albums failed to load"
   },
@@ -2106,15 +2098,15 @@
   "@allFilesAccess": {
     "description": "Toggle for MANAGE_EXTERNAL_STORAGE permission"
   },
-  "allFilesAccessEnabledSubtitle": "Darf in jeden Ordner schreiben",
+  "allFilesAccessEnabledSubtitle": "Can write to any folder",
   "@allFilesAccessEnabledSubtitle": {
     "description": "Subtitle when all files access is enabled"
   },
-  "allFilesAccessDisabledSubtitle": "Nur auf Medienordner begrenzt",
+  "allFilesAccessDisabledSubtitle": "Limited to media folders only",
   "@allFilesAccessDisabledSubtitle": {
     "description": "Subtitle when all files access is disabled"
   },
-  "allFilesAccessDescription": "Option bei Schreibfehlern bitte aktivieren (erforderlich ab Android 13).",
+  "allFilesAccessDescription": "Aktiviere die Option, wenn beim Speichern in benutzerdefinierten Ordnern Schreibfehler auftreten. Weil Android 13+ standardmäßig den Zugriff auf bestimmte Verzeichnisse einschränkt.",
   "@allFilesAccessDescription": {
     "description": "Description explaining when to enable all files access"
   },
@@ -2130,7 +2122,7 @@
   "@settingsLocalLibrary": {
     "description": "Settings menu item - local library"
   },
-  "settingsLocalLibrarySubtitle": "Musik scannen & Duplikate erkennen",
+  "settingsLocalLibrarySubtitle": "Scan music & detect duplicates",
   "@settingsLocalLibrarySubtitle": {
     "description": "Subtitle for local library settings"
   },
@@ -2138,7 +2130,7 @@
   "@settingsCache": {
     "description": "Settings menu item - cache management"
   },
-  "settingsCacheSubtitle": "Größe anzeigen und Daten im Cache leeren",
+  "settingsCacheSubtitle": "View size and clear cached data",
   "@settingsCacheSubtitle": {
     "description": "Subtitle for cache management menu"
   },
@@ -2154,7 +2146,7 @@
   "@libraryEnableLocalLibrary": {
     "description": "Toggle to enable library scanning"
   },
-  "libraryEnableLocalLibrarySubtitle": "Scan und verfolge deine bestehende Musik",
+  "libraryEnableLocalLibrarySubtitle": "Scan and track your existing music",
   "@libraryEnableLocalLibrarySubtitle": {
     "description": "Subtitle for enable toggle"
   },
@@ -2166,7 +2158,7 @@
   "@libraryFolderHint": {
     "description": "Placeholder when no folder selected"
   },
-  "libraryShowDuplicateIndicator": "Duplikat Indikator anzeigen",
+  "libraryShowDuplicateIndicator": "Show Duplicate Indicator",
   "@libraryShowDuplicateIndicator": {
     "description": "Toggle for duplicate indicator in search"
   },
@@ -2391,7 +2383,7 @@
   "@tutorialWelcomeTip1": {
     "description": "Tutorial welcome tip 1"
   },
-  "tutorialWelcomeTip2": "Hole dir FLAC Audio von Tidal, Qobuz oder Deezer",
+  "tutorialWelcomeTip2": "Hole dir FLAC Audio von Tidal, Qobuz oder Amazon Musik",
   "@tutorialWelcomeTip2": {
     "description": "Tutorial welcome tip 2"
   },
@@ -2463,7 +2455,7 @@
   "@tutorialSettingsDesc": {
     "description": "Tutorial settings page description"
   },
-  "tutorialSettingsTip1": "Download-Ordner und Ordner-Organisation ändern",
+  "tutorialSettingsTip1": "Downloadverzeichnis und Ordnerorganisation ändern",
   "@tutorialSettingsTip1": {
     "description": "Tutorial settings tip 1"
   },
@@ -2537,7 +2529,7 @@
   "@cacheSectionMaintenance": {
     "description": "Section header for cleanup actions"
   },
-  "cacheAppDirectory": "App-Cache Ordner",
+  "cacheAppDirectory": "App-Cache Verzeichnis",
   "@cacheAppDirectory": {
     "description": "Cache item title for app cache directory"
   },
@@ -2545,7 +2537,7 @@
   "@cacheAppDirectoryDesc": {
     "description": "Description of what app cache directory contains"
   },
-  "cacheTempDirectory": "Temporärer Ordner",
+  "cacheTempDirectory": "Temporäres Verzeichnis",
   "@cacheTempDirectory": {
     "description": "Cache item title for temporary files directory"
   },
@@ -2713,7 +2705,7 @@
   "@trackEditMetadata": {
     "description": "Menu action - edit embedded metadata"
   },
-  "trackCoverSaved": "Cover in {fileName} gespeichert",
+  "trackCoverSaved": "Cover art saved to {fileName}",
   "@trackCoverSaved": {
     "description": "Snackbar after cover art saved",
     "placeholders": {
@@ -2722,7 +2714,7 @@
       }
     }
   },
-  "trackCoverNoSource": "Keine Cover Quelle vorhanden",
+  "trackCoverNoSource": "No cover art source available",
   "@trackCoverNoSource": {
     "description": "Snackbar when no cover art URL or embedded cover"
   },
@@ -2815,90 +2807,6 @@
   "trackConvertFailed": "Konvertierung fehlgeschlagen",
   "@trackConvertFailed": {
     "description": "Snackbar when conversion fails"
-  },
-  "cueSplitTitle": "CUE-Sheet aufteilen",
-  "@cueSplitTitle": {
-    "description": "Title for CUE split bottom sheet"
-  },
-  "cueSplitSubtitle": "CUE+FLAC in einzelne Titel aufteilen",
-  "@cueSplitSubtitle": {
-    "description": "Subtitle for CUE split menu item"
-  },
-  "cueSplitAlbum": "Album: {album}",
-  "@cueSplitAlbum": {
-    "description": "Album name in CUE split sheet",
-    "placeholders": {
-      "album": {
-        "type": "String"
-      }
-    }
-  },
-  "cueSplitArtist": "Künstler: {artist}",
-  "@cueSplitArtist": {
-    "description": "Artist name in CUE split sheet",
-    "placeholders": {
-      "artist": {
-        "type": "String"
-      }
-    }
-  },
-  "cueSplitTrackCount": "{count} Titel",
-  "@cueSplitTrackCount": {
-    "description": "Number of tracks in CUE sheet",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "cueSplitConfirmTitle": "CUE-Album aufteilen",
-  "@cueSplitConfirmTitle": {
-    "description": "CUE split confirmation dialog title"
-  },
-  "cueSplitConfirmMessage": "Soll „{album}“ in {count} einzelne FLAC-Dateien aufgeteilt werden?\n\nDie Dateien werden im selben Ordner gespeichert.",
-  "@cueSplitConfirmMessage": {
-    "description": "CUE split confirmation dialog message",
-    "placeholders": {
-      "album": {
-        "type": "String"
-      },
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "cueSplitSplitting": "CUE-Sheet wird geteilt... ({current}/{total})",
-  "@cueSplitSplitting": {
-    "description": "Snackbar while splitting CUE",
-    "placeholders": {
-      "current": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "cueSplitSuccess": "{count} Titel erfolgreich aufgeteilt",
-  "@cueSplitSuccess": {
-    "description": "Snackbar after successful CUE split",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "cueSplitFailed": "CUE-Aufteilung fehlgeschlagen",
-  "@cueSplitFailed": {
-    "description": "Snackbar when CUE split fails"
-  },
-  "cueSplitNoAudioFile": "Audiodatei für dieses CUE-Sheet nicht gefunden",
-  "@cueSplitNoAudioFile": {
-    "description": "Error when CUE audio file is missing"
-  },
-  "cueSplitButton": "In Titel aufteilen",
-  "@cueSplitButton": {
-    "description": "Button text to start CUE splitting"
   },
   "actionCreate": "Erstellen",
   "@actionCreate": {
@@ -3186,11 +3094,11 @@
       }
     }
   },
-  "downloadUseAlbumArtistForFoldersAlbumSubtitle": "Interpret-Ordner verwenden Album-Interpret, sofern vorhanden",
+  "downloadUseAlbumArtistForFoldersAlbumSubtitle": "Künstlerordner verwenden den Album-Interpreten, wenn verfügbar",
   "@downloadUseAlbumArtistForFoldersAlbumSubtitle": {
     "description": "Subtitle when Album Artist is used for folder naming"
   },
-  "downloadUseAlbumArtistForFoldersTrackSubtitle": "Künstler-Ordner nur für Titel-Künstler",
+  "downloadUseAlbumArtistForFoldersTrackSubtitle": "Artist folders use Track Artist only",
   "@downloadUseAlbumArtistForFoldersTrackSubtitle": {
     "description": "Subtitle when Track Artist is used for folder naming"
   }

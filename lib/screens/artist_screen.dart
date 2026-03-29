@@ -14,13 +14,11 @@ import 'package:spotiflac_android/providers/local_library_provider.dart';
 import 'package:spotiflac_android/providers/playback_provider.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/utils/file_access.dart';
-import 'package:spotiflac_android/utils/string_utils.dart';
 import 'package:spotiflac_android/screens/album_screen.dart';
 import 'package:spotiflac_android/screens/home_tab.dart'
     show ExtensionAlbumScreen;
 import 'package:spotiflac_android/widgets/download_service_picker.dart';
 import 'package:spotiflac_android/widgets/track_collection_quick_actions.dart';
-import 'package:spotiflac_android/widgets/animation_utils.dart';
 import 'package:spotiflac_android/utils/clickable_metadata.dart';
 
 class _ArtistCache {
@@ -151,16 +149,6 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
     final tileSize = _artistAlbumTileSize();
     final textScale = _effectiveTextScale();
     return tileSize + 64 + ((textScale - 1) * 14);
-  }
-
-  String? _recommendedDownloadService() {
-    if (widget.extensionId != null && widget.extensionId!.isNotEmpty) {
-      return widget.extensionId;
-    }
-    if (widget.artistId.startsWith('tidal:')) return 'tidal';
-    if (widget.artistId.startsWith('qobuz:')) return 'qobuz';
-    if (widget.artistId.startsWith('deezer:')) return 'deezer';
-    return null;
   }
 
   @override
@@ -309,7 +297,8 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
               .toList();
         }
 
-        final topTracksList = artistData['top_tracks'] as List<dynamic>? ?? [];
+        final topTracksList =
+            artistData['top_tracks'] as List<dynamic>? ?? [];
         if (topTracksList.isNotEmpty) {
           topTracks = topTracksList
               .map((t) => _parseTrack(t as Map<String, dynamic>))
@@ -410,9 +399,8 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
           (data['artist_id'] ?? data['artistId'])?.toString() ??
           widget.artistId,
       albumId: data['album_id']?.toString() ?? album?.id,
-      coverUrl: normalizeCoverReference(
-        (data['cover_url'] ?? data['images'] ?? album?.coverUrl)?.toString(),
-      ),
+      coverUrl: (data['cover_url'] ?? data['images'] ?? album?.coverUrl)
+          ?.toString(),
       isrc: data['isrc']?.toString(),
       duration: (durationMs / 1000).round(),
       trackNumber: data['track_number'] as int?,
@@ -426,18 +414,18 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
 
   ArtistAlbum _parseArtistAlbum(Map<String, dynamic> data) {
     final totalTracksValue = data['total_tracks'];
-    final totalTracks = totalTracksValue is int
-        ? totalTracksValue
-        : int.tryParse(totalTracksValue?.toString() ?? '') ?? 0;
+    final totalTracks =
+        totalTracksValue is int
+            ? totalTracksValue
+            : int.tryParse(totalTracksValue?.toString() ?? '') ?? 0;
 
     return ArtistAlbum(
       id: data['id'] as String? ?? '',
       name: (data['name'] ?? data['title'] ?? '').toString(),
       releaseDate: (data['release_date'] ?? '').toString(),
       totalTracks: totalTracks,
-      coverUrl: normalizeCoverReference(
-        (data['cover_url'] ?? data['images'] ?? data['cover_art'])?.toString(),
-      ),
+      coverUrl: (data['cover_url'] ?? data['images'] ?? data['cover_art'])
+          ?.toString(),
       albumType: (data['album_type'] ?? data['type'] ?? 'album').toString(),
       artists: (data['artists'] ?? data['artist'] ?? widget.artistName)
           .toString(),
@@ -492,17 +480,10 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
                   hasDiscography: hasDiscography,
                 ),
                 if (_isLoadingDiscography)
-                  SliverToBoxAdapter(
-                    child: ArtistScreenSkeleton(
-                      showCoverHeader:
-                          (_headerImageUrl ??
-                              widget.headerImageUrl ??
-                              widget.coverUrl) ==
-                          null,
-                      showPopularSection:
-                          !widget.artistId.startsWith('deezer:') &&
-                          !widget.artistId.startsWith('qobuz:') &&
-                          !widget.artistId.startsWith('tidal:'),
+                  const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.all(32),
+                      child: Center(child: CircularProgressIndicator()),
                     ),
                   ),
                 if (_error != null)
@@ -805,7 +786,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
     );
     final singleTracks = singles.fold<int>(0, (sum, a) => sum + a.totalTracks);
 
-    showModalBottomSheet<void>(
+    showModalBottomSheet(
       context: context,
       useRootNavigator: true,
       backgroundColor: colorScheme.surfaceContainerHigh,
@@ -907,7 +888,6 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
     if (settings.askQualityBeforeDownload) {
       DownloadServicePicker.show(
         context,
-        recommendedService: _recommendedDownloadService(),
         onSelect: (quality, service) {
           _fetchAndQueueAlbums(albums, service, quality);
         },
@@ -939,7 +919,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
       return;
     }
 
-    showDialog<void>(
+    showDialog(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => _FetchingProgressDialog(
@@ -967,6 +947,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
 
       fetchedCount++;
 
+      // Update progress dialog
       if (mounted) {
         _FetchingProgressDialog.updateProgress(
           context,
@@ -997,6 +978,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
       return;
     }
 
+    // Check which tracks are already downloaded
     final historyState = ref.read(downloadHistoryProvider);
     final tracksToQueue = <Track>[];
     int skippedCount = 0;
@@ -1047,7 +1029,10 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
           content: Text(message),
           action: SnackBarAction(
             label: context.l10n.snackbarViewQueue,
-            onPressed: () {},
+            onPressed: () {
+              // Navigate to queue tab (index 1)
+              // This will be handled by the navigation system
+            },
           ),
         ),
       );
@@ -1121,10 +1106,6 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
   Track _parseTrackFromDeezer(Map<String, dynamic> data, ArtistAlbum album) {
     int durationMs = 0;
     final durationValue = data['duration'];
-    final artistData = data['artist'];
-    final artistName = artistData is Map<String, dynamic>
-        ? (artistData['name'] as String? ?? widget.artistName)
-        : (artistData?.toString() ?? widget.artistName);
     if (durationValue is int) {
       durationMs = durationValue * 1000; // Deezer returns seconds
     } else if (durationValue is double) {
@@ -1134,7 +1115,9 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
     return Track(
       id: 'deezer:${data['id']}',
       name: (data['title'] ?? data['name'] ?? '').toString(),
-      artistName: artistName,
+      artistName:
+          (data['artist']?['name'] ?? data['artist'] ?? widget.artistName)
+              .toString(),
       albumName: album.name,
       albumArtist: widget.artistName,
       artistId: widget.artistId,
@@ -1169,8 +1152,6 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
         imageUrl != null &&
         imageUrl.isNotEmpty &&
         Uri.tryParse(imageUrl)?.hasAuthority == true;
-
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     String? listenersText;
     final listeners = _monthlyListeners ?? widget.monthlyListeners;
@@ -1242,9 +1223,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
                     Colors.transparent,
                     Colors.black.withValues(alpha: 0.3),
                     Colors.black.withValues(alpha: 0.7),
-                    isDark
-                        ? colorScheme.surface
-                        : Colors.black.withValues(alpha: 0.85),
+                    colorScheme.surface,
                   ],
                   stops: const [0.0, 0.5, 0.75, 1.0],
                 ),
@@ -1285,7 +1264,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
                             listenersText,
                             style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(
-                                  color: Colors.white,
+                                  color: Colors.white.withValues(alpha: 0.8),
                                   shadows: [
                                     Shadow(
                                       offset: const Offset(0, 1),
@@ -1380,10 +1359,8 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
             },
             itemBuilder: (context, pageIndex) {
               final startIndex = pageIndex * tracksPerPage;
-              final endIndex = (startIndex + tracksPerPage).clamp(
-                0,
-                tracks.length,
-              );
+              final endIndex =
+                  (startIndex + tracksPerPage).clamp(0, tracks.length);
               final pageTracks = tracks.sublist(startIndex, endIndex);
 
               return Column(
@@ -1615,6 +1592,15 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
   void _handlePopularTrackTap(Track track, {required bool isQueued}) async {
     if (isQueued) return;
 
+    final settings = ref.read(settingsProvider);
+    if (settings.appmode == 'stream') {
+      await ref.read(playbackProvider.notifier).playTrack(
+            track: track,
+            service: settings.defaultService,
+          );
+      return;
+    }
+
     final playedLocal = await _playLocalIfAvailable(track);
     if (playedLocal) {
       return;
@@ -1709,7 +1695,6 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
     if (settings.askQualityBeforeDownload) {
       DownloadServicePicker.show(
         context,
-        recommendedService: _recommendedDownloadService(),
         onSelect: (quality, service) {
           if (!mounted) return;
           enqueue(service, quality: quality);
@@ -1860,14 +1845,29 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
                     Positioned(
                       top: 8,
                       right: 8,
-                      child: AnimatedSelectionCheckbox(
-                        visible: true,
-                        selected: isSelected,
-                        colorScheme: colorScheme,
-                        size: 28,
-                        unselectedColor: colorScheme.surface.withValues(
-                          alpha: 0.9,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? colorScheme.primary
+                              : colorScheme.surface.withValues(alpha: 0.9),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isSelected
+                                ? colorScheme.primary
+                                : colorScheme.outline,
+                            width: 2,
+                          ),
                         ),
+                        child: isSelected
+                            ? Icon(
+                                Icons.check,
+                                color: colorScheme.onPrimary,
+                                size: 18,
+                              )
+                            : null,
                       ),
                     ),
                   if (showTypeBadge)
@@ -1940,7 +1940,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
     if (album.providerId != null && album.providerId!.isNotEmpty) {
       Navigator.push(
         context,
-        MaterialPageRoute<void>(
+        MaterialPageRoute(
           builder: (context) => ExtensionAlbumScreen(
             extensionId: album.providerId!,
             albumId: album.id,
@@ -1952,7 +1952,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
     } else {
       Navigator.push(
         context,
-        MaterialPageRoute<void>(
+        MaterialPageRoute(
           builder: (context) => AlbumScreen(
             albumId: album.id,
             albumName: album.name,
@@ -2076,6 +2076,7 @@ class _FetchingProgressDialog extends StatefulWidget {
     required this.onCancel,
   });
 
+  // Static method to update progress from outside
   static void updateProgress(BuildContext context, int current, int total) {
     final state = context
         .findAncestorStateOfType<_FetchingProgressDialogState>();
@@ -2148,6 +2149,7 @@ class _FetchingProgressDialogState extends State<_FetchingProgressDialog> {
             ),
           ),
           const SizedBox(height: 8),
+          // Progress bar
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(

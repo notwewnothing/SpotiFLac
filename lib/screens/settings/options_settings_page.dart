@@ -13,13 +13,14 @@ class OptionsSettingsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
+
     final extensionState = ref.watch(extensionProvider);
     final hasExtensions = extensionState.extensions.isNotEmpty;
     final colorScheme = Theme.of(context).colorScheme;
     final topPadding = normalizedHeaderTopPadding(context);
 
     return PopScope(
-      canPop: true,
+      canPop: true, // Always allow back gesture
       child: Scaffold(
         body: CustomScrollView(
           slivers: [
@@ -152,9 +153,6 @@ class OptionsSettingsPage extends ConsumerWidget {
             ),
 
             SliverToBoxAdapter(
-              child: SettingsSectionHeader(title: context.l10n.sectionApp),
-            ),
-            SliverToBoxAdapter(
               child: SettingsGroup(
                 children: [
                   SettingsSwitchItem(
@@ -179,6 +177,11 @@ class OptionsSettingsPage extends ConsumerWidget {
                     currentChannel: settings.updateChannel,
                     onChanged: (v) =>
                         ref.read(settingsProvider.notifier).setUpdateChannel(v),
+                  ),
+                  _UpdateAppSelector(
+                    currentMode: settings.appmode,
+                    onChanged: (v) =>
+                        ref.read(settingsProvider.notifier).setAppMode(v),
                   ),
                 ],
               ),
@@ -241,7 +244,7 @@ class OptionsSettingsPage extends ConsumerWidget {
     WidgetRef ref,
     ColorScheme colorScheme,
   ) {
-    showDialog<void>(
+    showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(context.l10n.dialogClearHistoryTitle),
@@ -273,7 +276,7 @@ class OptionsSettingsPage extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
   ) async {
-    showDialog<void>(
+    showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
@@ -558,6 +561,89 @@ class _UpdateChannelSelector extends StatelessWidget {
   }
 }
 
+class _UpdateAppSelector extends StatelessWidget {
+  final String currentMode;
+  final ValueChanged<String> onChanged;
+  const _UpdateAppSelector({
+    required this.currentMode,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.mode, color: colorScheme.onSurfaceVariant, size: 24),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "App Mode Selector",
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      currentMode == 'stream'
+                          ? "Streaming mode"
+                          : "Downloading mode",
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              _ChannelChip(
+                label: "Download Mode",
+                isSelected: currentMode == 'download',
+                onTap: () => onChanged('download'),
+              ),
+              const SizedBox(width: 8),
+              _ChannelChip(
+                label: "Stream Mode",
+                isSelected: currentMode == 'stream',
+                onTap: () => onChanged('stream'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                size: 16,
+                color: colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  "The streaming mode is currently in early development. Expect some instability and missing features. Download mode is the recommended option for most users.",
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ChannelChip extends StatelessWidget {
   final String label;
   final bool isSelected;
@@ -611,34 +697,24 @@ class _MetadataSourceSelector extends ConsumerWidget {
   final ValueChanged<String> onChanged;
   const _MetadataSourceSelector({required this.onChanged});
 
-  static const _builtInProviders = {'tidal': 'Tidal', 'qobuz': 'Qobuz'};
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final settings = ref.watch(settingsProvider);
     final extState = ref.watch(extensionProvider);
 
-    final searchProvider = settings.searchProvider ?? '';
-    final isBuiltIn = _builtInProviders.containsKey(searchProvider);
-
     Extension? activeExtension;
-    if (searchProvider.isNotEmpty && !isBuiltIn) {
+    if (settings.searchProvider != null &&
+        settings.searchProvider!.isNotEmpty) {
       activeExtension = extState.extensions
-          .where((e) => e.id == searchProvider && e.enabled)
+          .where((e) => e.id == settings.searchProvider && e.enabled)
           .firstOrNull;
     }
-    final hasNonDefaultProvider = isBuiltIn || activeExtension != null;
+    final hasExtensionSearch = activeExtension != null;
 
-    String subtitle;
-    if (isBuiltIn) {
-      subtitle = 'Using ${_builtInProviders[searchProvider]}';
-    } else if (activeExtension != null) {
-      subtitle = context.l10n.optionsUsingExtension(
-        activeExtension.displayName,
-      );
-    } else {
-      subtitle = context.l10n.optionsPrimaryProviderSubtitle;
+    String? extensionName;
+    if (hasExtensionSearch) {
+      extensionName = activeExtension.displayName;
     }
 
     return Padding(
@@ -654,9 +730,11 @@ class _MetadataSourceSelector extends ConsumerWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            subtitle,
+            hasExtensionSearch
+                ? context.l10n.optionsUsingExtension(extensionName!)
+                : context.l10n.optionsPrimaryProviderSubtitle,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: hasNonDefaultProvider
+              color: hasExtensionSearch
                   ? colorScheme.primary
                   : colorScheme.onSurfaceVariant,
             ),
@@ -667,41 +745,17 @@ class _MetadataSourceSelector extends ConsumerWidget {
               _SourceChip(
                 icon: Icons.graphic_eq,
                 label: 'Deezer',
-                isSelected: searchProvider.isEmpty,
+                isSelected: !hasExtensionSearch,
                 onTap: () {
-                  if (hasNonDefaultProvider) {
+                  if (hasExtensionSearch) {
                     ref.read(settingsProvider.notifier).setSearchProvider(null);
                   }
                   onChanged('deezer');
                 },
               ),
-              const SizedBox(width: 8),
-              _SourceChip(
-                icon: Icons.waves,
-                label: 'Tidal',
-                isSelected: searchProvider == 'tidal',
-                onTap: () {
-                  ref
-                      .read(settingsProvider.notifier)
-                      .setSearchProvider('tidal');
-                  onChanged('tidal');
-                },
-              ),
-              const SizedBox(width: 8),
-              _SourceChip(
-                icon: Icons.album,
-                label: 'Qobuz',
-                isSelected: searchProvider == 'qobuz',
-                onTap: () {
-                  ref
-                      .read(settingsProvider.notifier)
-                      .setSearchProvider('qobuz');
-                  onChanged('qobuz');
-                },
-              ),
             ],
           ),
-          if (activeExtension != null) ...[
+          if (hasExtensionSearch) ...[
             const SizedBox(height: 12),
             Row(
               children: [

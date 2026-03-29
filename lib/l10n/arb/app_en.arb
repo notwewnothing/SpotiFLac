@@ -999,46 +999,6 @@
   "@searchPlaylists": {
     "description": "Search result category - playlists"
   },
-  "searchSortTitle": "Sort Results",
-  "@searchSortTitle": {
-    "description": "Bottom sheet title for search sort options"
-  },
-  "searchSortDefault": "Default",
-  "@searchSortDefault": {
-    "description": "Sort option - default API order"
-  },
-  "searchSortTitleAZ": "Title (A-Z)",
-  "@searchSortTitleAZ": {
-    "description": "Sort option - title ascending"
-  },
-  "searchSortTitleZA": "Title (Z-A)",
-  "@searchSortTitleZA": {
-    "description": "Sort option - title descending"
-  },
-  "searchSortArtistAZ": "Artist (A-Z)",
-  "@searchSortArtistAZ": {
-    "description": "Sort option - artist ascending"
-  },
-  "searchSortArtistZA": "Artist (Z-A)",
-  "@searchSortArtistZA": {
-    "description": "Sort option - artist descending"
-  },
-  "searchSortDurationShort": "Duration (Shortest)",
-  "@searchSortDurationShort": {
-    "description": "Sort option - shortest duration first"
-  },
-  "searchSortDurationLong": "Duration (Longest)",
-  "@searchSortDurationLong": {
-    "description": "Sort option - longest duration first"
-  },
-  "searchSortDateOldest": "Release Date (Oldest)",
-  "@searchSortDateOldest": {
-    "description": "Sort option - oldest release first"
-  },
-  "searchSortDateNewest": "Release Date (Newest)",
-  "@searchSortDateNewest": {
-    "description": "Sort option - newest release first"
-  },
   "tooltipPlay": "Play",
   "@tooltipPlay": {
     "description": "Tooltip - play button"
@@ -1666,7 +1626,7 @@
   "@storeEmptyNoResults": {
     "description": "Message when search/filter returns no results"
   },
-  "extensionDefaultProvider": "Default (Deezer)",
+  "extensionDefaultProvider": "Default (Deezer/Spotify)",
   "@extensionDefaultProvider": {
     "description": "Default search provider option"
   },
@@ -1865,49 +1825,21 @@
   "@qualityHiResFlacMaxSubtitle": {
     "description": "Technical spec for hi-res max"
   },
-  "downloadLossy320": "Lossy 320kbps",
-  "@downloadLossy320": {
-    "description": "Quality option label for Tidal lossy 320kbps"
-  },
-  "downloadLossyFormat": "Lossy Format",
-  "@downloadLossyFormat": {
-    "description": "Setting title to pick output format for Tidal lossy downloads"
-  },
-  "downloadLossy320Format": "Lossy 320kbps Format",
-  "@downloadLossy320Format": {
-    "description": "Title of the Tidal lossy format picker bottom sheet"
-  },
-  "downloadLossy320FormatDesc": "Choose the output format for Tidal 320kbps lossy downloads. The original AAC stream will be converted to your selected format.",
-  "@downloadLossy320FormatDesc": {
-    "description": "Description in the Tidal lossy format picker"
-  },
-  "downloadLossyMp3": "MP3 320kbps",
-  "@downloadLossyMp3": {
-    "description": "Tidal lossy format option - MP3 320kbps"
-  },
-  "downloadLossyMp3Subtitle": "Best compatibility, ~10MB per track",
-  "@downloadLossyMp3Subtitle": {
-    "description": "Subtitle for MP3 320kbps Tidal lossy option"
-  },
-  "downloadLossyOpus256": "Opus 256kbps",
-  "@downloadLossyOpus256": {
-    "description": "Tidal lossy format option - Opus 256kbps"
-  },
-  "downloadLossyOpus256Subtitle": "Best quality Opus, ~8MB per track",
-  "@downloadLossyOpus256Subtitle": {
-    "description": "Subtitle for Opus 256kbps Tidal lossy option"
-  },
-  "downloadLossyOpus128": "Opus 128kbps",
-  "@downloadLossyOpus128": {
-    "description": "Tidal lossy format option - Opus 128kbps"
-  },
-  "downloadLossyOpus128Subtitle": "Smallest size, ~4MB per track",
-  "@downloadLossyOpus128Subtitle": {
-    "description": "Subtitle for Opus 128kbps Tidal lossy option"
-  },
   "qualityNote": "Actual quality depends on track availability from the service",
   "@qualityNote": {
     "description": "Note about quality availability"
+  },
+  "youtubeQualityNote": "YouTube provides lossy audio only. Not part of lossless fallback.",
+  "@youtubeQualityNote": {
+    "description": "Note for YouTube service explaining lossy-only quality"
+  },
+  "youtubeOpusBitrateTitle": "YouTube Opus Bitrate",
+  "@youtubeOpusBitrateTitle": {
+    "description": "Title for YouTube Opus bitrate setting"
+  },
+  "youtubeMp3BitrateTitle": "YouTube MP3 Bitrate",
+  "@youtubeMp3BitrateTitle": {
+    "description": "Title for YouTube MP3 bitrate setting"
   },
   "downloadAskBeforeDownload": "Ask Before Download",
   "@downloadAskBeforeDownload": {
@@ -2028,14 +1960,6 @@
   "albumFolderArtistAlbumSinglesSubtitle": "Artist/Album/ and Artist/Singles/",
   "@albumFolderArtistAlbumSinglesSubtitle": {
     "description": "Folder structure example"
-  },
-  "albumFolderArtistAlbumFlat": "Artist / Album (Singles flat)",
-  "@albumFolderArtistAlbumFlat": {
-    "description": "Album folder option with singles directly in artist folder"
-  },
-  "albumFolderArtistAlbumFlatSubtitle": "Artist/Album/ and Artist/song.flac",
-  "@albumFolderArtistAlbumFlatSubtitle": {
-    "description": "Folder structure example for flat singles"
   },
   "downloadedAlbumDeleteSelected": "Delete Selected",
   "@downloadedAlbumDeleteSelected": {
@@ -3662,22 +3586,6 @@
   "@downloadArtistNameFilters": {
     "description": "Setting title for artist folder filter options"
   },
-  "downloadCreatePlaylistSourceFolder": "Create playlist source folder",
-  "@downloadCreatePlaylistSourceFolder": {
-    "description": "Setting title for adding a playlist folder prefix before the normal organization structure"
-  },
-  "downloadCreatePlaylistSourceFolderEnabled": "Playlist downloads use Playlist/ plus your normal folder structure.",
-  "@downloadCreatePlaylistSourceFolderEnabled": {
-    "description": "Subtitle when playlist source folder prefix is enabled"
-  },
-  "downloadCreatePlaylistSourceFolderDisabled": "Playlist downloads use the normal folder structure only.",
-  "@downloadCreatePlaylistSourceFolderDisabled": {
-    "description": "Subtitle when playlist source folder prefix is disabled"
-  },
-  "downloadCreatePlaylistSourceFolderRedundant": "By Playlist already places downloads inside a playlist folder.",
-  "@downloadCreatePlaylistSourceFolderRedundant": {
-    "description": "Subtitle when playlist folder prefix setting is redundant because folder organization is already by playlist"
-  },
   "downloadSongLinkRegion": "SongLink Region",
   "@downloadSongLinkRegion": {
     "description": "Setting title for SongLink country region"
@@ -3939,129 +3847,5 @@
   "editMetadataSelectEmpty": "Empty only",
   "@editMetadataSelectEmpty": {
     "description": "Button to select only fields that are currently empty"
-  },
-
-  "queueDownloadingCount": "Downloading ({count})",
-  "@queueDownloadingCount": {
-    "description": "Header for active downloads section with count",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "queueDownloadedHeader": "Downloaded",
-  "@queueDownloadedHeader": {
-    "description": "Header label for downloaded items section in library"
-  },
-  "queueFilteringIndicator": "Filtering...",
-  "@queueFilteringIndicator": {
-    "description": "Shown while filter results are being computed"
-  },
-  "queueTrackCount": "{count, plural, =1{1 track} other{{count} tracks}}",
-  "@queueTrackCount": {
-    "description": "Track count label with plural support",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "queueAlbumCount": "{count, plural, =1{1 album} other{{count} albums}}",
-  "@queueAlbumCount": {
-    "description": "Album count label with plural support",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "queueEmptyAlbums": "No album downloads",
-  "@queueEmptyAlbums": {
-    "description": "Empty state title when no album downloads exist"
-  },
-  "queueEmptyAlbumsSubtitle": "Download multiple tracks from an album to see them here",
-  "@queueEmptyAlbumsSubtitle": {
-    "description": "Empty state subtitle for album downloads"
-  },
-  "queueEmptySingles": "No single downloads",
-  "@queueEmptySingles": {
-    "description": "Empty state title when no single track downloads exist"
-  },
-  "queueEmptySinglesSubtitle": "Single track downloads will appear here",
-  "@queueEmptySinglesSubtitle": {
-    "description": "Empty state subtitle for single track downloads"
-  },
-  "queueEmptyHistory": "No download history",
-  "@queueEmptyHistory": {
-    "description": "Empty state title when download history is empty"
-  },
-  "queueEmptyHistorySubtitle": "Downloaded tracks will appear here",
-  "@queueEmptyHistorySubtitle": {
-    "description": "Empty state subtitle for download history"
-  },
-  "selectionAllPlaylistsSelected": "All playlists selected",
-  "@selectionAllPlaylistsSelected": {
-    "description": "Shown when all playlists are selected in selection mode"
-  },
-  "selectionTapPlaylistsToSelect": "Tap playlists to select",
-  "@selectionTapPlaylistsToSelect": {
-    "description": "Hint shown in playlist selection mode"
-  },
-  "selectionSelectPlaylistsToDelete": "Select playlists to delete",
-  "@selectionSelectPlaylistsToDelete": {
-    "description": "Hint shown when no playlists are selected for deletion"
-  },
-  "audioAnalysisTitle": "Audio Quality Analysis",
-  "@audioAnalysisTitle": {
-    "description": "Title for audio analysis section"
-  },
-  "audioAnalysisDescription": "Verify lossless quality with spectrum analysis",
-  "@audioAnalysisDescription": {
-    "description": "Description for audio analysis tap-to-analyze prompt"
-  },
-  "audioAnalysisAnalyzing": "Analyzing audio...",
-  "@audioAnalysisAnalyzing": {
-    "description": "Loading text while analyzing audio"
-  },
-  "audioAnalysisSampleRate": "Sample Rate",
-  "@audioAnalysisSampleRate": {
-    "description": "Sample rate metric label"
-  },
-  "audioAnalysisBitDepth": "Bit Depth",
-  "@audioAnalysisBitDepth": {
-    "description": "Bit depth metric label"
-  },
-  "audioAnalysisChannels": "Channels",
-  "@audioAnalysisChannels": {
-    "description": "Channels metric label"
-  },
-  "audioAnalysisDuration": "Duration",
-  "@audioAnalysisDuration": {
-    "description": "Duration metric label"
-  },
-  "audioAnalysisNyquist": "Nyquist",
-  "@audioAnalysisNyquist": {
-    "description": "Nyquist frequency metric label"
-  },
-  "audioAnalysisFileSize": "Size",
-  "@audioAnalysisFileSize": {
-    "description": "File size metric label"
-  },
-  "audioAnalysisDynamicRange": "Dynamic Range",
-  "@audioAnalysisDynamicRange": {
-    "description": "Dynamic range metric label"
-  },
-  "audioAnalysisPeak": "Peak",
-  "@audioAnalysisPeak": {
-    "description": "Peak amplitude metric label"
-  },
-  "audioAnalysisRms": "RMS",
-  "@audioAnalysisRms": {
-    "description": "RMS level metric label"
-  },
-  "audioAnalysisSamples": "Samples",
-  "@audioAnalysisSamples": {
-    "description": "Total samples metric label"
   }
 }

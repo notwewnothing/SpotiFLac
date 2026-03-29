@@ -450,7 +450,7 @@
   "@aboutSpotiSaverDesc": {
     "description": "Credit for SpotiSaver API"
   },
-  "aboutAppDescription": "Unduh lagu-lagu Spotify dalam kualitas lossless dari Tidal dan Qobuz.",
+  "aboutAppDescription": "Unduh lagu Spotify dalam kualitas lossless dari Tidal, Qobuz, dan Amazon Music.",
   "@aboutAppDescription": {
     "description": "App description in header card"
   },
@@ -1003,25 +1003,17 @@
   "@filenameFormat": {
     "description": "Setting title - filename pattern"
   },
-  "filenameShowAdvancedTags": "Tampilkan tag lanjutan",
+  "filenameShowAdvancedTags": "Show advanced tags",
   "@filenameShowAdvancedTags": {
     "description": "Toggle label for showing advanced filename tags"
   },
-  "filenameShowAdvancedTagsDescription": "Aktifkan tag yang diformat untuk padding trek dan pola tanggal",
+  "filenameShowAdvancedTagsDescription": "Enable formatted tags for track padding and date patterns",
   "@filenameShowAdvancedTagsDescription": {
     "description": "Description for advanced filename tag toggle"
   },
   "folderOrganizationNone": "Tidak ada",
   "@folderOrganizationNone": {
     "description": "Folder option - flat structure"
-  },
-  "folderOrganizationByPlaylist": "Berdasarkan Daftar Putar",
-  "@folderOrganizationByPlaylist": {
-    "description": "Folder option - playlist folders"
-  },
-  "folderOrganizationByPlaylistSubtitle": "Setiap daftar putar memerlukan folder terpisah",
-  "@folderOrganizationByPlaylistSubtitle": {
-    "description": "Subtitle for playlist folder option"
   },
   "folderOrganizationByArtist": "Berdasarkan Artis",
   "@folderOrganizationByArtist": {
@@ -1117,7 +1109,7 @@
   },
   "providerBuiltIn": "Bawaan",
   "@providerBuiltIn": {
-    "description": "Label for built-in providers (Tidal/Qobuz)"
+    "description": "Label for built-in providers (Tidal/Qobuz/Amazon)"
   },
   "providerExtension": "Ekstensi",
   "@providerExtension": {
@@ -1217,7 +1209,7 @@
   "@credentialsDescription": {
     "description": "Credentials dialog explanation"
   },
-  "credentialsClientId": "ID Klien",
+  "credentialsClientId": "Client ID",
   "@credentialsClientId": {
     "description": "Client ID field label - DO NOT TRANSLATE"
   },
@@ -1225,7 +1217,7 @@
   "@credentialsClientIdHint": {
     "description": "Client ID placeholder"
   },
-  "credentialsClientSecret": "Rahasia Klien",
+  "credentialsClientSecret": "Client Secret",
   "@credentialsClientSecret": {
     "description": "Client Secret field label - DO NOT TRANSLATE"
   },
@@ -1237,7 +1229,7 @@
   "@channelStable": {
     "description": "Update channel - stable releases"
   },
-  "channelPreview": "Pratinjau",
+  "channelPreview": "Preview",
   "@channelPreview": {
     "description": "Update channel - beta/preview releases"
   },
@@ -1277,39 +1269,39 @@
   "@sectionFileSettings": {
     "description": "Settings section header"
   },
-  "sectionLyrics": "Lirik",
+  "sectionLyrics": "Lyrics",
   "@sectionLyrics": {
     "description": "Settings section header"
   },
-  "lyricsMode": "Mode Lirik",
+  "lyricsMode": "Lyrics Mode",
   "@lyricsMode": {
     "description": "Setting - how to save lyrics"
   },
-  "lyricsModeDescription": "Pilih cara lirik disimpan bersama unduhan Anda",
+  "lyricsModeDescription": "Choose how lyrics are saved with your downloads",
   "@lyricsModeDescription": {
     "description": "Lyrics mode picker description"
   },
-  "lyricsModeEmbed": "Sematkan dalam file",
+  "lyricsModeEmbed": "Embed in file",
   "@lyricsModeEmbed": {
     "description": "Lyrics mode option - embed in audio file"
   },
-  "lyricsModeEmbedSubtitle": "Lirik tersimpan di dalam metadata FLAC",
+  "lyricsModeEmbedSubtitle": "Lyrics stored inside FLAC metadata",
   "@lyricsModeEmbedSubtitle": {
     "description": "Subtitle for embed option"
   },
-  "lyricsModeExternal": "File .lrc eksternal",
+  "lyricsModeExternal": "External .lrc file",
   "@lyricsModeExternal": {
     "description": "Lyrics mode option - separate LRC file"
   },
-  "lyricsModeExternalSubtitle": "File .lrc terpisah untuk pemutar musik seperti Samsung Music",
+  "lyricsModeExternalSubtitle": "Separate .lrc file for players like Samsung Music",
   "@lyricsModeExternalSubtitle": {
     "description": "Subtitle for external option"
   },
-  "lyricsModeBoth": "Keduanya",
+  "lyricsModeBoth": "Both",
   "@lyricsModeBoth": {
     "description": "Lyrics mode option - embed and external"
   },
-  "lyricsModeBothSubtitle": "Sematkan dan simpan file .lrc",
+  "lyricsModeBothSubtitle": "Embed and save .lrc file",
   "@lyricsModeBothSubtitle": {
     "description": "Subtitle for both option"
   },
@@ -1455,11 +1447,11 @@
   "@trackGenre": {
     "description": "Metadata label - music genre"
   },
-  "trackLabel": "Lebel",
+  "trackLabel": "Label",
   "@trackLabel": {
     "description": "Metadata label - record label"
   },
-  "trackCopyright": "Hak cipta",
+  "trackCopyright": "Copyright",
   "@trackCopyright": {
     "description": "Metadata label - copyright information"
   },
@@ -1483,15 +1475,15 @@
   "@trackLyricsLoadFailed": {
     "description": "Message when lyrics loading fails"
   },
-  "trackEmbedLyrics": "Sematkan Lirik",
+  "trackEmbedLyrics": "Embed Lyrics",
   "@trackEmbedLyrics": {
     "description": "Action - embed lyrics into audio file"
   },
-  "trackLyricsEmbedded": "Lirik berhasil disematkan",
+  "trackLyricsEmbedded": "Lyrics embedded successfully",
   "@trackLyricsEmbedded": {
     "description": "Snackbar - lyrics saved to file"
   },
-  "trackInstrumental": "Lagu instrumental",
+  "trackInstrumental": "Instrumental track",
   "@trackInstrumental": {
     "description": "Message when track is instrumental (no lyrics)"
   },
@@ -1570,7 +1562,7 @@
   "@storeClearFilters": {
     "description": "Button to clear all filters"
   },
-  "extensionDefaultProvider": "Bawaan (Deezer/Spotify)",
+  "extensionDefaultProvider": "Default (Deezer/Spotify)",
   "@extensionDefaultProvider": {
     "description": "Default search provider option"
   },
@@ -1586,7 +1578,7 @@
   "@extensionId": {
     "description": "Extension detail - unique ID"
   },
-  "extensionError": "Terjadi kesalahan",
+  "extensionError": "Error",
   "@extensionError": {
     "description": "Extension detail - error message"
   },
@@ -1773,6 +1765,18 @@
   "@qualityNote": {
     "description": "Note about quality availability"
   },
+  "youtubeQualityNote": "YouTube provides lossy audio only. Not part of lossless fallback.",
+  "@youtubeQualityNote": {
+    "description": "Note for YouTube service explaining lossy-only quality"
+  },
+  "youtubeOpusBitrateTitle": "YouTube Opus Bitrate",
+  "@youtubeOpusBitrateTitle": {
+    "description": "Title for YouTube Opus bitrate setting"
+  },
+  "youtubeMp3BitrateTitle": "YouTube MP3 Bitrate",
+  "@youtubeMp3BitrateTitle": {
+    "description": "Title for YouTube MP3 bitrate setting"
+  },
   "downloadAskBeforeDownload": "Tanya Sebelum Unduh",
   "@downloadAskBeforeDownload": {
     "description": "Setting - show quality picker"
@@ -1789,35 +1793,19 @@
   "@downloadAlbumFolderStructure": {
     "description": "Setting - album folder organization"
   },
-  "downloadUseAlbumArtistForFolders": "Gunakan Artis Album untuk folder",
+  "downloadUseAlbumArtistForFolders": "Use Album Artist for folders",
   "@downloadUseAlbumArtistForFolders": {
     "description": "Setting - choose whether artist folders use Album Artist or Track Artist"
   },
-  "downloadCreatePlaylistSourceFolder": "Buat folder sumber playlist",
-  "@downloadCreatePlaylistSourceFolder": {
-    "description": "Setting title for adding a playlist folder prefix before the normal organization structure"
-  },
-  "downloadCreatePlaylistSourceFolderEnabled": "Unduhan dari playlist memakai Playlist/ lalu struktur folder normal Anda.",
-  "@downloadCreatePlaylistSourceFolderEnabled": {
-    "description": "Subtitle when playlist source folder prefix is enabled"
-  },
-  "downloadCreatePlaylistSourceFolderDisabled": "Unduhan dari playlist hanya memakai struktur folder normal.",
-  "@downloadCreatePlaylistSourceFolderDisabled": {
-    "description": "Subtitle when playlist source folder prefix is disabled"
-  },
-  "downloadCreatePlaylistSourceFolderRedundant": "Mode Berdasarkan Playlist sudah menaruh unduhan ke dalam folder playlist.",
-  "@downloadCreatePlaylistSourceFolderRedundant": {
-    "description": "Subtitle when playlist folder prefix setting is redundant because folder organization is already by playlist"
-  },
-  "downloadUsePrimaryArtistOnly": "Hanya artis utama untuk folder",
+  "downloadUsePrimaryArtistOnly": "Primary artist only for folders",
   "@downloadUsePrimaryArtistOnly": {
     "description": "Setting - strip featured artists from folder name"
   },
-  "downloadUsePrimaryArtistOnlyEnabled": "Artis unggulan dihapus dari nama folder (misalnya Justin Bieber, Quavo → Justin Bieber)",
+  "downloadUsePrimaryArtistOnlyEnabled": "Featured artists removed from folder name (e.g. Justin Bieber, Quavo → Justin Bieber)",
   "@downloadUsePrimaryArtistOnlyEnabled": {
     "description": "Subtitle when primary artist only is enabled"
   },
-  "downloadUsePrimaryArtistOnlyDisabled": "Nama lengkap artis digunakan untuk nama folder",
+  "downloadUsePrimaryArtistOnlyDisabled": "Full artist string used for folder name",
   "@downloadUsePrimaryArtistOnlyDisabled": {
     "description": "Subtitle when primary artist only is disabled"
   },
@@ -1845,27 +1833,27 @@
   "@queueClearAllMessage": {
     "description": "Clear queue confirmation"
   },
-  "settingsAutoExportFailed": "Unduhan yang gagal diekspor otomatis",
+  "settingsAutoExportFailed": "Auto-export failed downloads",
   "@settingsAutoExportFailed": {
     "description": "Setting toggle for auto-export"
   },
-  "settingsAutoExportFailedSubtitle": "Simpan unduhan yang gagal ke file TXT secara otomatis",
+  "settingsAutoExportFailedSubtitle": "Save failed downloads to TXT file automatically",
   "@settingsAutoExportFailedSubtitle": {
     "description": "Subtitle for auto-export setting"
   },
-  "settingsDownloadNetwork": "Jaringan Unduhan",
+  "settingsDownloadNetwork": "Download Network",
   "@settingsDownloadNetwork": {
     "description": "Setting for network type preference"
   },
-  "settingsDownloadNetworkAny": "WiFi + Data Seluler",
+  "settingsDownloadNetworkAny": "WiFi + Mobile Data",
   "@settingsDownloadNetworkAny": {
     "description": "Network option - use any connection"
   },
-  "settingsDownloadNetworkWifiOnly": "Hanya WiFi",
+  "settingsDownloadNetworkWifiOnly": "WiFi Only",
   "@settingsDownloadNetworkWifiOnly": {
     "description": "Network option - only use WiFi"
   },
-  "settingsDownloadNetworkSubtitle": "Pilih jaringan mana yang akan digunakan untuk mengunduh. Jika diatur ke Hanya WiFi, unduhan akan berhenti sementara dan menggunakan data seluler.",
+  "settingsDownloadNetworkSubtitle": "Choose which network to use for downloads. When set to WiFi Only, downloads will pause on mobile data.",
   "@settingsDownloadNetworkSubtitle": {
     "description": "Subtitle explaining network preference"
   },
@@ -1901,11 +1889,11 @@
   "@albumFolderYearAlbumSubtitle": {
     "description": "Folder structure example"
   },
-  "albumFolderArtistAlbumSingles": "Artis / Album + Singel",
+  "albumFolderArtistAlbumSingles": "Artist / Album + Singles",
   "@albumFolderArtistAlbumSingles": {
     "description": "Album folder option with singles inside artist"
   },
-  "albumFolderArtistAlbumSinglesSubtitle": "Artis/Album/ dan Artis/Single/",
+  "albumFolderArtistAlbumSinglesSubtitle": "Artist/Album/ and Artist/Singles/",
   "@albumFolderArtistAlbumSinglesSubtitle": {
     "description": "Folder structure example"
   },
@@ -1974,19 +1962,19 @@
   "@recentTypeSong": {
     "description": "Recent access item type - song/track"
   },
-  "recentTypePlaylist": "Daftar putar",
+  "recentTypePlaylist": "Playlist",
   "@recentTypePlaylist": {
     "description": "Recent access item type - playlist"
   },
-  "recentEmpty": "Belum ada item terbaru",
+  "recentEmpty": "No recent items yet",
   "@recentEmpty": {
     "description": "Empty state text for recent access list"
   },
-  "recentShowAllDownloads": "Tampilkan Semua Unduhan",
+  "recentShowAllDownloads": "Show All Downloads",
   "@recentShowAllDownloads": {
     "description": "Button label to unhide hidden downloads in recent access"
   },
-  "recentPlaylistInfo": "Daftar Putar: {name}",
+  "recentPlaylistInfo": "Playlist: {name}",
   "@recentPlaylistInfo": {
     "description": "Snackbar message when tapping playlist in recent access",
     "placeholders": {
@@ -1996,7 +1984,7 @@
       }
     }
   },
-  "discographyDownload": "Unduh Diskografi",
+  "discographyDownload": "Download Discography",
   "@discographyDownload": {
     "description": "Button - download artist discography"
   },
@@ -2395,47 +2383,47 @@
       }
     }
   },
-  "tutorialWelcomeTitle": "Selamat Datang di SpotiFLAC!",
+  "tutorialWelcomeTitle": "Welcome to SpotiFLAC!",
   "@tutorialWelcomeTitle": {
     "description": "Tutorial welcome page title"
   },
-  "tutorialWelcomeDesc": "Mari kita pelajari cara mengunduh musik favorit Anda dalam kualitas lossless. Tutorial singkat ini akan menunjukkan dasar-dasarnya.",
+  "tutorialWelcomeDesc": "Let's learn how to download your favorite music in lossless quality. This quick tutorial will show you the basics.",
   "@tutorialWelcomeDesc": {
     "description": "Tutorial welcome page description"
   },
-  "tutorialWelcomeTip1": "Unduh musik dari Spotify, Deezer, atau tempel URL yang didukung",
+  "tutorialWelcomeTip1": "Download music from Spotify, Deezer, or paste any supported URL",
   "@tutorialWelcomeTip1": {
     "description": "Tutorial welcome tip 1"
   },
-  "tutorialWelcomeTip2": "Dapatkan audio berkualitas FLAC dari Tidal, Qobuz, atau Deezer",
+  "tutorialWelcomeTip2": "Get FLAC quality audio from Tidal, Qobuz, or Amazon Music",
   "@tutorialWelcomeTip2": {
     "description": "Tutorial welcome tip 2"
   },
-  "tutorialWelcomeTip3": "Penyematan metadata, sampul album, dan lirik secara otomatis",
+  "tutorialWelcomeTip3": "Automatic metadata, cover art, and lyrics embedding",
   "@tutorialWelcomeTip3": {
     "description": "Tutorial welcome tip 3"
   },
-  "tutorialSearchTitle": "Menemukan Musik",
+  "tutorialSearchTitle": "Finding Music",
   "@tutorialSearchTitle": {
     "description": "Tutorial search page title"
   },
-  "tutorialSearchDesc": "Ada dua cara mudah untuk menemukan musik yang ingin Anda unduh.",
+  "tutorialSearchDesc": "There are two easy ways to find music you want to download.",
   "@tutorialSearchDesc": {
     "description": "Tutorial search page description"
   },
-  "tutorialDownloadTitle": "Mengunduh Musik",
+  "tutorialDownloadTitle": "Downloading Music",
   "@tutorialDownloadTitle": {
     "description": "Tutorial download page title"
   },
-  "tutorialDownloadDesc": "Mengunduh musik itu mudah dan cepat. Begini cara kerjanya.",
+  "tutorialDownloadDesc": "Downloading music is simple and fast. Here's how it works.",
   "@tutorialDownloadDesc": {
     "description": "Tutorial download page description"
   },
-  "tutorialLibraryTitle": "Perpustakaan Anda",
+  "tutorialLibraryTitle": "Your Library",
   "@tutorialLibraryTitle": {
     "description": "Tutorial library page title"
   },
-  "tutorialLibraryDesc": "Semua musik yang Anda unduh tersusun rapi di tab Perpustakaan.",
+  "tutorialLibraryDesc": "All your downloaded music is organized in the Library tab.",
   "@tutorialLibraryDesc": {
     "description": "Tutorial library page description"
   },
@@ -2888,90 +2876,6 @@
   "trackConvertFailed": "Conversion failed",
   "@trackConvertFailed": {
     "description": "Snackbar when conversion fails"
-  },
-  "cueSplitTitle": "Split CUE Sheet",
-  "@cueSplitTitle": {
-    "description": "Title for CUE split bottom sheet"
-  },
-  "cueSplitSubtitle": "Split CUE+FLAC into individual tracks",
-  "@cueSplitSubtitle": {
-    "description": "Subtitle for CUE split menu item"
-  },
-  "cueSplitAlbum": "Album: {album}",
-  "@cueSplitAlbum": {
-    "description": "Album name in CUE split sheet",
-    "placeholders": {
-      "album": {
-        "type": "String"
-      }
-    }
-  },
-  "cueSplitArtist": "Artist: {artist}",
-  "@cueSplitArtist": {
-    "description": "Artist name in CUE split sheet",
-    "placeholders": {
-      "artist": {
-        "type": "String"
-      }
-    }
-  },
-  "cueSplitTrackCount": "{count} tracks",
-  "@cueSplitTrackCount": {
-    "description": "Number of tracks in CUE sheet",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "cueSplitConfirmTitle": "Split CUE Album",
-  "@cueSplitConfirmTitle": {
-    "description": "CUE split confirmation dialog title"
-  },
-  "cueSplitConfirmMessage": "Split \"{album}\" into {count} individual FLAC files?\n\nFiles will be saved to the same directory.",
-  "@cueSplitConfirmMessage": {
-    "description": "CUE split confirmation dialog message",
-    "placeholders": {
-      "album": {
-        "type": "String"
-      },
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "cueSplitSplitting": "Splitting CUE sheet... ({current}/{total})",
-  "@cueSplitSplitting": {
-    "description": "Snackbar while splitting CUE",
-    "placeholders": {
-      "current": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "cueSplitSuccess": "Split into {count} tracks successfully",
-  "@cueSplitSuccess": {
-    "description": "Snackbar after successful CUE split",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "cueSplitFailed": "CUE split failed",
-  "@cueSplitFailed": {
-    "description": "Snackbar when CUE split fails"
-  },
-  "cueSplitNoAudioFile": "Audio file not found for this CUE sheet",
-  "@cueSplitNoAudioFile": {
-    "description": "Error when CUE audio file is missing"
-  },
-  "cueSplitButton": "Split into Tracks",
-  "@cueSplitButton": {
-    "description": "Button text to start CUE splitting"
   },
   "actionCreate": "Create",
   "@actionCreate": {

@@ -6,41 +6,6 @@ String? normalizeOptionalString(String? value) {
   return trimmed;
 }
 
-final RegExp _windowsAbsolutePathPattern = RegExp(r'^[A-Za-z]:[\\/]');
-
-bool _looksLikeLocalReference(String value) {
-  return value.startsWith('/') ||
-      value.startsWith('content://') ||
-      value.startsWith('file://') ||
-      _windowsAbsolutePathPattern.hasMatch(value);
-}
-
-String? normalizeCoverReference(String? value) {
-  final normalized = normalizeOptionalString(value);
-  if (normalized == null) return null;
-
-  if (normalized.startsWith('//')) {
-    return 'https:$normalized';
-  }
-
-  if (normalized.startsWith('http://') ||
-      normalized.startsWith('https://') ||
-      _looksLikeLocalReference(normalized)) {
-    return normalized;
-  }
-
-  return null;
-}
-
-String? normalizeRemoteHttpUrl(String? value) {
-  final normalized = normalizeCoverReference(value);
-  if (normalized == null) return null;
-  if (normalized.startsWith('http://') || normalized.startsWith('https://')) {
-    return normalized;
-  }
-  return null;
-}
-
 String formatSampleRateKHz(int sampleRate) {
   final khz = sampleRate / 1000;
   final precision = sampleRate % 1000 == 0 ? 0 : 1;

@@ -84,32 +84,3 @@ func TestPreferredReleaseMetadataPrefersRequestValues(t *testing.T) {
 		t.Fatalf("disc number = %d", discNumber)
 	}
 }
-
-func TestBuildDownloadSuccessResponsePrefersProviderCoverURL(t *testing.T) {
-	req := DownloadRequest{
-		TrackName:   "Track",
-		ArtistName:  "Artist",
-		AlbumName:   "Album",
-		AlbumArtist: "Artist",
-	}
-
-	result := DownloadResult{
-		Title:    "Track",
-		Artist:   "Artist",
-		Album:    "Album",
-		CoverURL: "https://cdn.qobuz.test/cover.jpg",
-	}
-
-	resp := buildDownloadSuccessResponse(
-		req,
-		result,
-		"qobuz",
-		"ok",
-		"/tmp/test.flac",
-		false,
-	)
-
-	if resp.CoverURL != result.CoverURL {
-		t.Fatalf("cover url = %q, want %q", resp.CoverURL, result.CoverURL)
-	}
-}

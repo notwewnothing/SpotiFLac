@@ -363,7 +363,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get aboutAppDescription =>
-      'Скачивайте треки Spotify в lossless качестве с Tidal и Qobuz.';
+      'Скачайте треки Spotify в Lossless качестве из Tidal, Qobuz и Amazon Music.';
 
   @override
   String get artistAlbums => 'Альбомы';
@@ -706,15 +706,15 @@ class AppLocalizationsRu extends AppLocalizations {
   String get errorNoTracksFound => 'Треки не найдены';
 
   @override
-  String get errorUrlNotRecognized => 'Ссылка не распознана';
+  String get errorUrlNotRecognized => 'Link not recognized';
 
   @override
   String get errorUrlNotRecognizedMessage =>
-      'Эта ссылка не поддерживается. Убедитесь, что URL-адрес указан правильно и установлено совместимое расширение.';
+      'This link is not supported. Make sure the URL is correct and a compatible extension is installed.';
 
   @override
   String get errorUrlFetchFailed =>
-      'Не удалось загрузить контент по этой ссылке. Пожалуйста, попробуйте еще раз.';
+      'Failed to load content from this link. Please try again.';
 
   @override
   String errorMissingExtensionSource(String item) {
@@ -774,36 +774,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get searchPlaylists => 'Плейлисты';
 
   @override
-  String get searchSortTitle => 'Sort Results';
-
-  @override
-  String get searchSortDefault => 'Default';
-
-  @override
-  String get searchSortTitleAZ => 'Title (A-Z)';
-
-  @override
-  String get searchSortTitleZA => 'Title (Z-A)';
-
-  @override
-  String get searchSortArtistAZ => 'Artist (A-Z)';
-
-  @override
-  String get searchSortArtistZA => 'Artist (Z-A)';
-
-  @override
-  String get searchSortDurationShort => 'Duration (Shortest)';
-
-  @override
-  String get searchSortDurationLong => 'Duration (Longest)';
-
-  @override
-  String get searchSortDateOldest => 'Release Date (Oldest)';
-
-  @override
-  String get searchSortDateNewest => 'Release Date (Newest)';
-
-  @override
   String get tooltipPlay => 'Воспроизвести';
 
   @override
@@ -820,11 +790,11 @@ class AppLocalizationsRu extends AppLocalizations {
   String get folderOrganizationNone => 'Без организации';
 
   @override
-  String get folderOrganizationByPlaylist => 'По плейлисту';
+  String get folderOrganizationByPlaylist => 'By Playlist';
 
   @override
   String get folderOrganizationByPlaylistSubtitle =>
-      'Отдельная папка для каждого плейлиста';
+      'Separate folder for each playlist';
 
   @override
   String get folderOrganizationByArtist => 'По исполнителю';
@@ -1445,40 +1415,18 @@ class AppLocalizationsRu extends AppLocalizations {
   String get qualityHiResFlacMaxSubtitle => '24-бит / до 192кГц';
 
   @override
-  String get downloadLossy320 => 'Lossy 320kbps';
-
-  @override
-  String get downloadLossyFormat => 'Lossy Format';
-
-  @override
-  String get downloadLossy320Format => 'Lossy 320kbps Format';
-
-  @override
-  String get downloadLossy320FormatDesc =>
-      'Choose the output format for Tidal 320kbps lossy downloads. The original AAC stream will be converted to your selected format.';
-
-  @override
-  String get downloadLossyMp3 => 'MP3 320kbps';
-
-  @override
-  String get downloadLossyMp3Subtitle => 'Best compatibility, ~10MB per track';
-
-  @override
-  String get downloadLossyOpus256 => 'Opus 256kbps';
-
-  @override
-  String get downloadLossyOpus256Subtitle =>
-      'Best quality Opus, ~8MB per track';
-
-  @override
-  String get downloadLossyOpus128 => 'Opus 128kbps';
-
-  @override
-  String get downloadLossyOpus128Subtitle => 'Smallest size, ~4MB per track';
-
-  @override
   String get qualityNote =>
       'Фактическое качество зависит от доступности треков в сервисе';
+
+  @override
+  String get youtubeQualityNote =>
+      'YouTube обеспечивает только звук с потерями(Lossy).';
+
+  @override
+  String get youtubeOpusBitrateTitle => 'Битрейт YouTube Opus';
+
+  @override
+  String get youtubeMp3BitrateTitle => 'Битрейт YouTube MP3';
 
   @override
   String get downloadAskBeforeDownload => 'Спрашивать перед скачиванием';
@@ -1502,7 +1450,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get downloadUsePrimaryArtistOnlyEnabled =>
-      'Список исполнителей, чьи работы были удалены из названия папки (например, Джастин Бибер, Quavo → Джастин Бибер)';
+      'Featured artists removed from folder name (e.g. Justin Bieber, Quavo → Justin Bieber)';
 
   @override
   String get downloadUsePrimaryArtistOnlyDisabled =>
@@ -1580,13 +1528,6 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get albumFolderArtistAlbumSinglesSubtitle =>
       'Исполнитель/Альбом и Исполнитель/Сингл/';
-
-  @override
-  String get albumFolderArtistAlbumFlat => 'Artist / Album (Singles flat)';
-
-  @override
-  String get albumFolderArtistAlbumFlatSubtitle =>
-      'Artist/Album/ and Artist/song.flac';
 
   @override
   String get downloadedAlbumDeleteSelected => 'Удалить выбранные';
@@ -1999,7 +1940,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get tutorialWelcomeTip2 =>
-      'Получите аудио в качестве FLAC от Tidal, Qobuz или Deezer';
+      'Скачайте FLAC с Tidal, Qobuz или Amazon Music';
 
   @override
   String get tutorialWelcomeTip3 =>
@@ -2095,7 +2036,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String cleanupOrphanedDownloadsResult(int count) {
-    return 'Удалено $count утерянных записей из истории';
+    return 'Removed $count orphaned entries from history';
   }
 
   @override
@@ -2120,7 +2061,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get cacheSectionStorage => 'Кэшированные данные';
 
   @override
-  String get cacheSectionMaintenance => 'Обслуживание';
+  String get cacheSectionMaintenance => 'Maintenance';
 
   @override
   String get cacheAppDirectory => 'Папка кэша приложения';
@@ -2166,7 +2107,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get cacheCleanupUnusedDesc =>
-      'Удалить записи из истории загрузок и библиотеки, которые остались без файлов.';
+      'Remove orphaned download history and library entries for missing files.';
 
   @override
   String get cacheNoData => 'Нет кэшированных данных';
@@ -2214,7 +2155,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get cacheCleanupUnusedSubtitle =>
-      'Удалить историю загрузок, оставшихся без просмотра, и отсутствующие записи в библиотеке';
+      'Remove orphaned download history and missing library entries';
 
   @override
   String cacheCleanupResult(int downloadCount, int libraryCount) {
@@ -2354,52 +2295,52 @@ class AppLocalizationsRu extends AppLocalizations {
   String get trackConvertFailed => 'Ошибка конвертации';
 
   @override
-  String get cueSplitTitle => 'Разделить CUE Sheet';
+  String get cueSplitTitle => 'Split CUE Sheet';
 
   @override
-  String get cueSplitSubtitle => 'Разделить файл CUE+FLAC на отдельные треки';
+  String get cueSplitSubtitle => 'Split CUE+FLAC into individual tracks';
 
   @override
   String cueSplitAlbum(String album) {
-    return 'Альбом: $album';
+    return 'Album: $album';
   }
 
   @override
   String cueSplitArtist(String artist) {
-    return 'Артист: $artist';
+    return 'Artist: $artist';
   }
 
   @override
   String cueSplitTrackCount(int count) {
-    return '$count треков';
+    return '$count tracks';
   }
 
   @override
-  String get cueSplitConfirmTitle => 'Разделенный CUE-альбом';
+  String get cueSplitConfirmTitle => 'Split CUE Album';
 
   @override
   String cueSplitConfirmMessage(String album, int count) {
-    return 'Разбить \"$album\" на $count отдельных FLAC-файлов?';
+    return 'Split \"$album\" into $count individual FLAC files?\n\nFiles will be saved to the same directory.';
   }
 
   @override
   String cueSplitSplitting(int current, int total) {
-    return 'Разделение CUE sheet... ($current/$total)';
+    return 'Splitting CUE sheet... ($current/$total)';
   }
 
   @override
   String cueSplitSuccess(int count) {
-    return 'Успешно разделено на $count треков';
+    return 'Split into $count tracks successfully';
   }
 
   @override
-  String get cueSplitFailed => 'Разделение CUE не удалось';
+  String get cueSplitFailed => 'CUE split failed';
 
   @override
-  String get cueSplitNoAudioFile => 'Аудиофайл для этого CUE sheet не найден';
+  String get cueSplitNoAudioFile => 'Audio file not found for this CUE sheet';
 
   @override
-  String get cueSplitButton => 'Разделить на Треки';
+  String get cueSplitButton => 'Split into Tracks';
 
   @override
   String get actionCreate => 'Создать';
@@ -2565,8 +2506,7 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get selectionShareNoFiles =>
-      'Файлы, доступные для совместного доступа, не найдены';
+  String get selectionShareNoFiles => 'No shareable files found';
 
   @override
   String selectionConvertCount(int count) {
@@ -2599,7 +2539,7 @@ class AppLocalizationsRu extends AppLocalizations {
       other: 'tracks',
       one: 'track',
     );
-    return 'Преобразовать $count $_temp0 в $format с $bitrate?';
+    return 'Convert $count $_temp0 to $format at $bitrate?\n\nOriginal files will be deleted after conversion.';
   }
 
   @override
@@ -2802,22 +2742,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get downloadArtistNameFilters => 'Artist Name Filters';
-
-  @override
-  String get downloadCreatePlaylistSourceFolder =>
-      'Create playlist source folder';
-
-  @override
-  String get downloadCreatePlaylistSourceFolderEnabled =>
-      'Playlist downloads use Playlist/ plus your normal folder structure.';
-
-  @override
-  String get downloadCreatePlaylistSourceFolderDisabled =>
-      'Playlist downloads use the normal folder structure only.';
-
-  @override
-  String get downloadCreatePlaylistSourceFolderRedundant =>
-      'By Playlist already places downloads inside a playlist folder.';
 
   @override
   String get downloadSongLinkRegion => 'SongLink Region';
@@ -3049,106 +2973,4 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get editMetadataSelectEmpty => 'Empty only';
-
-  @override
-  String queueDownloadingCount(int count) {
-    return 'Downloading ($count)';
-  }
-
-  @override
-  String get queueDownloadedHeader => 'Downloaded';
-
-  @override
-  String get queueFilteringIndicator => 'Filtering...';
-
-  @override
-  String queueTrackCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count tracks',
-      one: '1 track',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String queueAlbumCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count albums',
-      one: '1 album',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get queueEmptyAlbums => 'No album downloads';
-
-  @override
-  String get queueEmptyAlbumsSubtitle =>
-      'Download multiple tracks from an album to see them here';
-
-  @override
-  String get queueEmptySingles => 'No single downloads';
-
-  @override
-  String get queueEmptySinglesSubtitle =>
-      'Single track downloads will appear here';
-
-  @override
-  String get queueEmptyHistory => 'No download history';
-
-  @override
-  String get queueEmptyHistorySubtitle => 'Downloaded tracks will appear here';
-
-  @override
-  String get selectionAllPlaylistsSelected => 'All playlists selected';
-
-  @override
-  String get selectionTapPlaylistsToSelect => 'Tap playlists to select';
-
-  @override
-  String get selectionSelectPlaylistsToDelete => 'Select playlists to delete';
-
-  @override
-  String get audioAnalysisTitle => 'Audio Quality Analysis';
-
-  @override
-  String get audioAnalysisDescription =>
-      'Verify lossless quality with spectrum analysis';
-
-  @override
-  String get audioAnalysisAnalyzing => 'Analyzing audio...';
-
-  @override
-  String get audioAnalysisSampleRate => 'Sample Rate';
-
-  @override
-  String get audioAnalysisBitDepth => 'Bit Depth';
-
-  @override
-  String get audioAnalysisChannels => 'Channels';
-
-  @override
-  String get audioAnalysisDuration => 'Duration';
-
-  @override
-  String get audioAnalysisNyquist => 'Nyquist';
-
-  @override
-  String get audioAnalysisFileSize => 'Size';
-
-  @override
-  String get audioAnalysisDynamicRange => 'Dynamic Range';
-
-  @override
-  String get audioAnalysisPeak => 'Peak';
-
-  @override
-  String get audioAnalysisRms => 'RMS';
-
-  @override
-  String get audioAnalysisSamples => 'Samples';
 }

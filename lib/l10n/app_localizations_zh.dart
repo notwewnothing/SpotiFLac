@@ -760,36 +760,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get searchPlaylists => 'Playlists';
 
   @override
-  String get searchSortTitle => 'Sort Results';
-
-  @override
-  String get searchSortDefault => 'Default';
-
-  @override
-  String get searchSortTitleAZ => 'Title (A-Z)';
-
-  @override
-  String get searchSortTitleZA => 'Title (Z-A)';
-
-  @override
-  String get searchSortArtistAZ => 'Artist (A-Z)';
-
-  @override
-  String get searchSortArtistZA => 'Artist (Z-A)';
-
-  @override
-  String get searchSortDurationShort => 'Duration (Shortest)';
-
-  @override
-  String get searchSortDurationLong => 'Duration (Longest)';
-
-  @override
-  String get searchSortDateOldest => 'Release Date (Oldest)';
-
-  @override
-  String get searchSortDateNewest => 'Release Date (Newest)';
-
-  @override
   String get tooltipPlay => 'Play';
 
   @override
@@ -1420,40 +1390,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get qualityHiResFlacMaxSubtitle => '24-bit / up to 192kHz';
 
   @override
-  String get downloadLossy320 => 'Lossy 320kbps';
-
-  @override
-  String get downloadLossyFormat => 'Lossy Format';
-
-  @override
-  String get downloadLossy320Format => 'Lossy 320kbps Format';
-
-  @override
-  String get downloadLossy320FormatDesc =>
-      'Choose the output format for Tidal 320kbps lossy downloads. The original AAC stream will be converted to your selected format.';
-
-  @override
-  String get downloadLossyMp3 => 'MP3 320kbps';
-
-  @override
-  String get downloadLossyMp3Subtitle => 'Best compatibility, ~10MB per track';
-
-  @override
-  String get downloadLossyOpus256 => 'Opus 256kbps';
-
-  @override
-  String get downloadLossyOpus256Subtitle =>
-      'Best quality Opus, ~8MB per track';
-
-  @override
-  String get downloadLossyOpus128 => 'Opus 128kbps';
-
-  @override
-  String get downloadLossyOpus128Subtitle => 'Smallest size, ~4MB per track';
-
-  @override
   String get qualityNote =>
       'Actual quality depends on track availability from the service';
+
+  @override
+  String get youtubeQualityNote =>
+      'YouTube provides lossy audio only. Not part of lossless fallback.';
+
+  @override
+  String get youtubeOpusBitrateTitle => 'YouTube Opus Bitrate';
+
+  @override
+  String get youtubeMp3BitrateTitle => 'YouTube MP3 Bitrate';
 
   @override
   String get downloadAskBeforeDownload => 'Ask Before Download';
@@ -1551,13 +1499,6 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get albumFolderArtistAlbumSinglesSubtitle =>
       'Artist/Album/ and Artist/Singles/';
-
-  @override
-  String get albumFolderArtistAlbumFlat => 'Artist / Album (Singles flat)';
-
-  @override
-  String get albumFolderArtistAlbumFlatSubtitle =>
-      'Artist/Album/ and Artist/song.flac';
 
   @override
   String get downloadedAlbumDeleteSelected => 'Delete Selected';
@@ -2745,22 +2686,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get downloadArtistNameFilters => 'Artist Name Filters';
 
   @override
-  String get downloadCreatePlaylistSourceFolder =>
-      'Create playlist source folder';
-
-  @override
-  String get downloadCreatePlaylistSourceFolderEnabled =>
-      'Playlist downloads use Playlist/ plus your normal folder structure.';
-
-  @override
-  String get downloadCreatePlaylistSourceFolderDisabled =>
-      'Playlist downloads use the normal folder structure only.';
-
-  @override
-  String get downloadCreatePlaylistSourceFolderRedundant =>
-      'By Playlist already places downloads inside a playlist folder.';
-
-  @override
   String get downloadSongLinkRegion => 'SongLink Region';
 
   @override
@@ -2990,108 +2915,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get editMetadataSelectEmpty => 'Empty only';
-
-  @override
-  String queueDownloadingCount(int count) {
-    return 'Downloading ($count)';
-  }
-
-  @override
-  String get queueDownloadedHeader => 'Downloaded';
-
-  @override
-  String get queueFilteringIndicator => 'Filtering...';
-
-  @override
-  String queueTrackCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count tracks',
-      one: '1 track',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String queueAlbumCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count albums',
-      one: '1 album',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get queueEmptyAlbums => 'No album downloads';
-
-  @override
-  String get queueEmptyAlbumsSubtitle =>
-      'Download multiple tracks from an album to see them here';
-
-  @override
-  String get queueEmptySingles => 'No single downloads';
-
-  @override
-  String get queueEmptySinglesSubtitle =>
-      'Single track downloads will appear here';
-
-  @override
-  String get queueEmptyHistory => 'No download history';
-
-  @override
-  String get queueEmptyHistorySubtitle => 'Downloaded tracks will appear here';
-
-  @override
-  String get selectionAllPlaylistsSelected => 'All playlists selected';
-
-  @override
-  String get selectionTapPlaylistsToSelect => 'Tap playlists to select';
-
-  @override
-  String get selectionSelectPlaylistsToDelete => 'Select playlists to delete';
-
-  @override
-  String get audioAnalysisTitle => 'Audio Quality Analysis';
-
-  @override
-  String get audioAnalysisDescription =>
-      'Verify lossless quality with spectrum analysis';
-
-  @override
-  String get audioAnalysisAnalyzing => 'Analyzing audio...';
-
-  @override
-  String get audioAnalysisSampleRate => 'Sample Rate';
-
-  @override
-  String get audioAnalysisBitDepth => 'Bit Depth';
-
-  @override
-  String get audioAnalysisChannels => 'Channels';
-
-  @override
-  String get audioAnalysisDuration => 'Duration';
-
-  @override
-  String get audioAnalysisNyquist => 'Nyquist';
-
-  @override
-  String get audioAnalysisFileSize => 'Size';
-
-  @override
-  String get audioAnalysisDynamicRange => 'Dynamic Range';
-
-  @override
-  String get audioAnalysisPeak => 'Peak';
-
-  @override
-  String get audioAnalysisRms => 'RMS';
-
-  @override
-  String get audioAnalysisSamples => 'Samples';
 }
 
 /// The translations for Chinese, as used in China (`zh_CN`).
@@ -3102,283 +2925,294 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get appName => 'SpotiFLAC';
 
   @override
-  String get navHome => '主页';
+  String get navHome => 'Home';
 
   @override
-  String get navLibrary => '乐库';
+  String get navLibrary => 'Library';
 
   @override
-  String get navSettings => '设置';
+  String get navSettings => 'Settings';
 
   @override
-  String get navStore => '商店';
+  String get navStore => 'Store';
 
   @override
-  String get homeTitle => '主页';
+  String get homeTitle => 'Home';
 
   @override
-  String get homeSubtitle => '粘贴 Spotify 链接或按名称搜索';
+  String get homeSubtitle => 'Paste a Spotify link or search by name';
 
   @override
-  String get homeSupports => '支持：歌曲、专辑、播放列表、艺人网址';
+  String get homeSupports => 'Supports: Track, Album, Playlist, Artist URLs';
 
   @override
-  String get homeRecent => '最近';
+  String get homeRecent => 'Recent';
 
   @override
-  String get historyFilterAll => '全部';
+  String get historyFilterAll => 'All';
 
   @override
-  String get historyFilterAlbums => '专辑';
+  String get historyFilterAlbums => 'Albums';
 
   @override
-  String get historyFilterSingles => '单曲';
+  String get historyFilterSingles => 'Singles';
 
   @override
-  String get historySearchHint => '搜索历史……';
+  String get historySearchHint => 'Search history...';
 
   @override
-  String get settingsTitle => '设置';
+  String get settingsTitle => 'Settings';
 
   @override
-  String get settingsDownload => '下载';
+  String get settingsDownload => 'Download';
 
   @override
-  String get settingsAppearance => '外观';
+  String get settingsAppearance => 'Appearance';
 
   @override
-  String get settingsOptions => '选项';
+  String get settingsOptions => 'Options';
 
   @override
-  String get settingsExtensions => '扩展';
+  String get settingsExtensions => 'Extensions';
 
   @override
-  String get settingsAbout => '关于';
+  String get settingsAbout => 'About';
 
   @override
-  String get downloadTitle => '下载';
+  String get downloadTitle => 'Download';
 
   @override
-  String get downloadAskQualitySubtitle => '为每次下载显示质量选择器';
+  String get downloadAskQualitySubtitle =>
+      'Show quality picker for each download';
 
   @override
-  String get downloadFilenameFormat => '文件名格式';
+  String get downloadFilenameFormat => 'Filename Format';
 
   @override
-  String get downloadFolderOrganization => '文件夹结构';
+  String get downloadFolderOrganization => 'Folder Organization';
 
   @override
-  String get appearanceTitle => '外观';
+  String get appearanceTitle => 'Appearance';
 
   @override
-  String get appearanceThemeSystem => '系统';
+  String get appearanceThemeSystem => 'System';
 
   @override
-  String get appearanceThemeLight => '浅色';
+  String get appearanceThemeLight => 'Light';
 
   @override
-  String get appearanceThemeDark => '深色';
+  String get appearanceThemeDark => 'Dark';
 
   @override
-  String get appearanceDynamicColor => '动态色彩';
+  String get appearanceDynamicColor => 'Dynamic Color';
 
   @override
-  String get appearanceDynamicColorSubtitle => '使用壁纸的颜色';
+  String get appearanceDynamicColorSubtitle => 'Use colors from your wallpaper';
 
   @override
-  String get appearanceHistoryView => '历史记录';
+  String get appearanceHistoryView => 'History View';
 
   @override
-  String get appearanceHistoryViewList => '列表';
+  String get appearanceHistoryViewList => 'List';
 
   @override
-  String get appearanceHistoryViewGrid => '网格';
+  String get appearanceHistoryViewGrid => 'Grid';
 
   @override
-  String get optionsTitle => '选项';
+  String get optionsTitle => 'Options';
 
   @override
-  String get optionsPrimaryProvider => '主要提供者';
+  String get optionsPrimaryProvider => 'Primary Provider';
 
   @override
-  String get optionsPrimaryProviderSubtitle => '按歌曲名称搜索时使用的服务。';
+  String get optionsPrimaryProviderSubtitle =>
+      'Service used when searching by track name.';
 
   @override
   String optionsUsingExtension(String extensionName) {
-    return '使用扩展：$extensionName';
+    return 'Using extension: $extensionName';
   }
 
   @override
-  String get optionsSwitchBack => '点击 Deezer 或 Spotify 即可从扩展程序切换回来';
+  String get optionsSwitchBack =>
+      'Tap Deezer or Spotify to switch back from extension';
 
   @override
-  String get optionsAutoFallback => '自动回退';
+  String get optionsAutoFallback => 'Auto Fallback';
 
   @override
-  String get optionsAutoFallbackSubtitle => '如果下载失败，请尝试其他服务';
+  String get optionsAutoFallbackSubtitle =>
+      'Try other services if download fails';
 
   @override
-  String get optionsUseExtensionProviders => '使用扩展提供商';
+  String get optionsUseExtensionProviders => 'Use Extension Providers';
 
   @override
-  String get optionsUseExtensionProvidersOn => '扩展会被最先尝试';
+  String get optionsUseExtensionProvidersOn => 'Extensions will be tried first';
 
   @override
-  String get optionsUseExtensionProvidersOff => '仅使用内置提供商';
+  String get optionsUseExtensionProvidersOff => 'Using built-in providers only';
 
   @override
-  String get optionsEmbedLyrics => '内嵌歌词';
+  String get optionsEmbedLyrics => 'Embed Lyrics';
 
   @override
-  String get optionsEmbedLyricsSubtitle => '嵌入已同步歌词到 FLAC 文件';
+  String get optionsEmbedLyricsSubtitle =>
+      'Embed synced lyrics into FLAC files';
 
   @override
-  String get optionsMaxQualityCover => '最高质量封面';
+  String get optionsMaxQualityCover => 'Max Quality Cover';
 
   @override
-  String get optionsMaxQualityCoverSubtitle => '下载最高分辨率封面';
+  String get optionsMaxQualityCoverSubtitle =>
+      'Download highest resolution cover art';
 
   @override
-  String get optionsConcurrentDownloads => '并行下载数';
+  String get optionsConcurrentDownloads => 'Concurrent Downloads';
 
   @override
-  String get optionsConcurrentSequential => '按顺序下载（一次一首）';
+  String get optionsConcurrentSequential => 'Sequential (1 at a time)';
 
   @override
   String optionsConcurrentParallel(int count) {
-    return '同时下载 $count 首';
+    return '$count parallel downloads';
   }
 
   @override
-  String get optionsConcurrentWarning => '并行下载可能会触发速率限制';
+  String get optionsConcurrentWarning =>
+      'Parallel downloads may trigger rate limiting';
 
   @override
-  String get optionsExtensionStore => '扩展商店';
+  String get optionsExtensionStore => 'Extension Store';
 
   @override
-  String get optionsExtensionStoreSubtitle => '在导航中显示商店标签';
+  String get optionsExtensionStoreSubtitle => 'Show Store tab in navigation';
 
   @override
-  String get optionsCheckUpdates => '检查更新';
+  String get optionsCheckUpdates => 'Check for Updates';
 
   @override
-  String get optionsCheckUpdatesSubtitle => '当有新版本可用时通知';
+  String get optionsCheckUpdatesSubtitle =>
+      'Notify when new version is available';
 
   @override
-  String get optionsUpdateChannel => '更新频道';
+  String get optionsUpdateChannel => 'Update Channel';
 
   @override
-  String get optionsUpdateChannelStable => '仅稳定版本';
+  String get optionsUpdateChannelStable => 'Stable releases only';
 
   @override
-  String get optionsUpdateChannelPreview => '获取预览版本';
+  String get optionsUpdateChannelPreview => 'Get preview releases';
 
   @override
-  String get optionsUpdateChannelWarning => '预览版本可能包含错误或者尚未完善的功能';
+  String get optionsUpdateChannelWarning =>
+      'Preview may contain bugs or incomplete features';
 
   @override
-  String get optionsClearHistory => '清除下载历史记录';
+  String get optionsClearHistory => 'Clear Download History';
 
   @override
-  String get optionsClearHistorySubtitle => '从历史记录中清除所有已下载的曲目';
+  String get optionsClearHistorySubtitle =>
+      'Remove all downloaded tracks from history';
 
   @override
-  String get optionsDetailedLogging => '详细日志';
+  String get optionsDetailedLogging => 'Detailed Logging';
 
   @override
-  String get optionsDetailedLoggingOn => '正在记录详细日志';
+  String get optionsDetailedLoggingOn => 'Detailed logs are being recorded';
 
   @override
-  String get optionsDetailedLoggingOff => '为错误报告启用';
+  String get optionsDetailedLoggingOff => 'Enable for bug reports';
 
   @override
-  String get optionsSpotifyCredentials => 'Spotify 凭据';
+  String get optionsSpotifyCredentials => 'Spotify Credentials';
 
   @override
   String optionsSpotifyCredentialsConfigured(String clientId) {
-    return '客户端 ID：$clientId……';
+    return 'Client ID: $clientId...';
   }
 
   @override
-  String get optionsSpotifyCredentialsRequired => '必填 - 点击配置';
+  String get optionsSpotifyCredentialsRequired => 'Required - tap to configure';
 
   @override
   String get optionsSpotifyWarning =>
-      'Spotify 需要您自己的 API 凭据。在 developer.spotify.com 免费获取';
+      'Spotify requires your own API credentials. Get them free from developer.spotify.com';
 
   @override
   String get optionsSpotifyDeprecationWarning =>
-      'Spotify 搜索将在 2026 年 3 月 3 日因 Spotify API 更改而被废弃。请切换到 Deezer。';
+      'Spotify search will be deprecated on March 3, 2026 due to Spotify API changes. Please switch to Deezer.';
 
   @override
-  String get extensionsTitle => '扩展';
+  String get extensionsTitle => 'Extensions';
 
   @override
-  String get extensionsDisabled => '禁用';
+  String get extensionsDisabled => 'Disabled';
 
   @override
   String extensionsVersion(String version) {
-    return '版本 $version';
+    return 'Version $version';
   }
 
   @override
   String extensionsAuthor(String author) {
-    return '来自 $author';
+    return 'by $author';
   }
 
   @override
-  String get extensionsUninstall => '卸载';
+  String get extensionsUninstall => 'Uninstall';
 
   @override
-  String get storeTitle => '扩展商店';
+  String get storeTitle => 'Extension Store';
 
   @override
-  String get storeSearch => '搜索扩展……';
+  String get storeSearch => 'Search extensions...';
 
   @override
-  String get storeInstall => '安装';
+  String get storeInstall => 'Install';
 
   @override
-  String get storeInstalled => '已安装';
+  String get storeInstalled => 'Installed';
 
   @override
-  String get storeUpdate => '更新';
+  String get storeUpdate => 'Update';
 
   @override
-  String get aboutTitle => '关于';
+  String get aboutTitle => 'About';
 
   @override
-  String get aboutContributors => '贡献者';
+  String get aboutContributors => 'Contributors';
 
   @override
-  String get aboutMobileDeveloper => '移动版本开发者';
+  String get aboutMobileDeveloper => 'Mobile version developer';
 
   @override
-  String get aboutOriginalCreator => '原 SpotiLDAC 创建者';
+  String get aboutOriginalCreator => 'Creator of the original SpotiFLAC';
 
   @override
-  String get aboutLogoArtist => '有才华的艺术家创建了我们美丽的应用图标！';
+  String get aboutLogoArtist =>
+      'The talented artist who created our beautiful app logo!';
 
   @override
-  String get aboutTranslators => '译者';
+  String get aboutTranslators => 'Translators';
 
   @override
-  String get aboutSpecialThanks => '特别鸣谢';
+  String get aboutSpecialThanks => 'Special Thanks';
 
   @override
-  String get aboutLinks => '相关链接';
+  String get aboutLinks => 'Links';
 
   @override
-  String get aboutMobileSource => '移动版本源代码';
+  String get aboutMobileSource => 'Mobile source code';
 
   @override
-  String get aboutPCSource => '桌面版本源代码';
+  String get aboutPCSource => 'PC source code';
 
   @override
-  String get aboutReportIssue => '报告一个问题';
+  String get aboutReportIssue => 'Report an issue';
 
   @override
-  String get aboutReportIssueSubtitle => '报告您遇到的任何问题';
+  String get aboutReportIssueSubtitle => 'Report any problems you encounter';
 
   @override
   String get aboutFeatureRequest => 'Feature request';
@@ -3435,7 +3269,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get aboutAppDescription =>
-      'Download Spotify tracks in lossless quality from Tidal and Qobuz.';
+      'Download Spotify tracks in lossless quality from Tidal, Qobuz, and Amazon Music.';
 
   @override
   String get artistAlbums => 'Albums';
@@ -3551,19 +3385,20 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get setupNotificationGranted => 'Notification Permission Granted!';
 
   @override
-  String get setupNotificationEnable => '启用通知';
+  String get setupNotificationEnable => 'Enable Notifications';
 
   @override
-  String get setupFolderChoose => '选择下载文件夹';
+  String get setupFolderChoose => 'Choose Download Folder';
 
   @override
-  String get setupFolderDescription => '选择保存您下载的音乐的文件夹。';
+  String get setupFolderDescription =>
+      'Select a folder where your downloaded music will be saved.';
 
   @override
-  String get setupSelectFolder => '选择文件夹';
+  String get setupSelectFolder => 'Select Folder';
 
   @override
-  String get setupEnableNotifications => '启用通知';
+  String get setupEnableNotifications => 'Enable Notifications';
 
   @override
   String get setupNotificationBackgroundDescription =>
@@ -3760,21 +3595,11 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
   String get errorRateLimited => 'Rate Limited';
 
   @override
-  String get errorRateLimitedMessage => '请求过多。请等一会再搜索。';
+  String get errorRateLimitedMessage =>
+      'Too many requests. Please wait a moment before searching again.';
 
   @override
-  String get errorNoTracksFound => '未找到曲目';
-
-  @override
-  String get errorUrlNotRecognized => 'Link not recognized';
-
-  @override
-  String get errorUrlNotRecognizedMessage =>
-      'This link is not supported. Make sure the URL is correct and a compatible extension is installed.';
-
-  @override
-  String get errorUrlFetchFailed =>
-      'Failed to load content from this link. Please try again.';
+  String get errorNoTracksFound => 'No tracks found';
 
   @override
   String errorMissingExtensionSource(String item) {
@@ -3848,13 +3673,6 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get folderOrganizationNone => 'No organization';
-
-  @override
-  String get folderOrganizationByPlaylist => 'By Playlist';
-
-  @override
-  String get folderOrganizationByPlaylistSubtitle =>
-      'Separate folder for each playlist';
 
   @override
   String get folderOrganizationByArtist => 'By Artist';
@@ -4427,6 +4245,16 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
       'Actual quality depends on track availability from the service';
 
   @override
+  String get youtubeQualityNote =>
+      'YouTube provides lossy audio only. Not part of lossless fallback.';
+
+  @override
+  String get youtubeOpusBitrateTitle => 'YouTube Opus Bitrate';
+
+  @override
+  String get youtubeMp3BitrateTitle => 'YouTube MP3 Bitrate';
+
+  @override
   String get downloadAskBeforeDownload => 'Ask Before Download';
 
   @override
@@ -4894,7 +4722,7 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get tutorialWelcomeTip2 =>
-      'Get FLAC quality audio from Tidal, Qobuz, or Deezer';
+      'Get FLAC quality audio from Tidal, Qobuz, or Amazon Music';
 
   @override
   String get tutorialWelcomeTip3 =>
@@ -5210,54 +5038,6 @@ class AppLocalizationsZhCn extends AppLocalizationsZh {
 
   @override
   String get trackConvertFailed => 'Conversion failed';
-
-  @override
-  String get cueSplitTitle => 'Split CUE Sheet';
-
-  @override
-  String get cueSplitSubtitle => 'Split CUE+FLAC into individual tracks';
-
-  @override
-  String cueSplitAlbum(String album) {
-    return 'Album: $album';
-  }
-
-  @override
-  String cueSplitArtist(String artist) {
-    return 'Artist: $artist';
-  }
-
-  @override
-  String cueSplitTrackCount(int count) {
-    return '$count tracks';
-  }
-
-  @override
-  String get cueSplitConfirmTitle => 'Split CUE Album';
-
-  @override
-  String cueSplitConfirmMessage(String album, int count) {
-    return 'Split \"$album\" into $count individual FLAC files?\n\nFiles will be saved to the same directory.';
-  }
-
-  @override
-  String cueSplitSplitting(int current, int total) {
-    return 'Splitting CUE sheet... ($current/$total)';
-  }
-
-  @override
-  String cueSplitSuccess(int count) {
-    return 'Split into $count tracks successfully';
-  }
-
-  @override
-  String get cueSplitFailed => 'CUE split failed';
-
-  @override
-  String get cueSplitNoAudioFile => 'Audio file not found for this CUE sheet';
-
-  @override
-  String get cueSplitButton => 'Split into Tracks';
 
   @override
   String get actionCreate => 'Create';
@@ -5829,7 +5609,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get aboutAppDescription =>
-      'Download Spotify tracks in lossless quality from Tidal and Qobuz.';
+      'Download Spotify tracks in lossless quality from Tidal, Qobuz, and Amazon Music.';
 
   @override
   String get artistAlbums => 'Albums';
@@ -6162,17 +5942,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get errorNoTracksFound => 'No tracks found';
 
   @override
-  String get errorUrlNotRecognized => 'Link not recognized';
-
-  @override
-  String get errorUrlNotRecognizedMessage =>
-      'This link is not supported. Make sure the URL is correct and a compatible extension is installed.';
-
-  @override
-  String get errorUrlFetchFailed =>
-      'Failed to load content from this link. Please try again.';
-
-  @override
   String errorMissingExtensionSource(String item) {
     return 'Cannot load $item: missing extension source';
   }
@@ -6244,13 +6013,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get folderOrganizationNone => 'No organization';
-
-  @override
-  String get folderOrganizationByPlaylist => 'By Playlist';
-
-  @override
-  String get folderOrganizationByPlaylistSubtitle =>
-      'Separate folder for each playlist';
 
   @override
   String get folderOrganizationByArtist => 'By Artist';
@@ -6823,6 +6585,16 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
       'Actual quality depends on track availability from the service';
 
   @override
+  String get youtubeQualityNote =>
+      'YouTube provides lossy audio only. Not part of lossless fallback.';
+
+  @override
+  String get youtubeOpusBitrateTitle => 'YouTube Opus Bitrate';
+
+  @override
+  String get youtubeMp3BitrateTitle => 'YouTube MP3 Bitrate';
+
+  @override
   String get downloadAskBeforeDownload => 'Ask Before Download';
 
   @override
@@ -7290,7 +7062,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get tutorialWelcomeTip2 =>
-      'Get FLAC quality audio from Tidal, Qobuz, or Deezer';
+      'Get FLAC quality audio from Tidal, Qobuz, or Amazon Music';
 
   @override
   String get tutorialWelcomeTip3 =>
@@ -7606,54 +7378,6 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get trackConvertFailed => 'Conversion failed';
-
-  @override
-  String get cueSplitTitle => 'Split CUE Sheet';
-
-  @override
-  String get cueSplitSubtitle => 'Split CUE+FLAC into individual tracks';
-
-  @override
-  String cueSplitAlbum(String album) {
-    return 'Album: $album';
-  }
-
-  @override
-  String cueSplitArtist(String artist) {
-    return 'Artist: $artist';
-  }
-
-  @override
-  String cueSplitTrackCount(int count) {
-    return '$count tracks';
-  }
-
-  @override
-  String get cueSplitConfirmTitle => 'Split CUE Album';
-
-  @override
-  String cueSplitConfirmMessage(String album, int count) {
-    return 'Split \"$album\" into $count individual FLAC files?\n\nFiles will be saved to the same directory.';
-  }
-
-  @override
-  String cueSplitSplitting(int current, int total) {
-    return 'Splitting CUE sheet... ($current/$total)';
-  }
-
-  @override
-  String cueSplitSuccess(int count) {
-    return 'Split into $count tracks successfully';
-  }
-
-  @override
-  String get cueSplitFailed => 'CUE split failed';
-
-  @override
-  String get cueSplitNoAudioFile => 'Audio file not found for this CUE sheet';
-
-  @override
-  String get cueSplitButton => 'Split into Tracks';
 
   @override
   String get actionCreate => 'Create';

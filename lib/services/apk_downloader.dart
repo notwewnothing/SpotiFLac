@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:spotiflac_android/utils/logger.dart';
+import 'package:spotiflac_android/utils/platform_spoof.dart' as platform;
 
 final _log = AppLogger('ApkDownloader');
 
@@ -22,7 +23,7 @@ class ApkDownloader {
 
     final client = http.Client();
     IOSink? sink;
-    
+
     try {
       final request = http.Request('GET', uri);
       final response = await client.send(request);
@@ -33,7 +34,7 @@ class ApkDownloader {
       }
 
       final contentLength = response.contentLength ?? 0;
-      
+
       final dir = await getExternalStorageDirectory();
       if (dir == null) {
         _log.e('Could not get storage directory');
@@ -42,7 +43,7 @@ class ApkDownloader {
 
       final filePath = '${dir.path}/SpotiFLAC-$version.apk';
       final file = File(filePath);
-      
+
       if (await file.exists()) {
         await file.delete();
       }

@@ -44,76 +44,16 @@ func compareVersions(v1, v2 string) int {
 }
 
 type LoadedExtension struct {
-	ID          string             `json:"id"`
-	Manifest    *ExtensionManifest `json:"manifest"`
-	VM          *goja.Runtime      `json:"-"`
-	VMMu        sync.Mutex         `json:"-"`
-	runtime     *ExtensionRuntime
-	initialized bool
-	Enabled     bool   `json:"enabled"`
-	Error       string `json:"error,omitempty"`
-	DataDir     string `json:"data_dir"`
-	SourceDir   string `json:"source_dir"`
-	IconPath    string `json:"icon_path"`
-}
-
-func getExtensionInitSettings(extensionID string) map[string]interface{} {
-	settings := GetExtensionSettingsStore().GetAll(extensionID)
-	if len(settings) == 0 {
-		return settings
-	}
-
-	filtered := make(map[string]interface{}, len(settings))
-	for key, value := range settings {
-		if strings.HasPrefix(key, "_") {
-			continue
-		}
-		filtered[key] = value
-	}
-	return filtered
-}
-
-func ensureRuntimeReadyLocked(ext *LoadedExtension, applyStoredSettings bool) error {
-	if ext.VM == nil || ext.runtime == nil {
-		if err := initializeVMLocked(ext); err != nil {
-			ext.Error = err.Error()
-			ext.Enabled = false
-			return err
-		}
-	}
-
-	if applyStoredSettings && !ext.initialized {
-		settings := getExtensionInitSettings(ext.ID)
-		if len(settings) > 0 {
-			if err := initializeExtensionWithSettingsLocked(ext, settings); err != nil {
-				teardownVMLocked(ext)
-				ext.Error = err.Error()
-				ext.Enabled = false
-				return err
-			}
-		} else {
-			ext.initialized = true
-		}
-	}
-
-	ext.Error = ""
-	return nil
-}
-
-func (ext *LoadedExtension) ensureRuntimeReady() error {
-	ext.VMMu.Lock()
-	defer ext.VMMu.Unlock()
-
-	return ensureRuntimeReadyLocked(ext, true)
-}
-
-func (ext *LoadedExtension) lockReadyVM() (*goja.Runtime, error) {
-	ext.VMMu.Lock()
-	if err := ensureRuntimeReadyLocked(ext, true); err != nil {
-		ext.VMMu.Unlock()
-		return nil, err
-	}
-	return ext.VM, nil
+	ID        string             `json:"id"`
+	Manifest  *ExtensionManifest `json:"manifest"`
+	VM        *goja.Runtime      `json:"-"`
+	VMMu      sync.Mutex         `json:"-"`
+	runtime   *ExtensionRuntime
+	Enabled   bool   `json:"enabled"`
+	Error     string `json:"error,omitempty"`
+	DataDir   string `json:"data_dir"`
+	SourceDir string `json:"source_dir"`
+	IconPath  string `json:"icon_path"`
 }
 
 type ExtensionManager struct {
@@ -280,10 +220,10 @@ func (m *ExtensionManager) LoadExtensionFromFile(filePath string) (*LoadedExtens
 		SourceDir: extDir,
 	}
 
-	if err := validateExtensionLoad(ext); err != nil {
+	if err := m.initializeVM(ext); err != nil {
 		ext.Error = err.Error()
 		ext.Enabled = false
-		GoLog("[Extension] Failed to validate extension %s: %v\n", manifest.Name, err)
+		GoLog("[Extension] Failed to initialize VM for %s: %v\n", manifest.Name, err)
 	}
 
 	m.extensions[manifest.Name] = ext
@@ -292,10 +232,7 @@ func (m *ExtensionManager) LoadExtensionFromFile(filePath string) (*LoadedExtens
 	return ext, nil
 }
 
-func initializeVMLocked(ext *LoadedExtension) error {
-	ext.VM = nil
-	ext.runtime = nil
-	ext.initialized = false
+func (m *ExtensionManager) initializeVM(ext *LoadedExtension) error {
 	vm := goja.New()
 	ext.VM = vm
 
@@ -342,136 +279,6 @@ func initializeVMLocked(ext *LoadedExtension) error {
 	return nil
 }
 
-func (m *ExtensionManager) initializeVM(ext *LoadedExtension) error {
-	ext.VMMu.Lock()
-	defer ext.VMMu.Unlock()
-	return initializeVMLocked(ext)
-}
-
-func initializeExtensionWithSettingsLocked(
-	ext *LoadedExtension,
-	settings map[string]interface{},
-) error {
-	if ext.VM == nil {
-		return fmt.Errorf("Extension failed to load. Please reinstall the extension")
-	}
-
-	settingsJSON, err := json.Marshal(settings)
-	if err != nil {
-		return fmt.Errorf("Failed to save settings")
-	}
-
-	script := fmt.Sprintf(`
-		(function() {
-			var settings = %s;
-			if (typeof extension !== 'undefined' && typeof extension.initialize === 'function') {
-				try {
-					extension.initialize(settings);
-					return { success: true };
-				} catch (e) {
-					return { success: false, error: e.toString() };
-				}
-			}
-			return { success: true, message: 'no initialize function' };
-		})()
-	`, string(settingsJSON))
-
-	result, err := ext.VM.RunString(script)
-	if err != nil {
-		ext.Error = fmt.Sprintf("initialize failed: %v", err)
-		ext.Enabled = false
-		GoLog("[Extension] Initialize error for %s: %v\n", ext.ID, err)
-		return err
-	}
-
-	if result != nil && !goja.IsUndefined(result) {
-		exported := result.Export()
-		if resultMap, ok := exported.(map[string]interface{}); ok {
-			if success, ok := resultMap["success"].(bool); ok && !success {
-				errMsg := "unknown error"
-				if e, ok := resultMap["error"].(string); ok {
-					errMsg = e
-				}
-				ext.Error = errMsg
-				ext.Enabled = false
-				GoLog("[Extension] Initialize failed for %s: %s\n", ext.ID, errMsg)
-				return fmt.Errorf("initialize failed: %s", errMsg)
-			}
-		}
-	}
-
-	ext.initialized = true
-	GoLog("[Extension] Initialized %s\n", ext.ID)
-	return nil
-}
-
-func runCleanupLocked(ext *LoadedExtension) error {
-	if ext.VM != nil {
-		script := `
-			(function() {
-				if (typeof extension !== 'undefined' && typeof extension.cleanup === 'function') {
-					try {
-						extension.cleanup();
-						return { success: true };
-					} catch (e) {
-						return { success: false, error: e.toString() };
-					}
-				}
-				return { success: true, message: 'no cleanup function' };
-			})()
-		`
-
-		result, err := ext.VM.RunString(script)
-		if err != nil {
-			return err
-		}
-
-		if result != nil && !goja.IsUndefined(result) {
-			exported := result.Export()
-			if resultMap, ok := exported.(map[string]interface{}); ok {
-				if success, ok := resultMap["success"].(bool); ok && !success {
-					errMsg := "unknown error"
-					if e, ok := resultMap["error"].(string); ok {
-						errMsg = e
-					}
-					return fmt.Errorf("cleanup failed: %s", errMsg)
-				}
-			}
-		}
-
-		if result != nil && !goja.IsUndefined(result) && !goja.IsNull(result) {
-			GoLog("[Extension] Cleanup called for %s\n", ext.ID)
-		}
-	}
-	return nil
-}
-
-func teardownVMLocked(ext *LoadedExtension) {
-	if err := runCleanupLocked(ext); err != nil {
-		GoLog("[Extension] Error calling cleanup for %s: %v\n", ext.ID, err)
-	}
-	if ext.runtime != nil {
-		if err := ext.runtime.flushStorageNow(); err != nil {
-			GoLog("[Extension] Failed to flush storage for %s: %v\n", ext.ID, err)
-		}
-		ext.runtime.closeStorageFlusher()
-	}
-	ext.runtime = nil
-	ext.VM = nil
-	ext.initialized = false
-}
-
-func validateExtensionLoad(ext *LoadedExtension) error {
-	ext.VMMu.Lock()
-	defer ext.VMMu.Unlock()
-
-	if err := initializeVMLocked(ext); err != nil {
-		return err
-	}
-	teardownVMLocked(ext)
-	return nil
-}
-
 func (m *ExtensionManager) UnloadExtension(extensionID string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -481,9 +288,21 @@ func (m *ExtensionManager) UnloadExtension(extensionID string) error {
 		return fmt.Errorf("Extension not found")
 	}
 
-	ext.VMMu.Lock()
-	teardownVMLocked(ext)
-	ext.VMMu.Unlock()
+	if ext.VM != nil {
+		cleanup, err := ext.VM.RunString("typeof extension !== 'undefined' && typeof extension.cleanup === 'function' ? extension.cleanup() : null")
+		if err != nil {
+			GoLog("[Extension] Error calling cleanup for %s: %v\n", extensionID, err)
+		} else if cleanup != nil && !goja.IsUndefined(cleanup) && !goja.IsNull(cleanup) {
+			GoLog("[Extension] Cleanup called for %s\n", extensionID)
+		}
+	}
+	if ext.runtime != nil {
+		if err := ext.runtime.flushStorageNow(); err != nil {
+			GoLog("[Extension] Failed to flush storage for %s: %v\n", extensionID, err)
+		}
+		ext.runtime.closeStorageFlusher()
+		ext.runtime = nil
+	}
 
 	delete(m.extensions, extensionID)
 	GoLog("[Extension] Unloaded extension: %s\n", extensionID)
@@ -522,21 +341,7 @@ func (m *ExtensionManager) SetExtensionEnabled(extensionID string, enabled bool)
 		return fmt.Errorf("Extension not found")
 	}
 
-	if enabled {
-		ext.Enabled = true
-		if err := ext.ensureRuntimeReady(); err != nil {
-			store := GetExtensionSettingsStore()
-			ext.Enabled = false
-			_ = store.Set(extensionID, "_enabled", false)
-			return err
-		}
-	} else {
-		ext.Enabled = false
-		ext.Error = ""
-		ext.VMMu.Lock()
-		teardownVMLocked(ext)
-		ext.VMMu.Unlock()
-	}
+	ext.Enabled = enabled
 	GoLog("[Extension] %s %s\n", extensionID, map[bool]string{true: "enabled", false: "disabled"}[enabled])
 
 	store := GetExtensionSettingsStore()
@@ -631,10 +436,10 @@ func (m *ExtensionManager) loadExtensionFromDirectory(dirPath string) (*LoadedEx
 		}
 	}
 
-	if err := validateExtensionLoad(ext); err != nil {
+	if err := m.initializeVM(ext); err != nil {
 		ext.Error = err.Error()
 		ext.Enabled = false
-		GoLog("[Extension] Failed to validate extension %s: %v\n", manifest.Name, err)
+		GoLog("[Extension] Failed to initialize VM for %s: %v\n", manifest.Name, err)
 	}
 
 	m.extensions[manifest.Name] = ext
@@ -785,14 +590,10 @@ func (m *ExtensionManager) UpgradeExtension(filePath string) (*LoadedExtension, 
 		SourceDir: extDir,
 	}
 
-	if wasEnabled {
-		if err := ext.ensureRuntimeReady(); err != nil {
-			GoLog("[Extension] Failed to initialize upgraded extension %s: %v\n", newManifest.Name, err)
-		}
-	} else if err := validateExtensionLoad(ext); err != nil {
+	if err := m.initializeVM(ext); err != nil {
 		ext.Error = err.Error()
 		ext.Enabled = false
-		GoLog("[Extension] Failed to validate upgraded extension %s: %v\n", newManifest.Name, err)
+		GoLog("[Extension] Failed to initialize VM for %s: %v\n", newManifest.Name, err)
 	}
 
 	m.mu.Lock()
@@ -989,13 +790,56 @@ func (m *ExtensionManager) InitializeExtension(extensionID string, settings map[
 		return fmt.Errorf("Extension not found")
 	}
 
-	ext.VMMu.Lock()
-	defer ext.VMMu.Unlock()
+	if ext.VM == nil {
+		return fmt.Errorf("Extension failed to load. Please reinstall the extension")
+	}
 
-	if err := ensureRuntimeReadyLocked(ext, false); err != nil {
+	settingsJSON, err := json.Marshal(settings)
+	if err != nil {
+		return fmt.Errorf("Failed to save settings")
+	}
+
+	script := fmt.Sprintf(`
+		(function() {
+			var settings = %s;
+			if (typeof extension !== 'undefined' && typeof extension.initialize === 'function') {
+				try {
+					extension.initialize(settings);
+					return { success: true };
+				} catch (e) {
+					return { success: false, error: e.toString() };
+				}
+			}
+			return { success: true, message: 'no initialize function' };
+		})()
+	`, string(settingsJSON))
+
+	result, err := ext.VM.RunString(script)
+	if err != nil {
+		ext.Error = fmt.Sprintf("initialize failed: %v", err)
+		ext.Enabled = false
+		GoLog("[Extension] Initialize error for %s: %v\n", extensionID, err)
 		return err
 	}
-	return initializeExtensionWithSettingsLocked(ext, settings)
+
+	if result != nil && !goja.IsUndefined(result) {
+		exported := result.Export()
+		if resultMap, ok := exported.(map[string]interface{}); ok {
+			if success, ok := resultMap["success"].(bool); ok && !success {
+				errMsg := "unknown error"
+				if e, ok := resultMap["error"].(string); ok {
+					errMsg = e
+				}
+				ext.Error = errMsg
+				ext.Enabled = false
+				GoLog("[Extension] Initialize failed for %s: %s\n", extensionID, errMsg)
+				return fmt.Errorf("initialize failed: %s", errMsg)
+			}
+		}
+	}
+
+	GoLog("[Extension] Initialized %s\n", extensionID)
+	return nil
 }
 
 func (m *ExtensionManager) CleanupExtension(extensionID string) error {
@@ -1010,12 +854,41 @@ func (m *ExtensionManager) CleanupExtension(extensionID string) error {
 	if ext.VM == nil {
 		return nil
 	}
-	ext.VMMu.Lock()
-	defer ext.VMMu.Unlock()
-	if err := runCleanupLocked(ext); err != nil {
+
+	script := `
+		(function() {
+			if (typeof extension !== 'undefined' && typeof extension.cleanup === 'function') {
+				try {
+					extension.cleanup();
+					return { success: true };
+				} catch (e) {
+					return { success: false, error: e.toString() };
+				}
+			}
+			return { success: true, message: 'no cleanup function' };
+		})()
+	`
+
+	result, err := ext.VM.RunString(script)
+	if err != nil {
 		GoLog("[Extension] Cleanup error for %s: %v\n", extensionID, err)
 		return err
 	}
+
+	if result != nil && !goja.IsUndefined(result) {
+		exported := result.Export()
+		if resultMap, ok := exported.(map[string]interface{}); ok {
+			if success, ok := resultMap["success"].(bool); ok && !success {
+				errMsg := "unknown error"
+				if e, ok := resultMap["error"].(string); ok {
+					errMsg = e
+				}
+				GoLog("[Extension] Cleanup failed for %s: %s\n", extensionID, errMsg)
+				return fmt.Errorf("cleanup failed: %s", errMsg)
+			}
+		}
+	}
+
 	GoLog("[Extension] Cleaned up %s\n", extensionID)
 	return nil
 }
@@ -1044,8 +917,8 @@ func (m *ExtensionManager) InvokeAction(extensionID string, actionName string) (
 		return nil, fmt.Errorf("extension not found: %s", extensionID)
 	}
 
-	if err := ext.ensureRuntimeReady(); err != nil {
-		return nil, err
+	if ext.VM == nil {
+		return nil, fmt.Errorf("extension VM not initialized")
 	}
 
 	if !ext.Enabled {

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:spotiflac_android/constants/app_info.dart';
+import 'package:spotiflac_android/utils/platform_spoof.dart' as platform;
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/utils/logger.dart';
 import 'package:spotiflac_android/providers/extension_provider.dart';
@@ -218,28 +219,23 @@ class StoreNotifier extends Notifier<StoreState> {
   Future<void> initialize(String cacheDir) async {
     if (state.isInitialized) return;
 
-    // Load saved registry URL early to avoid UI flash (empty → setup screen)
-    final prefs = await SharedPreferences.getInstance();
-    final savedUrl = prefs.getString(_registryUrlPrefKey) ?? '';
-
-    state = state.copyWith(
-      isLoading: true,
-      clearError: true,
-      registryUrl: savedUrl,
-    );
+    state = state.copyWith(isLoading: true, clearError: true);
 
     try {
       await PlatformBridge.initExtensionStore(cacheDir);
 
+      // Load saved registry URL from SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      final savedUrl = prefs.getString(_registryUrlPrefKey) ?? '';
+
       if (savedUrl.isNotEmpty) {
         await PlatformBridge.setStoreRegistryUrl(savedUrl);
+        state = state.copyWith(registryUrl: savedUrl);
         await refresh();
       }
 
       state = state.copyWith(isInitialized: true, isLoading: false);
-      _log.i(
-        'Extension store initialized (registryUrl: ${savedUrl.isEmpty ? "not set" : savedUrl})',
-      );
+      _log.i('Extension store initialized (registryUrl: ${savedUrl.isEmpty ? "not set" : savedUrl})');
     } catch (e) {
       _log.e('Failed to initialize store: $e');
       state = state.copyWith(isLoading: false, error: e.toString());
@@ -264,12 +260,13 @@ class StoreNotifier extends Notifier<StoreState> {
       // Read back the resolved URL (may differ from input after normalisation).
       final resolvedUrl = await PlatformBridge.getStoreRegistryUrl();
 
+      // Persist to SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_registryUrlPrefKey, resolvedUrl);
 
       state = state.copyWith(
         registryUrl: resolvedUrl,
-        extensions: const [],
+        extensions: const [], // Clear old extensions
       );
 
       _log.i('Registry URL set to: $resolvedUrl');
