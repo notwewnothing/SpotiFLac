@@ -1,6 +1,9 @@
 import 'dart:math';
+import 'dart:io';
+import 'package:just_audio_background/just_audio_background.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:audio_session/audio_session.dart';
 import 'package:spotiflac_android/models/track.dart';
 import 'package:spotiflac_android/providers/settings_provider.dart';
 import 'package:spotiflac_android/services/ffmpeg_service.dart';
@@ -38,6 +41,7 @@ class StreamingAudioState {
   final int currentQueueIndex;
   final bool looping;
   final bool shuffling;
+  final List<StreamingTrackInfo> originalQueue;
 
   const StreamingAudioState({
     this.state = PlaybackState.idle,
@@ -50,6 +54,7 @@ class StreamingAudioState {
     this.currentQueueIndex = -1,
     this.looping = false,
     this.shuffling = false,
+    this.originalQueue = const [],
   });
 
   StreamingAudioState copyWith({
@@ -63,6 +68,7 @@ class StreamingAudioState {
     int? currentQueueIndex,
     bool? looping,
     bool? shuffling,
+    List<StreamingTrackInfo>? originalQueue,
   }) {
     return StreamingAudioState(
       state: state ?? this.state,
@@ -75,6 +81,7 @@ class StreamingAudioState {
       currentQueueIndex: currentQueueIndex ?? this.currentQueueIndex,
       looping: looping ?? this.looping,
       shuffling: shuffling ?? this.shuffling,
+      originalQueue: originalQueue ?? this.originalQueue,
     );
   }
 }
@@ -88,6 +95,7 @@ class StreamingAudioNotifier extends Notifier<StreamingAudioState> {
   @override
   StreamingAudioState build() {
     _audioPlayer = AudioPlayer();
+    _initializeAudioSession();
 
     ref.onDispose(() {
       _isDisposed = true;
@@ -99,6 +107,21 @@ class StreamingAudioNotifier extends Notifier<StreamingAudioState> {
     _setupAudioPlayerListeners();
 
     return const StreamingAudioState();
+  }
+
+  /// Initialize audio session for proper iOS lock screen and system control support
+  Future<void> _initializeAudioSession() async {
+    try {
+      if (Platform.isIOS) {
+        final session = await AudioSession.instance;
+        await session.configure(
+          const AudioSessionConfiguration.music(),
+        );
+        _log.d('iOS audio session configured for music playback');
+      }
+    } catch (e) {
+      _log.e('Error initializing audio session: $e');
+    }
   }
 
   void _setupAudioPlayerListeners() {
@@ -294,10 +317,25 @@ class StreamingAudioNotifier extends Notifier<StreamingAudioState> {
       }
 
       _isTransitioning = false;
+      final mediaItem = MediaItem(
+        id: trackInfo.track.id,
+        album: trackInfo.track.albumName,
+        title: trackInfo.track.name,
+        artist: trackInfo.track.artistName,
+        duration: Duration(seconds: trackInfo.track.duration),
+        artUri: (trackInfo.track.coverUrl ?? '').isNotEmpty
+            ? Uri.parse(trackInfo.track.coverUrl!)
+            : null,
+      );
+
       if (readablePath != null) {
-        await _audioPlayer.setFilePath(playableUrl);
+        await _audioPlayer.setAudioSource(
+          AudioSource.file(playableUrl, tag: mediaItem),
+        );
       } else {
-        await _audioPlayer.setUrl(playableUrl);
+        await _audioPlayer.setAudioSource(
+          AudioSource.uri(Uri.parse(playableUrl), tag: mediaItem),
+        );
       }
 
       if (generation != _playGeneration) return;
@@ -339,14 +377,22 @@ class StreamingAudioNotifier extends Notifier<StreamingAudioState> {
         0,
         queueTracks.length - 1,
       );
-      state = state.copyWith(queue: queueTracks, currentQueueIndex: startIndex);
+      state = state.copyWith(
+        queue: queueTracks,
+        originalQueue: List.from(queueTracks),
+        currentQueueIndex: startIndex,
+      );
     } else {
       final trackInfo = StreamingTrackInfo(
         track: track,
         service: service,
         addedAt: DateTime.now(),
       );
-      state = state.copyWith(queue: [trackInfo], currentQueueIndex: 0);
+      state = state.copyWith(
+        queue: [trackInfo],
+        originalQueue: [trackInfo],
+        currentQueueIndex: 0,
+      );
     }
 
     await _playTrackByIndex(state.currentQueueIndex);
@@ -378,9 +424,47 @@ class StreamingAudioNotifier extends Notifier<StreamingAudioState> {
   }
 
   void toggleShuffle() {
-    final newShuffle = !state.shuffling;
+    final currentlyShuffling = state.shuffling;
+    final newShuffle = !currentlyShuffling;
     _log.i('Shuffle toggled: $newShuffle');
-    state = state.copyWith(shuffling: newShuffle);
+
+    if (newShuffle) {
+      // Shuffling ON:
+      // Store current order and shuffle.
+      final currentQueue = List<StreamingTrackInfo>.from(state.queue);
+      final currentTrack = state.currentTrack;
+      
+      // Shuffle everything except possibly the current track if we want to stay on it.
+      // For simplicity, shuffle all and find where the current track went.
+      currentQueue.shuffle();
+      
+      int newIndex = -1;
+      if (currentTrack != null) {
+        newIndex = currentQueue.indexWhere((item) => item.track.id == currentTrack.track.id);
+      }
+      
+      state = state.copyWith(
+        shuffling: true,
+        queue: currentQueue,
+        currentQueueIndex: newIndex,
+      );
+    } else {
+      // Shuffling OFF:
+      // Restore original order.
+      final restoredQueue = List<StreamingTrackInfo>.from(state.originalQueue);
+      final currentTrack = state.currentTrack;
+      
+      int newIndex = -1;
+      if (currentTrack != null) {
+        newIndex = restoredQueue.indexWhere((item) => item.track.id == currentTrack.track.id);
+      }
+      
+      state = state.copyWith(
+        shuffling: false,
+        queue: restoredQueue,
+        currentQueueIndex: newIndex,
+      );
+    }
   }
 
   Future<void> stop() async {
@@ -478,14 +562,18 @@ class StreamingAudioNotifier extends Notifier<StreamingAudioState> {
     );
 
     final updatedQueue = [...state.queue, newTrackInfo];
-    state = state.copyWith(queue: updatedQueue);
+    final updatedOriginal = [...state.originalQueue, newTrackInfo];
+    state = state.copyWith(queue: updatedQueue, originalQueue: updatedOriginal);
   }
 
   void removeFromQueue(int index) {
     if (index < 0 || index >= state.queue.length) return;
 
     final updatedQueue = [...state.queue];
-    updatedQueue.removeAt(index);
+    final removedItem = updatedQueue.removeAt(index);
+    
+    final updatedOriginal = [...state.originalQueue];
+    updatedOriginal.removeWhere((item) => item.track.id == removedItem.track.id);
 
     int newCurrentIndex = state.currentQueueIndex;
     if (index == state.currentQueueIndex && updatedQueue.isNotEmpty) {
@@ -496,6 +584,7 @@ class StreamingAudioNotifier extends Notifier<StreamingAudioState> {
         final nextTrack = updatedQueue[newCurrentIndex];
         state = state.copyWith(
           queue: updatedQueue,
+          originalQueue: updatedOriginal,
           currentQueueIndex: newCurrentIndex,
         );
         _playTrackByIndex(newCurrentIndex);
@@ -520,6 +609,13 @@ class StreamingAudioNotifier extends Notifier<StreamingAudioState> {
     final item = updatedQueue.removeAt(oldIndex);
     final adjustedNew = newIndex > oldIndex ? newIndex - 1 : newIndex;
     updatedQueue.insert(adjustedNew, item);
+
+    // If we are NOT shuffling, update originalQueue to match.
+    // If we ARE shuffling, originalQueue stays as is (it's the 'reference' order).
+    List<StreamingTrackInfo> updatedOriginal = state.originalQueue;
+    if (!state.shuffling) {
+      updatedOriginal = List.from(updatedQueue);
+    }
 
     // Track the currently playing item
     int newCurrentIndex = state.currentQueueIndex;

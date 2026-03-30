@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sqflite_common/sqflite.dart' show databaseFactory, Database;
 import 'package:go_router/go_router.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 import 'package:spotiflac_android/app.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/providers/extension_provider.dart';
@@ -20,6 +21,12 @@ import 'package:spotiflac_android/services/cover_cache_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await JustAudioBackground.init(
+    androidNotificationChannelId: 'com.zarz.spotiflac.channel.audio',
+    androidNotificationChannelName: 'Audio Playback',
+    androidNotificationOngoing: true,
+  );
 
   // Initialize sqflite FFI for desktop platforms
   if (!Platform.isAndroid && !Platform.isIOS) {

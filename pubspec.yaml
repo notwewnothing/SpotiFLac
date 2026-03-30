@@ -65,8 +65,10 @@ dependencies:
 
   # Audio Playback
   just_audio: ^0.9.41
+  just_audio_background: ^0.0.1-beta.15
   audio_waveforms: ^1.1.0
   palette_generator: ^0.3.3
+  audio_session: ^0.1.17
 
 dev_dependencies:
   flutter_test:

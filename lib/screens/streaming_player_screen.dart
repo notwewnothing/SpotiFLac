@@ -123,10 +123,27 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
   Future<void> _fetchLyrics(Track track) async {
     setState(() => _isLoadingLyrics = true);
     try {
+      // Step 1: For local files, try to extract embedded lyrics first
+      if (_isLocalTrack(track)) {
+        final localLyrics = await _getEmbeddedOrLocalLyrics(track);
+        if (localLyrics != null && localLyrics.isNotEmpty) {
+          if (mounted) {
+            setState(() {
+              _rawLyrics = localLyrics;
+              _lrcLines = _parseLrc(localLyrics);
+              _isLoadingLyrics = false;
+            });
+          }
+          return; // Successfully found local lyrics
+        }
+      }
+
+      // Step 2: Try online providers via platform bridge
       final result = await PlatformBridge.getLyricsLRC(
         track.id,
         track.name,
         track.artistName,
+        filePath: _isLocalTrack(track) ? track.id : null,
         durationMs: track.duration * 1000,
       );
       if (mounted) {
@@ -137,6 +154,23 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
         });
       }
     } catch (e) {
+      // Step 3: On error, try embedded lyrics as final fallback for local tracks
+      if (_isLocalTrack(track)) {
+        try {
+          final fallbackLyrics = await _getEmbeddedOrLocalLyrics(track);
+          if (fallbackLyrics != null && fallbackLyrics.isNotEmpty) {
+            if (mounted) {
+              setState(() {
+                _rawLyrics = fallbackLyrics;
+                _lrcLines = _parseLrc(fallbackLyrics);
+                _isLoadingLyrics = false;
+              });
+            }
+            return;
+          }
+        } catch (_) {}
+      }
+
       if (mounted) {
         setState(() {
           _rawLyrics = null;
@@ -144,6 +178,35 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
           _isLoadingLyrics = false;
         });
       }
+    }
+  }
+
+  /// Check if track is a local file
+  bool _isLocalTrack(Track track) {
+    return (track.source ?? '').toLowerCase() == 'local_file' ||
+        track.id.startsWith('local_') ||
+        track.id.contains('/');
+  }
+
+  /// Try to get embedded or local lyrics for a track
+  /// Returns null if no lyrics found
+  Future<String?> _getEmbeddedOrLocalLyrics(Track track) async {
+    try {
+      final lyricsData = await PlatformBridge.getLyricsLRCWithSource(
+        track.id,
+        track.name,
+        track.artistName,
+        filePath: track.id,
+        durationMs: track.duration * 1000,
+      );
+
+      // Check if lyrics were found from embedded source
+      if (lyricsData['source'] == 'embedded' || lyricsData['source'] == 'local') {
+        return lyricsData['lyrics'] as String?;
+      }
+      return lyricsData['lyrics'] as String?;
+    } catch (e) {
+      return null;
     }
   }
 
@@ -612,7 +675,24 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
                         _iconToggle(
                           icon: Icons.shuffle_rounded,
                           active: s.shuffling,
-                          onTap: () => notifier.toggleShuffle(),
+                          onTap: () {
+                            notifier.toggleShuffle();
+                            // Show feedback
+                            final newState = !s.shuffling;
+                            ScaffoldMessenger.of(context).clearSnackBars();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  newState
+                                      ? '✓ Shuffle enabled - queue reordered'
+                                      : '✓ Shuffle disabled - original order restored',
+                                ),
+                                duration: const Duration(milliseconds: 1500),
+                                backgroundColor:
+                                    newState ? Colors.blue : Colors.grey[800],
+                              ),
+                            );
+                          },
                         ),
                         // Queue / List icon
                         _iconToggle(
@@ -812,6 +892,33 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // ── Shuffle Indicator ──
+        if (s.shuffling)
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.blue.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.blue.withValues(alpha: 0.5)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.shuffle, color: Colors.blue, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Queue is shuffled - new order shown below',
+                    style: TextStyle(
+                      color: Colors.blue.withValues(alpha: 0.9),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           child: Text(
