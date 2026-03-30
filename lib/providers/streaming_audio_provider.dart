@@ -9,6 +9,7 @@ import 'package:spotiflac_android/utils/logger.dart';
 import 'package:spotiflac_android/utils/playback_utils.dart';
 import 'package:spotiflac_android/providers/local_library_provider.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
+import 'package:spotiflac_android/utils/file_access.dart';
 
 final _log = AppLogger('StreamingAudioProvider');
 
@@ -243,6 +244,10 @@ class StreamingAudioNotifier extends Notifier<StreamingAudioState> {
           localState: localState,
           historyState: historyState,
         );
+      } else {
+        // Even if provided directly (e.g. from local_file source), 
+        // validate the iOS GUID if needed.
+        readablePath = await validateOrFixIosPath(readablePath);
       }
 
       if (readablePath != null) {
@@ -289,7 +294,12 @@ class StreamingAudioNotifier extends Notifier<StreamingAudioState> {
       }
 
       _isTransitioning = false;
-      await _audioPlayer.setUrl(playableUrl);
+      if (readablePath != null) {
+        await _audioPlayer.setFilePath(playableUrl);
+      } else {
+        await _audioPlayer.setUrl(playableUrl);
+      }
+
       if (generation != _playGeneration) return;
       await _audioPlayer.play();
       state = state.copyWith(state: PlaybackState.playing);

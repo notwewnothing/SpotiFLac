@@ -14,14 +14,20 @@ class PlaybackUtils {
   }) async {
     // 1. Check Local Library (User-added folders)
     final localItem = _findLocalLibraryItemForTrack(track, localState);
-    if (localItem != null && await fileExists(localItem.filePath)) {
-      return localItem.filePath;
+    if (localItem != null) {
+      final path = await validateOrFixIosPath(localItem.filePath);
+      if (await fileExists(path)) {
+        return path;
+      }
     }
 
     // 2. Check Download History (App-managed downloads)
     final historyItem = _findDownloadHistoryItemForTrack(track, historyState);
-    if (historyItem != null && await fileExists(historyItem.filePath)) {
-      return historyItem.filePath;
+    if (historyItem != null) {
+      final path = await validateOrFixIosPath(historyItem.filePath);
+      if (await fileExists(path)) {
+        return path;
+      }
     }
 
     return null;
