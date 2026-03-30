@@ -1125,13 +1125,13 @@ class _HomeTabState extends ConsumerState<HomeTab>
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              'SpotiFLAC',
+                              'AudioPhile',
                               style: Theme.of(context).textTheme.headlineSmall
                                   ?.copyWith(fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              context.l10n.homeSubtitle,
+                              "Yk it's like audio + pedophile like as in i like audio :)",
                               textAlign: TextAlign.center,
                               style: Theme.of(context).textTheme.bodyMedium
                                   ?.copyWith(
@@ -3360,18 +3360,16 @@ class _TrackItemWithStatus extends ConsumerWidget {
 
     final settings = ref.read(settingsProvider);
     if (settings.appmode == 'stream') {
-      await ref.read(playbackProvider.notifier).playTrack(
-            track: track,
-            service: settings.defaultService,
-          );
+      await ref
+          .read(playbackProvider.notifier)
+          .playTrack(track: track, service: settings.defaultService);
       return;
     }
 
     if (isInLocalLibrary) {
-      await ref.read(playbackProvider.notifier).playTrack(
-            track: track,
-            service: settings.defaultService,
-          );
+      await ref
+          .read(playbackProvider.notifier)
+          .playTrack(track: track, service: settings.defaultService);
       return;
     }
 
@@ -3382,10 +3380,9 @@ class _TrackItemWithStatus extends ConsumerWidget {
       if (historyItem != null) {
         final exists = await fileExists(historyItem.filePath);
         if (exists) {
-          await ref.read(playbackProvider.notifier).playTrack(
-                track: track,
-                service: settings.defaultService,
-              );
+          await ref
+              .read(playbackProvider.notifier)
+              .playTrack(track: track, service: settings.defaultService);
           return;
         } else {
           ref

@@ -201,7 +201,8 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
       );
 
       // Check if lyrics were found from embedded source
-      if (lyricsData['source'] == 'embedded' || lyricsData['source'] == 'local') {
+      if (lyricsData['source'] == 'embedded' ||
+          lyricsData['source'] == 'local') {
         return lyricsData['lyrics'] as String?;
       }
       return lyricsData['lyrics'] as String?;
@@ -603,10 +604,16 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
                           icon: Icon(
                             Icons.fast_rewind_rounded,
                             color: Colors.white.withValues(
-                              alpha: (s.currentQueueIndex > 0 || s.shuffling) && s.queue.isNotEmpty ? 1.0 : 0.4,
+                              alpha:
+                                  (s.currentQueueIndex > 0 || s.shuffling) &&
+                                      s.queue.isNotEmpty
+                                  ? 1.0
+                                  : 0.4,
                             ),
                           ),
-                          onPressed: (s.currentQueueIndex > 0 || s.shuffling) && s.queue.isNotEmpty
+                          onPressed:
+                              (s.currentQueueIndex > 0 || s.shuffling) &&
+                                  s.queue.isNotEmpty
                               ? () => notifier.playPreviousInQueue()
                               : null,
                         ),
@@ -645,12 +652,18 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
                           icon: Icon(
                             Icons.fast_forward_rounded,
                             color: Colors.white.withValues(
-                              alpha: (s.currentQueueIndex < s.queue.length - 1 || s.shuffling) && s.queue.isNotEmpty
+                              alpha:
+                                  (s.currentQueueIndex < s.queue.length - 1 ||
+                                          s.shuffling) &&
+                                      s.queue.isNotEmpty
                                   ? 1.0
                                   : 0.4,
                             ),
                           ),
-                          onPressed: (s.currentQueueIndex < s.queue.length - 1 || s.shuffling) && s.queue.isNotEmpty
+                          onPressed:
+                              (s.currentQueueIndex < s.queue.length - 1 ||
+                                      s.shuffling) &&
+                                  s.queue.isNotEmpty
                               ? () => notifier.playNextInQueue()
                               : null,
                         ),
@@ -688,8 +701,9 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
                                       : '✓ Shuffle disabled - original order restored',
                                 ),
                                 duration: const Duration(milliseconds: 1500),
-                                backgroundColor:
-                                    newState ? Colors.blue : Colors.grey[800],
+                                backgroundColor: newState
+                                    ? Colors.blue
+                                    : Colors.grey[800],
                               ),
                             );
                           },
