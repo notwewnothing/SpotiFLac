@@ -3485,7 +3485,128 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         deezerTrackId = trackToDownload.availability!.deezerId;
       }
 
+      // Parallelize ISRC and SongLink lookups to reduce API calls and rate limiting
       if (deezerTrackId == null &&
+          (trackToDownload.isrc != null &&
+              trackToDownload.isrc!.isNotEmpty &&
+              _isValidISRC(trackToDownload.isrc!)) &&
+          (trackToDownload.id.isNotEmpty &&
+              !trackToDownload.id.startsWith('deezer:') &&
+              !trackToDownload.id.startsWith('extension:'))) {
+        
+        String spotifyId = trackToDownload.id;
+        if (spotifyId.startsWith('spotify:track:')) {
+          spotifyId = spotifyId.split(':').last;
+        }
+
+        // Try both ISRC and SongLink concurrently, use first successful result
+        try {
+          final results = await Future.wait<Map<String, dynamic>?>(
+            [
+              _searchDeezerByISRCAsync(trackToDownload.isrc!),
+              _convertSpotifyToDeezerAsync('track', spotifyId),
+            ],
+            eagerError: false,
+          );
+
+          // Check ISRC result first (faster)
+          if (results[0] != null) {
+            final deezerResult = results[0]!;
+            if (deezerResult['success'] == true &&
+                deezerResult['track_id'] != null) {
+              deezerTrackId = deezerResult['track_id'].toString();
+              _log.d('Found Deezer track ID via ISRC (parallel): $deezerTrackId');
+            }
+          }
+
+          // Fallback to SongLink if ISRC failed
+          if (deezerTrackId == null && results[1] != null) {
+            final deezerData = results[1]!;
+            if (deezerData['track'] is Map<String, dynamic>) {
+              final trackData = deezerData['track'] as Map<String, dynamic>;
+              final rawId = trackData['spotify_id'] as String?;
+              if (rawId != null && rawId.startsWith('deezer:')) {
+                deezerTrackId = rawId.split(':')[1];
+                _log.d('Found Deezer track ID via SongLink (parallel): $deezerTrackId');
+              } else if (deezerData['id'] != null) {
+                deezerTrackId = deezerData['id'].toString();
+                _log.d('Found Deezer track ID via SongLink (parallel, legacy): $deezerTrackId');
+              }
+            } else if (deezerData['id'] != null) {
+              deezerTrackId = deezerData['id'].toString();
+              _log.d('Found Deezer track ID via SongLink (parallel, flat): $deezerTrackId');
+            }
+
+            // Enrich track metadata from SongLink response
+            if (deezerData['track'] is Map<String, dynamic>) {
+              final trackData = deezerData['track'] as Map<String, dynamic>;
+              final deezerReleaseDate = normalizeOptionalString(
+                trackData['release_date'] as String?,
+              );
+              final deezerIsrc = normalizeOptionalString(
+                trackData['isrc'] as String?,
+              );
+              final deezerTrackNum = trackData['track_number'] as int?;
+              final deezerDiscNum = trackData['disc_number'] as int?;
+
+              final needsEnrich =
+                  (trackToDownload.releaseDate == null &&
+                      deezerReleaseDate != null) ||
+                  (trackToDownload.isrc == null && deezerIsrc != null) ||
+                  (!_isValidISRC(trackToDownload.isrc ?? '') &&
+                      deezerIsrc != null) ||
+                  ((trackToDownload.trackNumber == null ||
+                          trackToDownload.trackNumber! <= 0) &&
+                      deezerTrackNum != null &&
+                      deezerTrackNum > 0) ||
+                  ((trackToDownload.discNumber == null ||
+                          trackToDownload.discNumber! <= 0) &&
+                      deezerDiscNum != null &&
+                      deezerDiscNum > 0);
+
+              if (needsEnrich) {
+                trackToDownload = Track(
+                  id: trackToDownload.id,
+                  name: trackToDownload.name,
+                  artistName: trackToDownload.artistName,
+                  albumName: trackToDownload.albumName,
+                  albumArtist: trackToDownload.albumArtist,
+                  artistId: trackToDownload.artistId,
+                  albumId: trackToDownload.albumId,
+                  coverUrl: trackToDownload.coverUrl,
+                  duration: trackToDownload.duration,
+                  isrc: (deezerIsrc != null && _isValidISRC(deezerIsrc))
+                      ? deezerIsrc
+                      : trackToDownload.isrc,
+                  trackNumber:
+                      (trackToDownload.trackNumber != null &&
+                              trackToDownload.trackNumber! > 0)
+                          ? trackToDownload.trackNumber
+                          : deezerTrackNum,
+                  discNumber:
+                      (trackToDownload.discNumber != null &&
+                              trackToDownload.discNumber! > 0)
+                          ? trackToDownload.discNumber
+                          : deezerDiscNum,
+                  releaseDate: trackToDownload.releaseDate ?? deezerReleaseDate,
+                  deezerId: deezerTrackId,
+                  availability: trackToDownload.availability,
+                  albumType: trackToDownload.albumType,
+                  totalTracks: trackToDownload.totalTracks,
+                  source: trackToDownload.source,
+                );
+                _log.d(
+                  'Enriched track from Deezer (parallel) - date: ${trackToDownload.releaseDate}, ISRC: ${trackToDownload.isrc}, track: ${trackToDownload.trackNumber}, disc: ${trackToDownload.discNumber}',
+                );
+              }
+            }
+          }
+        } catch (e) {
+          _log.w('Failed to resolve Deezer ID (parallel lookup): $e');
+        }
+      }
+      // Fallback: Use ISRC alone if no Spotify ID
+      else if (deezerTrackId == null &&
           trackToDownload.isrc != null &&
           trackToDownload.isrc!.isNotEmpty &&
           _isValidISRC(trackToDownload.isrc!)) {
@@ -3503,9 +3624,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           _log.w('Failed to search Deezer by ISRC: $e');
         }
       }
-
-      // Fallback: Use SongLink to convert Spotify ID to Deezer ID
-      if (deezerTrackId == null &&
+      // Fallback: Use SongLink alone if no valid ISRC
+      else if (deezerTrackId == null &&
           trackToDownload.id.isNotEmpty &&
           !trackToDownload.id.startsWith('deezer:') &&
           !trackToDownload.id.startsWith('extension:')) {
@@ -4683,6 +4803,33 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       } catch (cleanupErr) {
         _log.e('Post-exception connection cleanup failed: $cleanupErr');
       }
+    }
+  }
+
+  /// Async wrapper for ISRC-based Deezer lookup (used in parallel with SongLink)
+  Future<Map<String, dynamic>?> _searchDeezerByISRCAsync(String isrc) async {
+    try {
+      _log.d('Parallel lookup: Searching Deezer by ISRC: $isrc');
+      final result = await PlatformBridge.searchDeezerByISRC(isrc);
+      return result;
+    } catch (e) {
+      _log.w('Parallel ISRC lookup failed: $e');
+      return null;
+    }
+  }
+
+  /// Async wrapper for SongLink Spotify-to-Deezer conversion (used in parallel with ISRC)
+  Future<Map<String, dynamic>?> _convertSpotifyToDeezerAsync(
+    String type,
+    String spotifyId,
+  ) async {
+    try {
+      _log.d('Parallel lookup: Converting Spotify ID via SongLink: $spotifyId');
+      final result = await PlatformBridge.convertSpotifyToDeezer(type, spotifyId);
+      return result;
+    } catch (e) {
+      _log.w('Parallel SongLink conversion failed: $e');
+      return null;
     }
   }
 }
