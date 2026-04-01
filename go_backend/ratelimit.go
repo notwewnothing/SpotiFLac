@@ -88,8 +88,11 @@ func (r *RateLimiter) Available() int {
 	return r.maxRequests - len(r.timestamps)
 }
 
-// Global SongLink rate limiter - 9 requests per minute (to be safe, limit is 10)
-var songLinkRateLimiter = NewRateLimiter(9, time.Minute)
+// Global SongLink rate limiter
+// Actual API limit appears to be 10/min, but we set higher to allow bursts with concurrent downloads
+// With up to 5 concurrent downloads, we need ~15-20/min capacity to avoid rate limiting
+// Reference: https://github.com/jscalzo/song.link/blob/main/README.md
+var songLinkRateLimiter = NewRateLimiter(20, time.Minute)
 
 func GetSongLinkRateLimiter() *RateLimiter {
 	return songLinkRateLimiter
