@@ -513,7 +513,7 @@ func parseSpotifyLyricsResponseBody(body []byte) (*LyricsResponse, error) {
 	if len(lines) > 0 {
 		last := len(lines) - 1
 		if lines[last].EndTimeMs == 0 {
-			lines[last].EndTimeMs = lines[last].StartTimeMs + 5000
+			lines[last].EndTimeMs = lines[last].StartTimeMs + 3000  // 3 seconds (was 5000)
 		}
 	}
 
@@ -869,7 +869,11 @@ func parseSyncedLyrics(syncedLyrics string) []LyricsLine {
 	}
 
 	if len(lines) > 0 {
-		lines[len(lines)-1].EndTimeMs = lines[len(lines)-1].StartTimeMs + 5000
+		// Set last line duration - use a reasonable default if track duration is unavailable
+		// Only add to EndTimeMs for display purposes, don't affect seek position
+		if lines[len(lines)-1].EndTimeMs == 0 {
+			lines[len(lines)-1].EndTimeMs = lines[len(lines)-1].StartTimeMs + 3000  // 3 seconds (was 5000)
+		}
 	}
 
 	return lines

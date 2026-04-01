@@ -841,31 +841,36 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
         controller: _lyricsScrollController,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 80),
         itemCount: _lrcLines.length,
-        itemExtent: 52,
+        itemExtent: null,  // Allow dynamic sizing instead of fixed 52px
         physics: const BouncingScrollPhysics(),
         itemBuilder: (context, i) {
           final line = _lrcLines[i];
           final isActive = i == activeIdx;
           return GestureDetector(
             onTap: () => notifier.seek(line.timestamp),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              alignment: Alignment.centerLeft,
-              child: AnimatedDefaultTextStyle(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),  // Add vertical spacing between lines
+              child: AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
-                style: TextStyle(
-                  fontSize: isActive ? 24 : 18,
-                  fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
-                  color: isActive
-                      ? Colors.white
-                      : Colors.white.withValues(alpha: 0.4),
-                  fontFamily:
-                      'SF Pro Display', // Assume standard sans system fallback if not exactly SF Pro
-                ),
-                child: Text(
-                  line.text,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                alignment: Alignment.centerLeft,
+                child: AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 300),
+                  style: TextStyle(
+                    fontSize: isActive ? 24 : 18,
+                    fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
+                    color: isActive
+                        ? Colors.white
+                        : Colors.white.withValues(alpha: 0.4),
+                    fontFamily:
+                        'SF Pro Display', // Assume standard sans system fallback if not exactly SF Pro
+                    height: 1.4,  // Add line height for proper spacing
+                  ),
+                  child: Text(
+                    line.text,
+                    maxLines: null,  // Allow unlimited lines to wrap instead of ellipsis
+                    overflow: TextOverflow.visible,  // Show full text wrapped to multiple lines
+                    softWrap: true,  // Enable text wrapping
+                  ),
                 ),
               ),
             ),
