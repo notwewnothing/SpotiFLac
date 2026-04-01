@@ -127,7 +127,7 @@ abstract class AppLocalizations {
   /// App name - DO NOT TRANSLATE
   ///
   /// In en, this message translates to:
-  /// **'SpotiFLAC'**
+  /// **'AudioPhile'**
   String get appName;
 
   /// Bottom navigation - Home tab
@@ -613,7 +613,7 @@ abstract class AppLocalizations {
   /// Role description for original creator
   ///
   /// In en, this message translates to:
-  /// **'Creator of the original SpotiFLAC'**
+  /// **'Creator of the original AudioPhile'**
   String get aboutOriginalCreator;
 
   /// Role description for logo artist
@@ -955,7 +955,7 @@ abstract class AppLocalizations {
   /// Explanation for storage permission
   ///
   /// In en, this message translates to:
-  /// **'SpotiFLAC needs storage permission to save your downloaded music files.'**
+  /// **'AudioPhile needs storage permission to save your downloaded music files.'**
   String get setupStorageDescription;
 
   /// Success message for notification permission
@@ -1255,7 +1255,7 @@ abstract class AppLocalizations {
   /// Snackbar - wrong file type selected
   ///
   /// In en, this message translates to:
-  /// **'Please select a .spotiflac-ext file'**
+  /// **'Please select a .AudioPhile-ext file'**
   String get snackbarSelectExtFile;
 
   /// Snackbar - provider order saved
@@ -2473,7 +2473,7 @@ abstract class AppLocalizations {
   /// Empty state subtitle
   ///
   /// In en, this message translates to:
-  /// **'Install .spotiflac-ext files to add new providers'**
+  /// **'Install .AudioPhile-ext files to add new providers'**
   String get extensionsNoExtensionsSubtitle;
 
   /// Button to install extension from file
@@ -3271,7 +3271,7 @@ abstract class AppLocalizations {
   /// Dialog message for storage permission
   ///
   /// In en, this message translates to:
-  /// **'SpotiFLAC needs storage access to scan your music library. Please grant permission in settings.'**
+  /// **'AudioPhile needs storage access to scan your music library. Please grant permission in settings.'**
   String get libraryStorageAccessMessage;
 
   /// Error when folder doesn't exist
@@ -3280,7 +3280,7 @@ abstract class AppLocalizations {
   /// **'Selected folder does not exist'**
   String get libraryFolderNotExist;
 
-  /// Badge for tracks downloaded via SpotiFLAC
+  /// Badge for tracks downloaded via AudioPhile
   ///
   /// In en, this message translates to:
   /// **'Downloaded'**
@@ -3403,7 +3403,7 @@ abstract class AppLocalizations {
   /// Tutorial welcome page title
   ///
   /// In en, this message translates to:
-  /// **'Welcome to SpotiFLAC!'**
+  /// **'Welcome to AudioPhile!'**
   String get tutorialWelcomeTitle;
 
   /// Tutorial welcome page description
@@ -4476,7 +4476,7 @@ abstract class AppLocalizations {
   /// First paragraph of SAF migration dialog
   ///
   /// In en, this message translates to:
-  /// **'SpotiFLAC now uses Android Storage Access Framework (SAF) for downloads. This fixes \"permission denied\" errors on Android 10+.'**
+  /// **'AudioPhile now uses Android Storage Access Framework (SAF) for downloads. This fixes \"permission denied\" errors on Android 10+.'**
   String get safMigrationMessage1;
 
   /// Second paragraph of SAF migration dialog
@@ -4500,7 +4500,7 @@ abstract class AppLocalizations {
   /// Subtitle for donate menu item
   ///
   /// In en, this message translates to:
-  /// **'Support SpotiFLAC-Mobile development'**
+  /// **'Support AudioPhile-Mobile development'**
   String get settingsDonateSubtitle;
 
   /// Tooltip for the Love All button on album/playlist screens
@@ -4614,7 +4614,7 @@ abstract class AppLocalizations {
   /// Subtitle for app folder storage mode
   ///
   /// In en, this message translates to:
-  /// **'Use default Music/SpotiFLAC path'**
+  /// **'Use default Music/AudioPhile path'**
   String get storageModeAppFolderSubtitle;
 
   /// Storage mode option - use Android SAF picker

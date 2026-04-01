@@ -1796,7 +1796,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get libraryStorageAccessMessage =>
-      'SpotiFLAC needs storage access to scan your music library. Please grant permission in settings.';
+      'AudioPhile needs storage access to scan your music library. Please grant permission in settings.';
 
   @override
   String get libraryFolderNotExist => 'Selected folder does not exist';
@@ -1878,7 +1878,7 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get tutorialWelcomeTitle => 'Welcome to SpotiFLAC!';
+  String get tutorialWelcomeTitle => 'Welcome to AudioPhile!';
 
   @override
   String get tutorialWelcomeDesc =>
@@ -2581,7 +2581,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get safMigrationMessage1 =>
-      'SpotiFLAC now uses Android Storage Access Framework (SAF) for downloads. This fixes \"permission denied\" errors on Android 10+.';
+      'AudioPhile now uses Android Storage Access Framework (SAF) for downloads. This fixes \"permission denied\" errors on Android 10+.';
 
   @override
   String get safMigrationMessage2 =>
@@ -2594,7 +2594,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsDonate => 'Donate';
 
   @override
-  String get settingsDonateSubtitle => 'Support SpotiFLAC-Mobile development';
+  String get settingsDonateSubtitle => 'Support AudioPhile-Mobile development';
 
   @override
   String get tooltipLoveAll => 'Love All';
@@ -2660,7 +2660,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get storageModeAppFolder => 'App folder (non-SAF)';
 
   @override
-  String get storageModeAppFolderSubtitle => 'Use default Music/SpotiFLAC path';
+  String get storageModeAppFolderSubtitle =>
+      'Use default Music/AudioPhile path';
 
   @override
   String get storageModeSaf => 'SAF folder';

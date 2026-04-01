@@ -841,7 +841,7 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
         controller: _lyricsScrollController,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 80),
         itemCount: _lrcLines.length,
-        itemExtent: null,  // Allow dynamic sizing instead of fixed 52px
+        itemExtent: null, // Allow dynamic sizing instead of fixed 52px
         physics: const BouncingScrollPhysics(),
         itemBuilder: (context, i) {
           final line = _lrcLines[i];
@@ -849,7 +849,9 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
           return GestureDetector(
             onTap: () => notifier.seek(line.timestamp),
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),  // Add vertical spacing between lines
+              padding: const EdgeInsets.symmetric(
+                vertical: 8,
+              ), // Add vertical spacing between lines
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
                 alignment: Alignment.centerLeft,
@@ -863,13 +865,15 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
                         : Colors.white.withValues(alpha: 0.4),
                     fontFamily:
                         'SF Pro Display', // Assume standard sans system fallback if not exactly SF Pro
-                    height: 1.4,  // Add line height for proper spacing
+                    height: 1.4, // Add line height for proper spacing
                   ),
                   child: Text(
                     line.text,
-                    maxLines: null,  // Allow unlimited lines to wrap instead of ellipsis
-                    overflow: TextOverflow.visible,  // Show full text wrapped to multiple lines
-                    softWrap: true,  // Enable text wrapping
+                    maxLines:
+                        null, // Allow unlimited lines to wrap instead of ellipsis
+                    overflow: TextOverflow
+                        .visible, // Show full text wrapped to multiple lines
+                    softWrap: true, // Enable text wrapping
                   ),
                 ),
               ),

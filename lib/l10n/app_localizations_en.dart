@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appName => 'SpotiFLAC';
+  String get appName => 'AudioPhile';
 
   @override
   String get navHome => 'Home';
@@ -274,7 +274,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aboutMobileDeveloper => 'Mobile version developer';
 
   @override
-  String get aboutOriginalCreator => 'Creator of the original SpotiFLAC';
+  String get aboutOriginalCreator => 'Creator of the original AudioPhile';
 
   @override
   String get aboutLogoArtist =>
@@ -466,7 +466,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get setupStorageDescription =>
-      'SpotiFLAC needs storage permission to save your downloaded music files.';
+      'AudioPhile needs storage permission to save your downloaded music files.';
 
   @override
   String get setupNotificationGranted => 'Notification Permission Granted!';
@@ -656,7 +656,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get snackbarFileNotFound => 'File not found';
 
   @override
-  String get snackbarSelectExtFile => 'Please select a .spotiflac-ext file';
+  String get snackbarSelectExtFile => 'Please select a .AudioPhile-ext file';
 
   @override
   String get snackbarProviderPrioritySaved => 'Provider priority saved';
@@ -1322,7 +1322,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get extensionsNoExtensionsSubtitle =>
-      'Install .spotiflac-ext files to add new providers';
+      'Install .AudioPhile-ext files to add new providers';
 
   @override
   String get extensionsInstallButton => 'Install Extension';
@@ -1796,7 +1796,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get libraryStorageAccessMessage =>
-      'SpotiFLAC needs storage access to scan your music library. Please grant permission in settings.';
+      'AudioPhile needs storage access to scan your music library. Please grant permission in settings.';
 
   @override
   String get libraryFolderNotExist => 'Selected folder does not exist';
@@ -1878,7 +1878,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get tutorialWelcomeTitle => 'Welcome to SpotiFLAC!';
+  String get tutorialWelcomeTitle => 'Welcome to AudioPhile!';
 
   @override
   String get tutorialWelcomeDesc =>
@@ -2581,7 +2581,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get safMigrationMessage1 =>
-      'SpotiFLAC now uses Android Storage Access Framework (SAF) for downloads. This fixes \"permission denied\" errors on Android 10+.';
+      'AudioPhile now uses Android Storage Access Framework (SAF) for downloads. This fixes \"permission denied\" errors on Android 10+.';
 
   @override
   String get safMigrationMessage2 =>
@@ -2594,7 +2594,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsDonate => 'Donate';
 
   @override
-  String get settingsDonateSubtitle => 'Support SpotiFLAC-Mobile development';
+  String get settingsDonateSubtitle => 'Support AudioPhile-Mobile development';
 
   @override
   String get tooltipLoveAll => 'Love All';
@@ -2660,7 +2660,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get storageModeAppFolder => 'App folder (non-SAF)';
 
   @override
-  String get storageModeAppFolderSubtitle => 'Use default Music/SpotiFLAC path';
+  String get storageModeAppFolderSubtitle =>
+      'Use default Music/AudioPhile path';
 
   @override
   String get storageModeSaf => 'SAF folder';
