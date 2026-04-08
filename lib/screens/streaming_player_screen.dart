@@ -80,7 +80,7 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
   bool _isLoadingLyrics = false;
   String? _rawLyrics;
   List<_LrcLine> _lrcLines = [];
-  final ScrollController _lyricsScrollController = ScrollController();
+  List<GlobalKey> _lyricsKeys = [];
   String? _lastScrolledTrackId;
 
   // Background colors
@@ -96,7 +96,6 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
 
   @override
   void dispose() {
-    _lyricsScrollController.dispose();
     super.dispose();
   }
 
@@ -131,6 +130,7 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
             setState(() {
               _rawLyrics = localLyrics;
               _lrcLines = _parseLrc(localLyrics);
+              _lyricsKeys = List.generate(_lrcLines.length, (_) => GlobalKey());
               _isLoadingLyrics = false;
             });
           }
@@ -150,6 +150,7 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
         setState(() {
           _rawLyrics = result;
           _lrcLines = _parseLrc(result);
+          _lyricsKeys = List.generate(_lrcLines.length, (_) => GlobalKey());
           _isLoadingLyrics = false;
         });
       }
@@ -163,6 +164,7 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
               setState(() {
                 _rawLyrics = fallbackLyrics;
                 _lrcLines = _parseLrc(fallbackLyrics);
+                _lyricsKeys = List.generate(_lrcLines.length, (_) => GlobalKey());
                 _isLoadingLyrics = false;
               });
             }
@@ -175,6 +177,7 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
         setState(() {
           _rawLyrics = null;
           _lrcLines = [];
+          _lyricsKeys = [];
           _isLoadingLyrics = false;
         });
       }
@@ -223,13 +226,16 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
   }
 
   void _scrollToActiveLine(int activeIdx) {
-    if (!_lyricsScrollController.hasClients || activeIdx < 0) return;
-    final offset = (activeIdx * 52.0) - 80;
-    _lyricsScrollController.animateTo(
-      offset.clamp(0.0, _lyricsScrollController.position.maxScrollExtent),
-      duration: const Duration(milliseconds: 350),
-      curve: Curves.easeOut,
-    );
+    if (activeIdx < 0 || activeIdx >= _lyricsKeys.length) return;
+    final key = _lyricsKeys[activeIdx];
+    if (key.currentContext != null) {
+      Scrollable.ensureVisible(
+        key.currentContext!,
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeOut,
+        alignment: 0.5,
+      );
+    }
   }
 
   void _downloadCurrentTrack(Track track) {
@@ -279,6 +285,7 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
         setState(() {
           _rawLyrics = null;
           _lrcLines = [];
+          _lyricsKeys = [];
           _lastScrolledTrackId = null;
           // Return to default view if track completely changes? We keep the viewmode the user prefers.
         });
@@ -499,8 +506,9 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
                                     color: Colors.white,
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
+                                    fontSize: 26,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -0.5,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
@@ -509,8 +517,9 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
                                   artistId: track?.artistId,
                                   extensionId: track?.source,
                                   style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.6),
+                                    color: Colors.white.withValues(alpha: 0.7),
                                     fontSize: 18,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -837,49 +846,48 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
         ).createShader(bounds);
       },
       blendMode: BlendMode.dstIn,
-      child: ListView.builder(
-        controller: _lyricsScrollController,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 80),
-        itemCount: _lrcLines.length,
-        itemExtent: null, // Allow dynamic sizing instead of fixed 52px
+      child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
-        itemBuilder: (context, i) {
-          final line = _lrcLines[i];
-          final isActive = i == activeIdx;
-          return GestureDetector(
-            onTap: () => notifier.seek(line.timestamp),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                vertical: 8,
-              ), // Add vertical spacing between lines
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                alignment: Alignment.centerLeft,
-                child: AnimatedDefaultTextStyle(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 120),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: List.generate(_lrcLines.length, (i) {
+            final line = _lrcLines[i];
+            final isActive = i == activeIdx;
+            return GestureDetector(
+              key: _lyricsKeys[i],
+              onTap: () => notifier.seek(line.timestamp),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 8,
+                ),
+                child: AnimatedContainer(
                   duration: const Duration(milliseconds: 300),
-                  style: TextStyle(
-                    fontSize: isActive ? 24 : 18,
-                    fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
-                    color: isActive
-                        ? Colors.white
-                        : Colors.white.withValues(alpha: 0.4),
-                    fontFamily:
-                        'SF Pro Display', // Assume standard sans system fallback if not exactly SF Pro
-                    height: 1.4, // Add line height for proper spacing
-                  ),
-                  child: Text(
-                    line.text,
-                    maxLines:
-                        null, // Allow unlimited lines to wrap instead of ellipsis
-                    overflow: TextOverflow
-                        .visible, // Show full text wrapped to multiple lines
-                    softWrap: true, // Enable text wrapping
+                  alignment: Alignment.centerLeft,
+                  child: AnimatedDefaultTextStyle(
+                    duration: const Duration(milliseconds: 300),
+                    style: TextStyle(
+                      fontSize: isActive ? 30 : 20,
+                      fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
+                      color: isActive
+                          ? Colors.white
+                          : Colors.white.withValues(alpha: 0.4),
+                      fontFamily:
+                          'SF Pro Display',
+                      height: 1.4,
+                    ),
+                    child: Text(
+                      line.text,
+                      maxLines: null,
+                      overflow: TextOverflow.visible,
+                      softWrap: true,
+                    ),
                   ),
                 ),
               ),
-            ),
-          );
-        },
+            );
+          }),
+        ),
       ),
     );
   }

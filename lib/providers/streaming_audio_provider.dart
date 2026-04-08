@@ -13,6 +13,7 @@ import 'package:spotiflac_android/utils/playback_utils.dart';
 import 'package:spotiflac_android/providers/local_library_provider.dart';
 import 'package:spotiflac_android/providers/download_queue_provider.dart';
 import 'package:spotiflac_android/utils/file_access.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 final _log = AppLogger('StreamingAudioProvider');
 
@@ -88,13 +89,18 @@ class StreamingAudioState {
 
 class StreamingAudioNotifier extends Notifier<StreamingAudioState> {
   late AudioPlayer _audioPlayer;
+  late ConcatenatingAudioSource _playlist;
   bool _isDisposed = false;
   bool _isTransitioning = false;
   int _playGeneration = 0;
+  List<int> _sourceIndexToQueueIndex = [];
+  bool _isPrefetching = false;
 
   @override
   StreamingAudioState build() {
     _audioPlayer = AudioPlayer();
+    _playlist = ConcatenatingAudioSource(children: []);
+    _audioPlayer.setAudioSource(_playlist);
     _initializeAudioSession();
 
     ref.onDispose(() {
@@ -155,7 +161,25 @@ class StreamingAudioNotifier extends Notifier<StreamingAudioState> {
           state.currentTrack != null &&
           !_isTransitioning) {
         _log.d('Track completed: ${state.currentTrack!.track.name}');
-        _onTrackEnded();
+        // Natural track completion handles its own advancement via currentIndexStream now
+      }
+    });
+
+    _audioPlayer.currentIndexStream.listen((index) {
+      if (_isDisposed || index == null || _isTransitioning) return;
+      if (index >= 0 && index < _sourceIndexToQueueIndex.length) {
+        final queueIndex = _sourceIndexToQueueIndex[index];
+        if (queueIndex != state.currentQueueIndex) {
+          _log.i('Advanced natively to queue index: $queueIndex');
+          state = state.copyWith(
+            currentQueueIndex: queueIndex,
+            currentTrack: state.queue[queueIndex],
+          );
+          _prefetchNextTrack();
+        }
+      } else if (_audioPlayer.processingState == ProcessingState.completed) {
+         _log.d('Reached end of concatenating playlist.');
+         state = state.copyWith(state: PlaybackState.stopped);
       }
     });
 
@@ -170,68 +194,9 @@ class StreamingAudioNotifier extends Notifier<StreamingAudioState> {
     });
   }
 
-  void _onTrackEnded() {
-    if (_isDisposed || state.queue.isEmpty) return;
-
-    if (state.looping) {
-      _playTrackByIndex(state.currentQueueIndex);
-      return;
-    }
-
-    if (state.shuffling) {
-      final nextIndex = _getRandomQueueIndex(exclude: state.currentQueueIndex);
-      final nextTrack = state.queue[nextIndex];
-      _log.i(
-        'Shuffle: next random track is ${nextTrack.track.name} (index $nextIndex)',
-      );
-      _playTrackByIndex(nextIndex);
-      return;
-    }
-
-    final nextIndex = state.currentQueueIndex + 1;
-    if (nextIndex < state.queue.length) {
-      _playTrackByIndex(nextIndex);
-    } else {
-      _log.d('Queue finished');
-      state = state.copyWith(state: PlaybackState.stopped);
-    }
-  }
-
-  /// Internal: plays a track at [index] from the EXISTING queue.
-  /// Does NOT modify the queue list — only updates currentTrack and currentQueueIndex.
-  Future<void> _playTrackByIndex(int index) async {
-    if (_isDisposed || index < 0 || index >= state.queue.length) return;
-
-    // Increment generation to invalidate any in-flight fetches from previous calls
-    final generation = ++_playGeneration;
-    _isTransitioning = true;
-
-    final trackInfo = state.queue[index];
-    _log.i(
-      'Loading track: ${trackInfo.track.name} by ${trackInfo.track.artistName}',
-    );
-
-    // Stop any active FFmpeg tunnel from previous Amazon playback
-    await FFmpegService.stopLiveDecryptedStream();
-    // Stop the player cleanly before loading new track
-    try {
-      await _audioPlayer.stop();
-    } catch (_) {}
-
-    // Check if a newer call superseded us
-    if (generation != _playGeneration) {
-      _log.d('Stale playback request (gen $generation), aborting');
-      return;
-    }
-
-    state = state.copyWith(
-      state: PlaybackState.loading,
-      currentQueueIndex: index,
-      currentTrack: trackInfo,
-      position: Duration.zero,
-      duration: Duration(seconds: trackInfo.track.duration),
-      error: null,
-    );
+  Future<AudioSource?> _resolveAudioSource(int queueIndex, {bool isPrefetch = false}) async {
+    if (queueIndex < 0 || queueIndex >= state.queue.length) return null;
+    final trackInfo = state.queue[queueIndex];
 
     try {
       final settings = ref.read(settingsProvider);
@@ -266,55 +231,45 @@ class StreamingAudioNotifier extends Notifier<StreamingAudioState> {
           historyState: historyState,
         );
       } else {
-        // Even if provided directly (e.g. from local_file source),
-        // validate the iOS GUID if needed.
         readablePath = await validateOrFixIosPath(readablePath);
       }
 
       if (readablePath != null) {
-        _log.i('Playing local file: $readablePath');
+        if (!isPrefetch) _log.i('Resolved local file: $readablePath');
         playableUrl = readablePath;
       } else {
+        // Skip fetching streaming URLs if offline mode is active
+        final connectivityResult = await Connectivity().checkConnectivity();
+        final isOffline = connectivityResult.contains(ConnectivityResult.none) || 
+                          connectivityResult.isEmpty;
+                          
+        if (isOffline) {
+          _log.w('Device is offline and track is not downloaded: ${trackInfo.track.name}');
+          return null;
+        }
+
         final streamingUrl = await StreamingService.getStreamingUrlWithFallback(
           track: trackInfo.track,
           services: fallbackServices,
           quality: quality,
         );
 
-        // Abort if superseded during the async fetch
-        if (generation != _playGeneration) {
-          _log.d('Stale URL response (gen $generation), discarding');
-          return;
-        }
-
-        _log.d(
-          'Got streaming URL from ${streamingUrl.service}: ${streamingUrl.url.substring(0, streamingUrl.url.length.clamp(0, 80))}...',
-        );
-
         playableUrl = streamingUrl.url;
         decryptionKey = streamingUrl.decryptionKey;
       }
 
-      // If there's a decryption key (Amazon), pipe through FFmpeg live decrypt tunnel
       if (decryptionKey != null && decryptionKey.isNotEmpty) {
-        _log.i(
-          'Amazon encrypted stream detected, starting live decrypt tunnel...',
+        final liveStream = await FFmpegService.startEncryptedLiveDecryptedStream(
+          encryptedStreamUrl: playableUrl,
+          decryptionKey: decryptionKey,
         );
-        final liveStream =
-            await FFmpegService.startEncryptedLiveDecryptedStream(
-              encryptedStreamUrl: playableUrl,
-              decryptionKey: decryptionKey,
-            );
-        if (generation != _playGeneration) return;
         if (liveStream != null) {
           playableUrl = liveStream.localUrl;
-          _log.i('FFmpeg tunnel ready: $playableUrl');
         } else {
-          throw Exception('Failed to start Amazon decryption tunnel');
+          return null;
         }
       }
 
-      _isTransitioning = false;
       final mediaItem = MediaItem(
         id: trackInfo.track.id,
         album: trackInfo.track.albumName,
@@ -327,25 +282,138 @@ class StreamingAudioNotifier extends Notifier<StreamingAudioState> {
       );
 
       if (readablePath != null) {
-        await _audioPlayer.setAudioSource(
-          AudioSource.file(playableUrl, tag: mediaItem),
-        );
+        return AudioSource.file(playableUrl, tag: mediaItem);
       } else {
-        await _audioPlayer.setAudioSource(
-          AudioSource.uri(Uri.parse(playableUrl), tag: mediaItem),
-        );
+        return AudioSource.uri(Uri.parse(playableUrl), tag: mediaItem);
+      }
+    } catch (e) {
+      _log.w('Failed to resolve audio source for ${trackInfo.track.name}: $e');
+      return null;
+    }
+  }
+
+  Future<void> _prefetchNextTrack() async {
+    if (_isDisposed || _isPrefetching) return;
+    _isPrefetching = true;
+    try {
+      final currentGen = _playGeneration;
+      
+      int nextQueueIndex = -1;
+      if (state.looping) {
+        nextQueueIndex = state.currentQueueIndex;
+      } else {
+        nextQueueIndex = state.currentQueueIndex + 1;
       }
 
+      if (nextQueueIndex < state.queue.length) {
+        if (_sourceIndexToQueueIndex.isNotEmpty && _sourceIndexToQueueIndex.last == nextQueueIndex) {
+          return;
+        }
+
+        _log.d('Prefetching next track index: $nextQueueIndex');
+        final source = await _resolveAudioSource(nextQueueIndex, isPrefetch: true);
+        
+        if (source != null && currentGen == _playGeneration) {
+          await _playlist.add(source);
+          _sourceIndexToQueueIndex.add(nextQueueIndex);
+          _log.i('Prefetched and queued track for iOS background: ${state.queue[nextQueueIndex].track.name}');
+        } else if (source == null && currentGen == _playGeneration) {
+          _log.i('Prefetch failed/skipped for index $nextQueueIndex (Offline?). Moving to next.');
+          
+          if (state.looping) {
+             return;
+          }
+
+          // If source is null, we can skip it by aggressively prefetching the track after it!
+          var fallbackIndex = nextQueueIndex + 1;
+          while (fallbackIndex < state.queue.length && currentGen == _playGeneration) {
+            _log.d('Attempting prefetch skip to: $fallbackIndex');
+            final fallbackSource = await _resolveAudioSource(fallbackIndex, isPrefetch: true);
+            if (fallbackSource != null) {
+               await _playlist.add(fallbackSource);
+               _sourceIndexToQueueIndex.add(fallbackIndex);
+               _log.i('Skip and queued fallback track: ${state.queue[fallbackIndex].track.name}');
+               break; // found one!
+            }
+            fallbackIndex++;
+          }
+        }
+      }
+    } finally {
+      _isPrefetching = false;
+    }
+  }
+
+  /// Internal: plays a track at [index] from the EXISTING queue.
+  /// Does NOT modify the queue list — only updates currentTrack and currentQueueIndex.
+  Future<void> _playTrackByIndex(int index) async {
+    if (_isDisposed || index < 0 || index >= state.queue.length) return;
+
+    // Increment generation to invalidate any in-flight fetches from previous calls
+    final generation = ++_playGeneration;
+    _isTransitioning = true;
+
+    final trackInfo = state.queue[index];
+    _log.i('Loading track: ${trackInfo.track.name} by ${trackInfo.track.artistName}');
+
+    // Stop any active FFmpeg tunnel from previous Amazon playback
+    await FFmpegService.stopLiveDecryptedStream();
+    
+    // Check if a newer call superseded us
+    if (generation != _playGeneration) {
+      _log.d('Stale playback request (gen $generation), aborting');
+      return;
+    }
+
+    state = state.copyWith(
+      state: PlaybackState.loading,
+      currentQueueIndex: index,
+      currentTrack: trackInfo,
+      position: Duration.zero,
+      duration: Duration(seconds: trackInfo.track.duration),
+      error: null,
+    );
+
+    try {
+      final source = await _resolveAudioSource(index);
+
       if (generation != _playGeneration) return;
+
+      if (source == null) {
+         throw Exception('Could not resolve playable URL (Offline?) for ${trackInfo.track.name}');
+      }
+
+      await _playlist.clear();
+      _sourceIndexToQueueIndex.clear();
+      
+      await _playlist.add(source);
+      _sourceIndexToQueueIndex.add(index);
+      
+      await _audioPlayer.seek(Duration.zero, index: 0);
       await _audioPlayer.play();
       state = state.copyWith(state: PlaybackState.playing);
-
+      _isTransitioning = false;
+      
       _log.i('Now playing: ${trackInfo.track.name}');
+
+      // Immediately start fetching the next track to place in ConcatenatingAudioSource!
+      _prefetchNextTrack();
+
     } catch (e) {
       if (generation != _playGeneration) return;
       _log.e('Error playing track: $e');
       _isTransitioning = false;
       state = state.copyWith(state: PlaybackState.error, error: e.toString());
+      
+      // Auto-skip failed tracks (like offline unavailable ones)
+      if (index + 1 < state.queue.length) {
+         _log.w('Auto-skipping to next track in 2 seconds...');
+         Future.delayed(const Duration(seconds: 2), () {
+            if (_playGeneration == generation) {
+              _playTrackByIndex(index + 1);
+            }
+         });
+      }
     }
   }
 
@@ -486,29 +554,6 @@ class StreamingAudioNotifier extends Notifier<StreamingAudioState> {
     final clamped = volume.clamp(0.0, 1.0);
     _audioPlayer.setVolume(clamped);
     state = state.copyWith(volume: clamped);
-  }
-
-  void _playNextInQueue() {
-    if (_isDisposed || state.queue.isEmpty) return;
-
-    if (state.looping) {
-      _playTrackByIndex(state.currentQueueIndex);
-      return;
-    }
-
-    if (state.shuffling && state.queue.length > 1) {
-      int nextIndex = _getRandomQueueIndex(exclude: state.currentQueueIndex);
-      _playTrackByIndex(nextIndex);
-      return;
-    }
-
-    final nextIndex = state.currentQueueIndex + 1;
-    if (nextIndex < state.queue.length) {
-      _playTrackByIndex(nextIndex);
-    } else {
-      _log.d('Queue finished');
-      state = state.copyWith(state: PlaybackState.stopped);
-    }
   }
 
   int _getRandomQueueIndex({int? exclude}) {

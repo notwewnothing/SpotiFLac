@@ -657,7 +657,7 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
       _historyLog.d('Added new history entry: ${mergedItem.trackName}');
     }
 
-    _db.upsert(mergedItem.toJson()).catchError((e) {
+    _db.upsert(mergedItem.toJson()).catchError((Object e) {
       _historyLog.e('Failed to save to database: $e');
     });
   }
@@ -666,7 +666,7 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
     state = state.copyWith(
       items: state.items.where((item) => item.id != id).toList(),
     );
-    _db.deleteById(id).catchError((e) {
+    _db.deleteById(id).catchError((Object e) {
       _historyLog.e('Failed to delete from database: $e');
     });
   }
@@ -675,7 +675,7 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
     state = state.copyWith(
       items: state.items.where((item) => item.spotifyId != spotifyId).toList(),
     );
-    _db.deleteBySpotifyId(spotifyId).catchError((e) {
+    _db.deleteBySpotifyId(spotifyId).catchError((Object e) {
       _historyLog.e('Failed to delete from database: $e');
     });
     _historyLog.d('Removed item with spotifyId: $spotifyId');
@@ -1006,6 +1006,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
   int _lastNotifPercent = -1;
   int _lastNotifQueueCount = -1;
   final Set<String> _locallyCancelledItemIds = {};
+  final Map<String, int> _rateLimitRetries = {};
 
   double _normalizeProgressForUi(double value) {
     final clamped = value.clamp(0.0, 1.0).toDouble();
@@ -4621,6 +4622,25 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
             break;
           default:
             errorType = DownloadErrorType.unknown;
+        }
+
+        if (errorTypeStr == 'rate_limit') {
+          final retries = _rateLimitRetries[item.id] ?? 0;
+          if (retries < 5) {
+            _rateLimitRetries[item.id] = retries + 1;
+            _log.w('Rate limit hit for ${item.track.name}, waiting 10s before retry (Attempt ${retries + 1}/5)');
+            await Future<void>.delayed(const Duration(seconds: 10));
+            
+            // Cleanup connection early to avoid stale sockets
+            try {
+              await PlatformBridge.cleanupConnections();
+            } catch (_) {}
+
+            updateItemStatus(item.id, DownloadStatus.queued, progress: 0.0);
+            return;
+          } else {
+            _log.e('Rate limit hit for ${item.track.name}, max retries reached.');
+          }
         }
 
         _log.e('Download failed: $errorMsg (type: $errorTypeStr)');
