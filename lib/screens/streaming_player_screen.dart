@@ -410,13 +410,16 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
                                   isMinimisedMode ? 8 : 24,
                                 ),
                                 child: track?.coverUrl != null
-                                    ? CachedNetworkImage(
-                                        imageUrl: track!.coverUrl!,
-                                        fit: BoxFit.cover,
-                                        placeholder: (_, __) =>
-                                            _artPlaceholder(),
-                                        errorWidget: (_, __, ___) =>
-                                            _artPlaceholder(),
+                                    ? Hero(
+                                        tag: 'album_art_${track?.id ?? ''}',
+                                        child: CachedNetworkImage(
+                                          imageUrl: track?.coverUrl ?? '',
+                                          fit: BoxFit.cover,
+                                          placeholder: (_, __) =>
+                                              _artPlaceholder(),
+                                          errorWidget: (_, __, ___) =>
+                                              _artPlaceholder(),
+                                        ),
                                       )
                                     : _artPlaceholder(),
                               ),
@@ -614,14 +617,14 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
                             Icons.fast_rewind_rounded,
                             color: Colors.white.withValues(
                               alpha:
-                                  (s.currentQueueIndex > 0 || s.shuffling) &&
+                                  (s.currentQueueIndex > 0 || s.looping) &&
                                       s.queue.isNotEmpty
                                   ? 1.0
                                   : 0.4,
                             ),
                           ),
                           onPressed:
-                              (s.currentQueueIndex > 0 || s.shuffling) &&
+                              (s.currentQueueIndex > 0 || s.looping) &&
                                   s.queue.isNotEmpty
                               ? () => notifier.playPreviousInQueue()
                               : null,
@@ -663,7 +666,7 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
                             color: Colors.white.withValues(
                               alpha:
                                   (s.currentQueueIndex < s.queue.length - 1 ||
-                                          s.shuffling) &&
+                                          s.looping) &&
                                       s.queue.isNotEmpty
                                   ? 1.0
                                   : 0.4,
@@ -671,7 +674,7 @@ class _StreamingPlayerScreenState extends ConsumerState<StreamingPlayerScreen> {
                           ),
                           onPressed:
                               (s.currentQueueIndex < s.queue.length - 1 ||
-                                      s.shuffling) &&
+                                      s.looping) &&
                                   s.queue.isNotEmpty
                               ? () => notifier.playNextInQueue()
                               : null,

@@ -136,13 +136,11 @@ func (s *SongLinkClient) CheckTrackAvailability(spotifyTrackID string, isrc stri
 }
 
 func (s *SongLinkClient) checkTrackAvailabilityFromSpotify(spotifyTrackID string) (*TrackAvailability, error) {
+	songLinkRateLimiter.WaitForSlot()
+
 	availability, pageErr := s.checkTrackAvailabilityFromSpotifyPage(spotifyTrackID)
 	if pageErr == nil {
 		return availability, nil
-	}
-
-	if !songLinkRateLimiter.TryAcquire() {
-		return nil, fmt.Errorf("song.link page lookup failed: %w (SongLink local rate limit exceeded)", pageErr)
 	}
 
 	spotifyURL := fmt.Sprintf("https://open.spotify.com/track/%s", spotifyTrackID)

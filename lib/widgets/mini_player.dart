@@ -68,12 +68,15 @@ class MiniPlayer extends ConsumerWidget {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
                       child: track.coverUrl != null && track.coverUrl!.isNotEmpty
-                          ? CachedNetworkImage(
-                              imageUrl: track.coverUrl!,
-                              width: 48,
-                              height: 48,
-                              fit: BoxFit.cover,
-                              cacheManager: CoverCacheManager.instance,
+                          ? Hero(
+                              tag: 'album_art_${track.id}',
+                              child: CachedNetworkImage(
+                                imageUrl: track.coverUrl!,
+                                width: 48,
+                                height: 48,
+                                fit: BoxFit.cover,
+                                cacheManager: CoverCacheManager.instance,
+                              ),
                             )
                           : Container(
                               width: 48,
@@ -161,14 +164,14 @@ class MiniPlayer extends ConsumerWidget {
                         const SizedBox(width: 16),
                         // Next Button
                         GestureDetector(
-                          onTap: audioState.currentQueueIndex < audioState.queue.length - 1
+                          onTap: (audioState.currentQueueIndex < audioState.queue.length - 1 || audioState.looping)
                               ? () {
                                   ref.read(streamingAudioProvider.notifier).playNextInQueue();
                                 }
                               : null,
                           child: Icon(
                             Icons.skip_next_rounded,
-                            color: audioState.currentQueueIndex < audioState.queue.length - 1
+                            color: (audioState.currentQueueIndex < audioState.queue.length - 1 || audioState.looping)
                                 ? Colors.white
                                 : Colors.grey[700],
                             size: 32,

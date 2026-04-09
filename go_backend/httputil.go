@@ -33,7 +33,7 @@ const (
 	DefaultTimeout    = 60 * time.Second
 	DownloadTimeout   = 24 * time.Hour
 	SongLinkTimeout   = 30 * time.Second
-	DefaultMaxRetries = 3
+	DefaultMaxRetries = 5
 	DefaultRetryDelay = 1 * time.Second
 	Second            = time.Second
 )
@@ -251,7 +251,7 @@ func DefaultRetryConfig() RetryConfig {
 	return RetryConfig{
 		MaxRetries:    DefaultMaxRetries,
 		InitialDelay:  DefaultRetryDelay,
-		MaxDelay:      16 * time.Second,
+		MaxDelay:      30 * time.Second,
 		BackoffFactor: 2.0,
 	}
 }
@@ -346,11 +346,11 @@ func calculateNextDelay(currentDelay time.Duration, config RetryConfig) time.Dur
 	return min(nextDelay, config.MaxDelay)
 }
 
-// Returns 60 seconds as default if header is missing or invalid
+// Returns 10 seconds as default if header is missing or invalid
 func getRetryAfterDuration(resp *http.Response) time.Duration {
 	retryAfter := resp.Header.Get("Retry-After")
 	if retryAfter == "" {
-		return 60 * time.Second
+		return 10 * time.Second
 	}
 
 	if seconds, err := strconv.Atoi(retryAfter); err == nil {
@@ -364,7 +364,7 @@ func getRetryAfterDuration(resp *http.Response) time.Duration {
 		}
 	}
 
-	return 60 * time.Second
+	return 10 * time.Second
 }
 
 func ReadResponseBody(resp *http.Response) ([]byte, error) {

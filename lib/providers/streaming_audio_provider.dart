@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'dart:io';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -535,6 +534,12 @@ class StreamingAudioNotifier extends Notifier<StreamingAudioState> {
         currentQueueIndex: newIndex,
       );
     }
+    
+    // Also invalidate the prefetch so the next track correctly pulls from the new queue order.
+    // By re-calling _playTrackByIndex on the CURRENT track, we rebuild the concatenating playlist.
+    if (state.currentTrack != null && state.currentQueueIndex >= 0) {
+      _playTrackByIndex(state.currentQueueIndex);
+    }
   }
 
   Future<void> stop() async {
@@ -556,24 +561,8 @@ class StreamingAudioNotifier extends Notifier<StreamingAudioState> {
     state = state.copyWith(volume: clamped);
   }
 
-  int _getRandomQueueIndex({int? exclude}) {
-    if (state.queue.length <= 1) return 0;
-    int next;
-    final rand = Random();
-    do {
-      next = rand.nextInt(state.queue.length);
-    } while (exclude != null && next == exclude);
-    return next;
-  }
-
   Future<void> playNextInQueue() async {
     if (_isDisposed || state.queue.isEmpty) return;
-
-    if (state.shuffling && state.queue.length > 1) {
-      final nextIndex = _getRandomQueueIndex(exclude: state.currentQueueIndex);
-      await _playTrackByIndex(nextIndex);
-      return;
-    }
 
     final nextIndex = state.currentQueueIndex + 1;
     if (nextIndex < state.queue.length) {
@@ -583,12 +572,6 @@ class StreamingAudioNotifier extends Notifier<StreamingAudioState> {
 
   Future<void> playPreviousInQueue() async {
     if (_isDisposed || state.queue.isEmpty) return;
-
-    if (state.shuffling && state.queue.length > 1) {
-      final prevIndex = _getRandomQueueIndex(exclude: state.currentQueueIndex);
-      await _playTrackByIndex(prevIndex);
-      return;
-    }
 
     final prevIndex = state.currentQueueIndex - 1;
     if (prevIndex >= 0) {
