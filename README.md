@@ -35,10 +35,10 @@
 ## Screenshots
 
 <p align="center">
-  <img src="assets/images/IMAGE1.png" width="200" />
-  <img src="assets/images/IMAGE2.png" width="200" />
-  <img src="assets/images/IMAGE3.png" width="200" />
-  <img src="assets/images/IMAGE4.png" width="200" />
+  <img src="assets/images/IMAGE1.PNG" width="200" />
+  <img src="assets/images/IMAGE2.PNG" width="200" />
+  <img src="assets/images/IMAGE3.PNG" width="200" />
+  <img src="assets/images/IMAGE4.PNG" width="200" />
 
 </p>
 
