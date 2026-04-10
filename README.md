@@ -47,20 +47,7 @@
 
 </div>
 
-## Extensions
-
-Extensions allow the community to add new music sources and features without waiting for app updates. When a streaming service API changes or a new source becomes available, extensions can be updated independently.
-
-### Installing Extensions
-1. Go to **Store** tab in the app
-2. When opening the Store for the first time, you will be asked to enter an **Extension Repository URL**
-3. Browse and install extensions with one tap
-4. Or download a `.spotiflac-ext` file and install manually via **Settings > Extensions**
-5. Configure extension settings if needed
-6. Set provider priority in **Settings > Extensions > Provider Priority**
-
-### Developing Extensions
-Want to create your own extension? Check out the [Extension Development Guide](https://zarzet.github.io/SpotiFLAC-Mobile/docs) for complete documentation.
+THE APP IS A SPAGETTI CODE HOBBY PROJECT THAT I MADE OVER THE HOLIDAYS EXPECT BUGS AND LOTS OF THEM
 
 
 
