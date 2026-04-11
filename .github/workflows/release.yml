@@ -155,7 +155,7 @@ jobs:
             cd ..
             
             # Zipalign the new APK natively for 16KB page size boundary packaging
-            $ANDROID_HOME/build-tools/36.0.0/zipalign -p -f -P 16 -v 4 "aligned_temp_$apk" "$apk"
+            $ANDROID_HOME/build-tools/36.0.0/zipalign -f -P 16 -v 4 "aligned_temp_$apk" "$apk"
             
             rm -rf "unpacked_$apk" "aligned_temp_$apk"
           done
