@@ -18,7 +18,9 @@ if (keystorePropertiesFile.exists()) {
 android {
     namespace = "com.zarz.spotiflac"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // NDK r28+ emits 16 KB–aligned ELF segments (Android 15+ / 16 KB page devices).
+    // Keep in sync with `.github/workflows/release.yml` (sdkmanager ndk;… package).
+    ndkVersion = "28.0.13004108"
 
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
@@ -53,6 +55,12 @@ android {
         
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+        }
+    }
+
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
         }
     }
 
