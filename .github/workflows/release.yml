@@ -135,43 +135,6 @@ jobs:
             exit 1
           fi
 
-      - name: Force 16KB ELF Alignment for FFmpeg bindings (patchelf)
-        run: |
-          sudo apt-get update && sudo apt-get install -y patchelf zipalign
-          cd build/app/outputs/flutter-apk
-          for apk in *-release.apk; do
-            if [ ! -f "$apk" ]; then continue; fi
-            echo "Processing FFmpeg for 16KB ELF alignment in $apk..."
-            mkdir -p "unpacked_$apk"
-            
-            # 1. Extract ONLY the native libraries
-            unzip -q "$apk" "lib/*" -d "unpacked_$apk" || echo "No lib found in $apk"
-            
-            if [ -d "unpacked_$apk/lib" ]; then
-              # 2. Patch ONLY libffmpegkit.so to 16KB page size. Other libs (like Flutter) are natively compiled
-              find "unpacked_$apk/lib" -name "libffmpeg*.so" -type f -exec patchelf --page-size 16384 {} \;
-              find "unpacked_$apk/lib" -name "libswscale.so" -type f -exec patchelf --page-size 16384 {} \;
-              find "unpacked_$apk/lib" -name "libav*.so" -type f -exec patchelf --page-size 16384 {} \;
-              
-              # 3. Delete old invalid signatures from the APK
-              zip -q -d "$apk" "META-INF/*" || true
-              
-              # 4. Update the APK with patched, uncompressed libs (keeps resources.arsc intact!)
-              cd "unpacked_$apk"
-              zip -q -0 -u "../$apk" -r lib/
-              cd ..
-            else
-              # Strip signatures anyway if repackaging
-              zip -q -d "$apk" "META-INF/*" || true
-            fi
-            
-            # 5. Zipalign the APK natively for 16KB page size boundary
-            $ANDROID_HOME/build-tools/36.0.0/zipalign -f -P 16 -v 4 "$apk" "aligned_temp_$apk"
-            mv "aligned_temp_$apk" "$apk"
-            
-            rm -rf "unpacked_$apk"
-          done
-
       - name: Sign APKs
         uses: r0adkll/sign-android-release@v1
         id: sign_arm64
