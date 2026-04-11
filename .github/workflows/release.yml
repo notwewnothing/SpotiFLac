@@ -148,6 +148,9 @@ jobs:
             # Find and patch all .so files to 16KB page size
             find "unpacked_$apk/lib" -name "*.so" -type f -exec patchelf --page-size 16384 {} \;
             
+            # Remove old signatures (META-INF) so the repackaged APK doesn't have invalid hashes
+            rm -rf "unpacked_$apk/META-INF"
+            
             # Re-zip the APK, keeping .so files uncompressed
             cd "unpacked_$apk"
             zip -q -0 -r "../aligned_temp_$apk" lib/
