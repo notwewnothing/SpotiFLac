@@ -93,12 +93,12 @@ jobs:
           # Accept licenses
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
-          # Install NDK r27d LTS (required for 16KB page size support on Android 15+)
-          # Platform android-36 and build-tools 36.0.0 for targetSdk 36 (Android 16)
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "ndk;27.3.13750724" "platforms;android-36" "build-tools;36.0.0"
+          # NDK r28+ compiles 16 KB–aligned ELFs by default (Android 15+ 16 KB page devices).
+          # Must match android/app/build.gradle.kts and android/build.gradle.kts ndkVersion.
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "ndk;28.0.13004108" "platforms;android-36" "build-tools;36.0.0"
 
-          # Set NDK path
-          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.3.13750724" >> $GITHUB_ENV
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/28.0.13004108" >> $GITHUB_ENV
+          echo "ANDROID_NDK_ROOT=$ANDROID_HOME/ndk/28.0.13004108" >> $GITHUB_ENV
 
       - name: Install gomobile
         run: |
@@ -109,7 +109,7 @@ jobs:
         working-directory: go_backend
         run: |
           mkdir -p ../android/app/libs
-          gomobile bind -target=android -androidapi 24 -o ../android/app/libs/gobackend.aar .
+          gomobile bind -target=android -androidapi 24 -ldflags="-s -w -extldflags '-O2 -Wl,-z,max-page-size=16384'" -o ../android/app/libs/gobackend.aar .
         env:
           CGO_ENABLED: 1
 
@@ -134,6 +134,31 @@ jobs:
             echo "ERROR: APK not found!"
             exit 1
           fi
+
+      - name: Force 16KB ELF Alignment for 3rd Party Plugins (patchelf)
+        run: |
+          sudo apt-get update && sudo apt-get install -y patchelf zipalign
+          cd build/app/outputs/flutter-apk
+          for apk in *-release.apk; do
+            if [ ! -f "$apk" ]; then continue; fi
+            echo "Processing $apk for 16KB ELF alignment..."
+            mkdir -p "unpacked_$apk"
+            unzip -q "$apk" -d "unpacked_$apk"
+            
+            # Find and patch all .so files to 16KB page size
+            find "unpacked_$apk/lib" -name "*.so" -type f -exec patchelf --page-size 16384 {} \;
+            
+            # Re-zip the APK, keeping .so files uncompressed
+            cd "unpacked_$apk"
+            zip -q -0 -r "../aligned_temp_$apk" lib/
+            zip -q -9 -r "../aligned_temp_$apk" . -x "lib/*"
+            cd ..
+            
+            # Zipalign the new APK natively for 16KB page size boundary packaging
+            $ANDROID_HOME/build-tools/36.0.0/zipalign -p -f -P 16 -v 4 "aligned_temp_$apk" "$apk"
+            
+            rm -rf "unpacked_$apk" "aligned_temp_$apk"
+          done
 
       - name: Sign APKs
         uses: r0adkll/sign-android-release@v1

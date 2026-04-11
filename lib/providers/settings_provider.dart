@@ -23,7 +23,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
   final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
   bool _isSavingSettings = false;
-  bool _saveQueued = false;
+  bool _saveQueued = false; 
   String? _pendingSettingsJson;
 
   @override
@@ -53,7 +53,9 @@ class SettingsNotifier extends Notifier<AppSettings> {
   }
 
   void _syncLyricsSettingsToBackend() {
-    PlatformBridge.setLyricsProviders(state.lyricsProviders).catchError((Object e) {
+    PlatformBridge.setLyricsProviders(state.lyricsProviders).catchError((
+      Object e,
+    ) {
       _log.w('Failed to sync lyrics providers to backend: $e');
     });
 

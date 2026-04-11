@@ -9,6 +9,9 @@ subprojects {
     afterEvaluate {
         if (project.hasProperty("android")) {
             project.extensions.configure<com.android.build.gradle.BaseExtension>("android") {
+                // Same as :app — ensures plugin native code links against 16 KB–aware NDK.
+                ndkVersion = "28.0.13004108"
+
                 compileOptions {
                     isCoreLibraryDesugaringEnabled = true
                     sourceCompatibility = JavaVersion.VERSION_17

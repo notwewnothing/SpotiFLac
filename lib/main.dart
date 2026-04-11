@@ -246,10 +246,12 @@ class _EagerInitializationState extends ConsumerState<_EagerInitialization>
 
     // All checks passed -- start an incremental scan.
     final iosBookmark = settings.localLibraryBookmark;
-    ref.read(localLibraryProvider.notifier).startScan(
-      settings.localLibraryPath,
-      iosBookmark: iosBookmark.isNotEmpty ? iosBookmark : null,
-    );
+    ref
+        .read(localLibraryProvider.notifier)
+        .startScan(
+          settings.localLibraryPath,
+          iosBookmark: iosBookmark.isNotEmpty ? iosBookmark : null,
+        );
   }
 
   Future<void> _initializeAppServices() async {
