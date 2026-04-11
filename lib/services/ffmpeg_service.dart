@@ -2,12 +2,11 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:path/path.dart' as p;
-import 'package:spotiflac_android/utils/platform_spoof.dart' as platform;
-import 'package:ffmpeg_kit_16kb/ffmpeg_kit.dart';
-import 'package:ffmpeg_kit_16kb/ffmpeg_kit_config.dart';
-import 'package:ffmpeg_kit_16kb/ffmpeg_session.dart';
-import 'package:ffmpeg_kit_16kb/return_code.dart';
-import 'package:ffmpeg_kit_16kb/session_state.dart';
+import 'package:ffmpeg_kit_flutter_new_full/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter_new_full/ffmpeg_kit_config.dart';
+import 'package:ffmpeg_kit_flutter_new_full/ffmpeg_session.dart';
+import 'package:ffmpeg_kit_flutter_new_full/return_code.dart';
+import 'package:ffmpeg_kit_flutter_new_full/session_state.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:spotiflac_android/utils/logger.dart';
 

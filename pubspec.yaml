@@ -57,7 +57,7 @@ dependencies:
   logger: ^2.5.0
 
   # FFmpeg for audio conversion
-  ffmpeg_kit_16kb: ^1.0.4
+  ffmpeg_kit_flutter_new_full: ^2.0.0
   open_filex: ^4.7.0
 
   # Notifications
