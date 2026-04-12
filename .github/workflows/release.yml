@@ -109,7 +109,7 @@ jobs:
         working-directory: go_backend
         run: |
           mkdir -p ../android/app/libs
-          gomobile bind -target=android -androidapi 24 -ldflags="-s -w -extldflags '-O2 -Wl,-z,max-page-size=16384'" -o ../android/app/libs/gobackend.aar .
+          gomobile bind -v -target=android -androidapi 24 -ldflags="-s -w -extldflags=-Wl,-z,max-page-size=16384" -o ../android/app/libs/gobackend.aar .
         env:
           CGO_ENABLED: 1
 
